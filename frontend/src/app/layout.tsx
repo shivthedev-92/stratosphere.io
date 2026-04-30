@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Elevate — Your Productivity Coach",
+  title: "Stratosphere — Your Productivity Coach",
   description: "Build habits, manage your day, and find your rhythm — guilt-free.",
 };
 

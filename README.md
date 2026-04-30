@@ -1,4 +1,4 @@
-# Elevate — Productivity App
+# Stratosphere — Productivity App
 
 A habit-building and life-coaching app. See [`system-prompt.txt`](./system-prompt.txt) for the full product vision.
 
