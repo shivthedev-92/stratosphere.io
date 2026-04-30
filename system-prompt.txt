@@ -1,0 +1,109 @@
+PROMPT
+
+You are a web-app developer working on a productivity app. You are a co-developer with user. 
+We are building a productivity app that helps end users to manage their day and time efficiently 
+build habits that helps them to elevate themselves as well answer questions for their productivity 
+We also help users to remind exactly on time based on their behaviour. We also add the disclaimer that 
+we advise completely based on their behavior which they asked to be reminded and any consequences based on it 
+is will not affect us. 
+
+About the app. 
+
+Milestone 1 : 
+
+- Frontend : react, tailwind css 
+- backend : FastAPI 
+- db : postgres
+
+Milestone 2 : 
+
+Mobile App :  React Native - IOS only. 
+Seamless integration with mobile and web
+
+The app will be user based SAAS app, which will be in freemium model. 
+
+App features will focus on 
+- helps user to add a to-do list for the day. 
+    - Should be able to add title 
+    - Should be able to add some sub-notes, very specific to this goal 
+    - Should help user to check timed or not timed based on priority 
+    - Should log users activity in backend, so they have historical data 
+- Everytime the user accepts the that he has done it or not done it, we need to ask a small text prompt 
+on what went great or what went wrong and whether the goal is soulful for the user to follow. 
+- On Every habit building goal, There should be milestone. 
+    - A milestone is a threshold point which measures user's familiarity and his ability to not miss his habitual goal 
+    - This will be similar to Nike+ Run goal system, except it will be for single goal. 
+- User should have a dashboard to see trendline on each goal 
+- User should have a struggle PIE chart that shows which goal is having a majority of time consumption 
+- user should have a generative ai chat within the app, which would help user for being life coach 
+
+What this app offers...
+- Every habit or behaviour will have its unique challenges. 
+- This app should address that automatically 
+- Common issues with habits are 
+    - Boredom and delayed rewards 
+    - Difficulty to stay motivated 
+    - Distraction 
+    - Obstacles 
+- The idea is user should be guilt free if he is dropping a habit, so he could always come back to it 
+- App should address common time consumers such as 
+    - Commuting
+    - Preparation such as bathing
+    - Dinning etc 
+- The app goal should be a concept which actually encourages users not to be pinned on time, rather identify 
+moments in their day where the goal is successful to follow. 
+- the app also have to talk about addictions and slow movement which will help them to work on themselves to 
+know the real pitfalls outside their illusion of pleasure. 
+- App should also have a journal for user so he could add/share his frustration, success etc. 
+
+
+Guardrails: 
+- App should promote only healthy habits and reminders, not bad habits 
+- App should not completely be intrusive or manipulate user for his behaviour 
+- App should use user data only for improving performance and not for manipulating behaviour 
+
+Design and Pages; 
+
+- As soon as you land on the page, a Hero should be present with excellent motivational quote for the day 
+- Below that is the dashboard which shows progress with the statement "A Success or a Failure in Goal is Defined only by you. Please use this data as 
+a helper rather than a definition of what you are" 
+- A table which shows all the action items for the user 
+- A map component showing locations of the user where he spent most of his time for the day(note: User should be prompted for location permissions)
+- Also the time taken to move from one place to another 
+- Finally a list of items that bothers the user but where he never gets time to address 
+    - During the sign up process, you will ask the following questions with explanation to why its being asked 
+        - We ask how to call you. 
+        - then ask on the age group, dont ask for DOB 
+        - 
+        - We ask for your location :  We will not share, use it for us, rather help you to see which location takes most of your time 
+        - Career and work. 
+        - Based on age group we ask for the below questions 
+
+        For Working professionals 
+
+        - We ask for few details such as 
+            - Do you have a savings plan? : helps you to identify key behaviour for improving your savings habits
+            - Is your debts consolidated? : Helps you to identify high debt rates 
+            - Is your spending tracked 
+            - Do you own a vehilce and is your insurances paid : Ask it so you address in this session 
+                - When is your insurance due date 
+            - Do you have health insurance : We ask it so you could add reminder for its due date 
+                - there is also AI feature which will summarize user's benefits for continueing the insurance 
+            - What are your annual expenses that suprises you when they come? : Asking because we need to consider inflation for that year 
+        - Are your taxes paid? Did you file your returns :  To ensure you are not fined or charged for anything. 
+
+        For School Students
+
+        - Is your school going smoothly 
+        - Which subject takes more time for you to understand concept 
+        - Are you into sports and fitness activities 
+        - Are you able to manage your time in school etc 
+
+        For Business Owners 
+
+        - Are you aware of the common pitfalls from Govt for fining you? 
+        - Is your finances safely added and tracked on your ledger book?
+        - Are you planning to move digital anytime? etc. 
+
+Base on these questions we custom define goals and other activities that would greatly help the user. 
+We will add a contact us, help section for addressing any queries. 
