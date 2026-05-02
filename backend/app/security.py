@@ -20,13 +20,23 @@ from jose import jwt
 from app.config import settings
 
 
+#==================#
+# Hashing Password |
+#==================#
+
 def hash_password(password: str) -> str:
     return bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
 
+#==================#
+# Verify Password  |
+#==================#
 
 def verify_password(plain: str, hashed: str) -> bool:
     return bcrypt.checkpw(plain.encode(), hashed.encode())
 
+#====================#
+# Decode Access Token|
+#====================#
 
 def create_access_token(subject: str) -> str:
     expire = datetime.now(timezone.utc) + timedelta(minutes=settings.JWT_EXPIRE_MINUTES)
@@ -36,6 +46,9 @@ def create_access_token(subject: str) -> str:
         algorithm=settings.JWT_ALGORITHM,
     )
 
+#====================#
+# Decode Access Token|
+#====================#
 
 def decode_access_token(token: str) -> str:
     payload = jwt.decode(token, settings.JWT_SECRET, algorithms=[settings.JWT_ALGORITHM])

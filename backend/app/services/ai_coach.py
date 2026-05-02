@@ -47,10 +47,17 @@ Tone: Warm, concise, encouraging. Ask clarifying questions rather than assuming.
 Never lecture. Keep responses focused and actionable."""
 
 
+#================#
+# Coach Provider |
+#================#
+
 @runtime_checkable
 class CoachProvider(Protocol):
     async def reply(self, history: list[ChatMessage], user_message: str) -> str: ...
 
+#==============#
+# Ollama Coach |
+#==============#
 
 class OllamaCoach:
     async def reply(self, history: list[ChatMessage], user_message: str) -> str:
@@ -67,6 +74,10 @@ class OllamaCoach:
             response.raise_for_status()
             return response.json()["message"]["content"]
 
+
+#=================#
+# Anthropic Coach |
+#=================#
 
 class AnthropicCoach:
     def __init__(self) -> None:

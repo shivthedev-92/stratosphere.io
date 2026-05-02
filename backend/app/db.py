@@ -23,6 +23,9 @@ engine = create_engine(settings.DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 
+#======================#
+# Get Database Session |
+#======================#
 
 def get_db() -> Generator[Session, None, None]:
     db = SessionLocal()
