@@ -21,6 +21,14 @@ export const metadata: Metadata = {
   description: "Build habits, manage your day, and find your rhythm — guilt-free.",
 };
 
+
+/*
+Root Layout for the Stratosphere application. 
+This component wraps all pages and provides the basic HTML structure and global styles. 
+It also sets the metadata for the application, including the title and description, 
+which are important for SEO and social sharing.
+*/
+
 export default function RootLayout({
   children,
 }: Readonly<{

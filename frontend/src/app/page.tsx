@@ -17,6 +17,11 @@ import { RhythmIllustration } from "@/components/illustrations";
 
 const QUOTE = "The secret of getting ahead is getting started.";
 
+/** 
+ * Home page component for the Stratosphere application.
+ * This component renders the main landing page with a hero section and call-to-action buttons.
+ */
+
 export default function Home() {
   return (
     <main className="flex min-h-screen flex-col overflow-hidden bg-neutral-950 text-white">
