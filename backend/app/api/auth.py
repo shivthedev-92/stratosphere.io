@@ -17,8 +17,9 @@ from sqlalchemy.orm import Session
 
 from app.db import get_db
 from app.models.user import User
-from app.schemas.auth import LoginIn, SignupIn, TokenOut
+from app.schemas.auth import LoginIn, MessageOut, PasswordResetRequestIn, SignupIn, TokenOut
 from app.security import create_access_token, hash_password, verify_password
+from app.services.password_reset import RESET_REQUEST_MESSAGE, create_password_reset_request
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -44,3 +45,12 @@ def login(data: LoginIn, db: Session = Depends(get_db)) -> TokenOut:
     if not user or not verify_password(data.password, user.hashed_password):
         raise HTTPException(status_code=401, detail="Invalid credentials")
     return TokenOut(access_token=create_access_token(str(user.id)))
+
+
+@router.post("/password-reset/request", response_model=MessageOut)
+def request_password_reset(
+    data: PasswordResetRequestIn,
+    db: Session = Depends(get_db),
+) -> MessageOut:
+    create_password_reset_request(db, data.email)
+    return MessageOut(message=RESET_REQUEST_MESSAGE)

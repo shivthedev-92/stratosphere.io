@@ -18,6 +18,7 @@
 import { useState, useRef, useEffect, FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { BackgroundShell } from "@/components/background-shell";
 import { api, type ChatMessage } from "@/lib/api";
 import { CoachIllustration } from "@/components/illustrations";
 
@@ -59,7 +60,7 @@ export default function ChatPage() {
   }
 
   return (
-    <main className="flex flex-col min-h-screen bg-neutral-950 text-white">
+    <BackgroundShell className="flex min-h-screen flex-col text-white" showSwitcher>
       {/* Header */}
       <header className="flex items-center justify-between px-6 py-4 border-b border-neutral-800">
         <h1 className="font-semibold">AI Life Coach</h1>
@@ -126,6 +127,6 @@ export default function ChatPage() {
           Send
         </button>
       </form>
-    </main>
+    </BackgroundShell>
   );
 }

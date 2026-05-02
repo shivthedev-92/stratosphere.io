@@ -41,6 +41,10 @@ export type TokenOut = {
   token_type: string;
 };
 
+export type MessageOut = {
+  message: string;
+};
+
 export type ChatMessage = {
   role: "user" | "assistant";
   content: string;
@@ -70,6 +74,8 @@ export type GoalCreate = {
   priority: Priority;
 };
 
+export type GoalUpdate = GoalCreate;
+
 export type GoalLogCreate = {
   completed: boolean;
   reflection: string;
@@ -98,14 +104,33 @@ export const api = {
       body: JSON.stringify({ email, password }),
     }),
 
+  requestPasswordReset: (email: string) =>
+    request<MessageOut>("/auth/password-reset/request", {
+      method: "POST",
+      body: JSON.stringify({ email }),
+    }),
+
   me: () => request<UserOut>("/me"),
 
   goals: () => request<GoalOut[]>("/goals"),
+
+  goalLogs: () => request<GoalLogOut[]>("/goals/logs"),
 
   createGoal: (goal: GoalCreate) =>
     request<GoalOut>("/goals", {
       method: "POST",
       body: JSON.stringify(goal),
+    }),
+
+  updateGoal: (goalId: string, goal: GoalUpdate) =>
+    request<GoalOut>(`/goals/${goalId}`, {
+      method: "PATCH",
+      body: JSON.stringify(goal),
+    }),
+
+  deleteGoal: (goalId: string) =>
+    request<void>(`/goals/${goalId}`, {
+      method: "DELETE",
     }),
 
   createGoalLog: (goalId: string, log: GoalLogCreate) =>

@@ -25,3 +25,46 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+.signature-bg {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  --signature-image: linear-gradient(transparent, transparent);
+  background:
+    linear-gradient(to bottom, rgba(10, 10, 10, 0.36), #0a0a0a 92%),
+    linear-gradient(145deg, rgba(20, 184, 166, 0.12), transparent 28%),
+    linear-gradient(315deg, rgba(245, 158, 11, 0.1), transparent 24%),
+    var(--signature-image),
+    #0a0a0a;
+  background-position: center;
+  background-size: auto, auto, auto, cover, auto;
+}
+
+.signature-bg::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.045) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.045) 1px, transparent 1px);
+  background-size: 56px 56px;
+  mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.95), rgba(0, 0, 0, 0.42) 55%, transparent);
+}
+
+.signature-bg::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background:
+    repeating-linear-gradient(
+      115deg,
+      transparent 0 46px,
+      rgba(56, 189, 248, 0.055) 47px,
+      transparent 49px 96px
+    ),
+    linear-gradient(to bottom, rgba(10, 10, 10, 0.12), #0a0a0a 88%);
+  pointer-events: none;
+}

@@ -29,6 +29,14 @@ class GoalCreate(BaseModel):
     priority: Priority = "medium"
 
 
+class GoalUpdate(BaseModel):
+    title: str = Field(min_length=1, max_length=200)
+    notes: str | None = Field(default=None, max_length=2000)
+    is_timed: bool = False
+    scheduled_for: datetime | None = None
+    priority: Priority = "medium"
+
+
 class GoalOut(BaseModel):
     id: UUID
     title: str

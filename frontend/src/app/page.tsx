@@ -13,6 +13,7 @@
 // ############################################################################
 
 import Link from "next/link";
+import { BackgroundShell } from "@/components/background-shell";
 import { RhythmIllustration } from "@/components/illustrations";
 
 const QUOTE = "The secret of getting ahead is getting started.";
@@ -24,7 +25,7 @@ const QUOTE = "The secret of getting ahead is getting started.";
 
 export default function Home() {
   return (
-    <main className="flex min-h-screen flex-col overflow-hidden bg-neutral-950 text-white">
+    <BackgroundShell className="flex min-h-screen flex-col overflow-hidden text-white">
       <section className="relative flex flex-1 items-center justify-center px-6 py-20 text-center sm:py-24">
         <RhythmIllustration className="pointer-events-none absolute inset-x-1/2 top-1/2 h-[520px] w-[920px] -translate-x-1/2 -translate-y-1/2 opacity-35 blur-[0.2px]" />
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_0%,rgba(10,10,10,0.42)_44%,#0a0a0a_82%)]" />
@@ -59,6 +60,6 @@ export default function Home() {
       <footer className="relative z-10 px-4 pb-8 text-center text-xs text-neutral-600">
         Advice is based entirely on behaviour you choose to share. Any outcome rests with you, not this app.
       </footer>
-    </main>
+    </BackgroundShell>
   );
 }

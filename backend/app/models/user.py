@@ -29,4 +29,6 @@ class User(Base):
     age_group = Column(String, nullable=True)
     career_track = Column(String, nullable=True)
     hashed_password = Column(String, nullable=False)
+    password_reset_token_hash = Column(String, nullable=True)
+    password_reset_expires_at = Column(DateTime(timezone=True), nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())

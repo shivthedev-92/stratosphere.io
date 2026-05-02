@@ -3,6 +3,7 @@
 import { useState, FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { BackgroundShell } from "@/components/background-shell";
 import { api, saveToken } from "@/lib/api";
 
 export default function LoginPage() {
@@ -28,8 +29,8 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-neutral-950 px-4">
-      <div className="w-full max-w-md space-y-6">
+    <BackgroundShell className="flex min-h-screen items-center justify-center px-4 text-white" showSwitcher>
+      <div className="relative z-10 w-full max-w-md space-y-6 rounded-lg border border-white/10 bg-neutral-900/85 p-6 shadow-2xl shadow-black/30 backdrop-blur">
         <div className="text-center">
           <h1 className="text-2xl font-bold text-white">Welcome back</h1>
           <p className="text-neutral-400 text-sm mt-1">Pick up right where you left off.</p>
@@ -48,7 +49,12 @@ export default function LoginPage() {
             />
           </div>
           <div>
-            <label className="block text-sm text-neutral-300 mb-1">Password</label>
+            <div className="mb-1 flex items-center justify-between gap-3">
+              <label className="block text-sm text-neutral-300">Password</label>
+              <Link href="/forgot-password" className="text-xs font-semibold text-indigo-300 hover:text-indigo-200">
+                Forgot password?
+              </Link>
+            </div>
             <input
               type="password"
               value={password}
@@ -76,6 +82,6 @@ export default function LoginPage() {
           </Link>
         </p>
       </div>
-    </main>
+    </BackgroundShell>
   );
 }

@@ -15,50 +15,242 @@
 
 "use client";
 
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   api,
   clearToken,
+  type GoalLogOut,
   type GoalOut,
   type Priority,
   type UserOut,
 } from "@/lib/api";
-import { EmptyGoalsIllustration, InsightIllustration } from "@/components/illustrations";
+import { BackgroundShell } from "@/components/background-shell";
+import { CompletedReflectionsTable } from "@/components/completed-reflections-table";
+import { EmptyGoalsIllustration } from "@/components/illustrations";
+import { MonthPriorityCalendar } from "@/components/month-priority-calendar";
+import { ProgressSystem } from "@/components/progress-system";
+import { ReflectGoalModal } from "@/components/reflect-goal-modal";
+import { TaskDetailModal } from "@/components/task-detail-modal";
 
 const priorities: Priority[] = ["low", "medium", "high"];
+type ActionItemView = "list" | "cards";
+type ActionFilter = "today" | "upcoming" | "all";
+const ACTION_VIEW_KEY = "stratosphere-action-item-view";
+
+const priorityMeta: Record<Priority, { emoji: string; label: string; classes: string }> = {
+  low: {
+    emoji: "🌱",
+    label: "Low",
+    classes: "border-emerald-700/70 bg-emerald-950/60 text-emerald-200",
+  },
+  medium: {
+    emoji: "⚡",
+    label: "Medium",
+    classes: "border-sky-700/70 bg-sky-950/60 text-sky-200",
+  },
+  high: {
+    emoji: "🔥",
+    label: "High",
+    classes: "border-amber-700/70 bg-amber-950/60 text-amber-200",
+  },
+};
+
+function getInitials(name: string) {
+  return name
+    .trim()
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase())
+    .join("");
+}
+
+function getDayEmoji() {
+  const hour = new Date().getHours();
+  if (hour < 12) return "🌤️";
+  if (hour < 17) return "☀️";
+  return "🌙";
+}
+
+function getSubmitLabel(isSaving: boolean, isTimed: boolean, scheduledFor: string) {
+  if (isSaving) return "Saving...";
+  if (!isTimed || !scheduledFor) return "Add to today";
+
+  const selectedDate = new Date(scheduledFor);
+  const today = new Date();
+  const tomorrow = new Date();
+  tomorrow.setDate(today.getDate() + 1);
+
+  if (selectedDate.toDateString() === today.toDateString()) return "Add to today";
+  if (selectedDate.toDateString() === tomorrow.toDateString()) return "Add to tomorrow";
+
+  return `Add to ${selectedDate.toLocaleDateString(undefined, {
+    month: "short",
+    day: "numeric",
+  })}`;
+}
+
+function getGoalEffectiveDate(goal: GoalOut) {
+  return new Date(goal.scheduled_for ?? goal.created_at);
+}
+
+function getDateKey(date: Date) {
+  return `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
+}
+
+function getDateHeading(date: Date) {
+  const today = new Date();
+  const tomorrow = new Date();
+  tomorrow.setDate(today.getDate() + 1);
+  const yesterday = new Date();
+  yesterday.setDate(today.getDate() - 1);
+
+  if (date.toDateString() === today.toDateString()) return "Today";
+  if (date.toDateString() === tomorrow.toDateString()) return "Tomorrow";
+  if (date.toDateString() === yesterday.toDateString()) return "Yesterday";
+
+  return date.toLocaleDateString(undefined, {
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+}
+
+function groupGoalsByDate(goals: GoalOut[]) {
+  const sortedGoals = [...goals].sort((a, b) => {
+    const aDate = getGoalEffectiveDate(a).getTime();
+    const bDate = getGoalEffectiveDate(b).getTime();
+    if (aDate !== bDate) return aDate - bDate;
+    return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+  });
+
+  return sortedGoals.reduce<Array<{ key: string; label: string; goals: GoalOut[] }>>(
+    (groups, goal) => {
+      const date = getGoalEffectiveDate(goal);
+      const key = date.toDateString();
+      const group = groups.find((item) => item.key === key);
+      if (group) {
+        group.goals.push(goal);
+      } else {
+        groups.push({ key, label: getDateHeading(date), goals: [goal] });
+      }
+      return groups;
+    },
+    [],
+  );
+}
+
+function filterGoals(goals: GoalOut[], filter: ActionFilter, selectedDateKey: string | null) {
+  const today = new Date();
+  const todayKey = getDateKey(today);
+
+  return goals.filter((goal) => {
+    const goalDate = getGoalEffectiveDate(goal);
+    const goalKey = getDateKey(goalDate);
+    if (selectedDateKey) return goalKey === selectedDateKey;
+    if (filter === "today") return goalKey === todayKey;
+    if (filter === "upcoming") return goalDate > today && goalKey !== todayKey;
+    return true;
+  });
+}
 
 export default function DashboardPage() {
   const router = useRouter();
   const [user, setUser] = useState<UserOut | null>(null);
   const [goals, setGoals] = useState<GoalOut[]>([]);
+  const [goalLogs, setGoalLogs] = useState<GoalLogOut[]>([]);
   const [title, setTitle] = useState("");
   const [notes, setNotes] = useState("");
   const [isTimed, setIsTimed] = useState(false);
   const [scheduledFor, setScheduledFor] = useState("");
   const [priority, setPriority] = useState<Priority>("medium");
   const [activeGoal, setActiveGoal] = useState<GoalOut | null>(null);
+  const [detailGoal, setDetailGoal] = useState<GoalOut | null>(null);
   const [completed, setCompleted] = useState(true);
   const [reflection, setReflection] = useState("");
   const [soulful, setSoulful] = useState<boolean | null>(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [actionItemView, setActionItemView] = useState<ActionItemView>("list");
+  const [actionFilter, setActionFilter] = useState<ActionFilter>("today");
+  const [selectedCalendarDate, setSelectedCalendarDate] = useState<string | null>(null);
+  const addCardRef = useRef<HTMLElement>(null);
+  const [actionListHeight, setActionListHeight] = useState<number | null>(null);
 
   useEffect(() => {
-    Promise.all([api.me(), api.goals()])
-      .then(([userData, goalData]) => {
+    Promise.all([api.me(), api.goals(), api.goalLogs()])
+      .then(([userData, goalData, logData]) => {
         setUser(userData);
         setGoals(goalData);
+        setGoalLogs(logData);
       })
       .catch(() => router.push("/login"))
       .finally(() => setLoading(false));
   }, [router]);
 
+  useEffect(() => {
+    const savedView = window.localStorage.getItem(ACTION_VIEW_KEY);
+    if (savedView === "list" || savedView === "cards") {
+      setActionItemView(savedView);
+    }
+  }, []);
+
+  useEffect(() => {
+    const card = addCardRef.current;
+    if (!card) return;
+
+    function syncHeight() {
+      const currentCard = addCardRef.current;
+      if (!currentCard) return;
+      if (window.innerWidth < 1024) {
+        setActionListHeight(null);
+        return;
+      }
+      setActionListHeight(currentCard.getBoundingClientRect().height);
+    }
+
+    syncHeight();
+    const observer = new ResizeObserver(syncHeight);
+    observer.observe(card);
+    window.addEventListener("resize", syncHeight);
+
+    return () => {
+      observer.disconnect();
+      window.removeEventListener("resize", syncHeight);
+    };
+  }, [goals.length, isTimed]);
+
   function handleLogout() {
     clearToken();
     router.push("/");
+  }
+
+  function handleViewChange(view: ActionItemView) {
+    setActionItemView(view);
+    window.localStorage.setItem(ACTION_VIEW_KEY, view);
+  }
+
+  function handleFilterChange(filter: ActionFilter) {
+    setActionFilter(filter);
+    setSelectedCalendarDate(null);
+  }
+
+  function startReflection(goal: GoalOut) {
+    setActiveGoal(goal);
+    setCompleted(true);
+    setSoulful(true);
+  }
+
+  function handleReuseGoal(goal: GoalOut) {
+    setTitle(goal.title);
+    setNotes(goal.notes ?? "");
+    setPriority(goal.priority);
+    setIsTimed(false);
+    setScheduledFor("");
+    addCardRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
   async function handleCreateGoal(e: FormEvent) {
@@ -93,11 +285,12 @@ export default function DashboardPage() {
     setError("");
     setSaving(true);
     try {
-      await api.createGoalLog(activeGoal.id, {
+      const log = await api.createGoalLog(activeGoal.id, {
         completed,
         reflection: reflection.trim(),
         soulful,
       });
+      setGoalLogs((current) => [...current, log]);
       setActiveGoal(null);
       setReflection("");
       setSoulful(null);
@@ -109,16 +302,66 @@ export default function DashboardPage() {
     }
   }
 
+  async function handleUpdateGoal(goal: {
+    title: string;
+    notes: string | null;
+    is_timed: boolean;
+    scheduled_for: string | null;
+    priority: Priority;
+  }) {
+    if (!detailGoal) return;
+    setError("");
+    setSaving(true);
+    try {
+      const updated = await api.updateGoal(detailGoal.id, goal);
+      setGoals((current) => current.map((item) => (item.id === updated.id ? updated : item)));
+      setDetailGoal(null);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Could not update action item");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleDeleteGoal() {
+    if (!detailGoal) return;
+    setError("");
+    setSaving(true);
+    try {
+      await api.deleteGoal(detailGoal.id);
+      setGoals((current) => current.filter((item) => item.id !== detailGoal.id));
+      setGoalLogs((current) => current.filter((log) => log.goal_id !== detailGoal.id));
+      setDetailGoal(null);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Could not delete action item");
+    } finally {
+      setSaving(false);
+    }
+  }
+
   if (loading) return <p className="text-neutral-500 p-8">Loading...</p>;
   if (!user) return null;
 
+  const visibleGoals = filterGoals(goals, actionFilter, selectedCalendarDate);
+  const groupedGoals = groupGoalsByDate(visibleGoals);
+  const addressedGoalIds = new Set(
+    goalLogs
+      .filter((log) => log.completed)
+      .map((log) => log.goal_id),
+  );
+
   return (
-    <main className="min-h-screen bg-neutral-950 text-white">
-      <div className="mx-auto flex w-full max-w-6xl flex-col gap-8 px-4 py-6 sm:px-8 sm:py-10">
+    <BackgroundShell className="min-h-screen text-white" showSwitcher>
+      <div className="relative z-10 mx-auto flex w-full max-w-6xl flex-col gap-8 px-4 py-6 sm:px-8 sm:py-10">
         <header className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <p className="text-sm text-neutral-500">Today</p>
-            <h1 className="text-2xl font-bold">Hello, {user.name}</h1>
+          <div className="flex items-center gap-4">
+            <div className="grid h-14 w-14 shrink-0 place-items-center rounded-lg border border-white/15 bg-neutral-900/80 text-base font-bold shadow-lg shadow-black/20">
+              {getInitials(user.name) || "U"}
+            </div>
+            <div>
+              <p className="text-sm text-neutral-400">{getDayEmoji()} Today</p>
+              <h1 className="text-2xl font-bold">Hello, {user.name}</h1>
+            </div>
           </div>
           <div className="flex flex-wrap gap-3">
             <Link
@@ -136,9 +379,9 @@ export default function DashboardPage() {
           </div>
         </header>
 
-        <section className="rounded-lg border border-neutral-800 bg-neutral-900 p-5">
+        <section className="rounded-lg border border-white/10 bg-neutral-900/80 p-5 shadow-lg shadow-black/15 backdrop-blur">
           <p className="text-center text-sm italic text-neutral-300">
-            &ldquo;A Success or a Failure in Goal is Defined only by you. Please use this
+            ✦ &ldquo;A Success or a Failure in Goal is Defined only by you. Please use this
             data as a helper rather than a definition of what you are.&rdquo;
           </p>
         </section>
@@ -149,8 +392,11 @@ export default function DashboardPage() {
           </div>
         )}
 
-        <div className="grid gap-8 lg:grid-cols-[360px_1fr]">
-          <section className="rounded-lg border border-neutral-800 bg-neutral-900 p-5">
+        <div className="grid items-start gap-8 lg:grid-cols-[360px_minmax(0,1fr)]">
+          <section
+            ref={addCardRef}
+            className="rounded-lg border border-white/10 bg-neutral-900/85 p-5 shadow-lg shadow-black/15 backdrop-blur"
+          >
             <h2 className="text-base font-semibold">Add Action Item</h2>
             <p className="mt-1 text-sm text-neutral-500">
               Capture the goal and the moment where it may naturally fit today.
@@ -191,11 +437,12 @@ export default function DashboardPage() {
                       onClick={() => setPriority(item)}
                       className={`rounded-lg border px-3 py-2 text-sm capitalize ${
                         priority === item
-                          ? "border-indigo-500 bg-indigo-600 text-white"
+                          ? priorityMeta[item].classes
                           : "border-neutral-700 bg-neutral-800 text-neutral-300"
                       }`}
                     >
-                      {item}
+                      <span aria-hidden="true">{priorityMeta[item].emoji}</span>{" "}
+                      {priorityMeta[item].label}
                     </button>
                   ))}
                 </div>
@@ -225,199 +472,218 @@ export default function DashboardPage() {
                 disabled={saving || !title.trim()}
                 className="w-full rounded-lg bg-indigo-600 px-4 py-3 text-sm font-semibold transition-colors hover:bg-indigo-500 disabled:opacity-50"
               >
-                {saving ? "Saving..." : "Add to today"}
+                {getSubmitLabel(saving, isTimed, scheduledFor)}
               </button>
             </form>
+
+            <MonthPriorityCalendar
+              goals={goals}
+              selectedDateKey={selectedCalendarDate}
+              onDateSelect={(dateKey) => {
+                setSelectedCalendarDate((current) => (current === dateKey ? null : dateKey));
+                setActionFilter("all");
+              }}
+            />
           </section>
 
-          <section className="rounded-lg border border-neutral-800 bg-neutral-900">
-            <div className="border-b border-neutral-800 px-5 py-4">
-              <h2 className="text-base font-semibold">Today&apos;s Action Items</h2>
-              <p className="mt-1 text-sm text-neutral-500">
-                Mark an item when you are ready, then reflect without judgment.
-              </p>
+          <section
+            className="flex min-h-0 flex-col overflow-hidden rounded-lg border border-white/10 bg-neutral-900/85 shadow-lg shadow-black/15 backdrop-blur"
+            style={actionListHeight ? { height: actionListHeight } : undefined}
+          >
+            <div className="shrink-0 border-b border-neutral-800 px-5 py-4">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                <div>
+                  <h2 className="text-base font-semibold">Today&apos;s Action Items</h2>
+                  <p className="mt-1 text-sm text-neutral-500">
+                    Mark an item when you are ready, then reflect without judgment.
+                  </p>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {[
+                      { label: "Today", value: "today" },
+                      { label: "Upcoming", value: "upcoming" },
+                      { label: "All", value: "all" },
+                    ].map((item) => (
+                      <button
+                        key={item.value}
+                        type="button"
+                        onClick={() => handleFilterChange(item.value as ActionFilter)}
+                        className={`rounded-md border px-2.5 py-1 text-xs font-semibold transition ${
+                          actionFilter === item.value && !selectedCalendarDate
+                            ? "border-indigo-500 bg-indigo-600 text-white"
+                            : "border-white/10 bg-neutral-950/40 text-neutral-400 hover:text-white"
+                        }`}
+                      >
+                        {item.label}
+                      </button>
+                    ))}
+                    {selectedCalendarDate && (
+                      <button
+                        type="button"
+                        onClick={() => setSelectedCalendarDate(null)}
+                        className="rounded-md border border-indigo-500/60 bg-indigo-950/50 px-2.5 py-1 text-xs font-semibold text-indigo-200"
+                      >
+                        Clear date
+                      </button>
+                    )}
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 rounded-lg border border-white/10 bg-neutral-950/50 p-1 text-xs font-semibold">
+                  {[
+                    { label: "List", value: "list" },
+                    { label: "Cards", value: "cards" },
+                  ].map((item) => (
+                    <button
+                      key={item.value}
+                      type="button"
+                      onClick={() => handleViewChange(item.value as ActionItemView)}
+                      className={`rounded-md px-3 py-1.5 transition ${
+                        actionItemView === item.value
+                          ? "bg-indigo-600 text-white"
+                          : "text-neutral-400 hover:text-white"
+                      }`}
+                    >
+                      {item.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
             </div>
 
-            <div className="divide-y divide-neutral-800">
-              {goals.length === 0 ? (
+            <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
+              {visibleGoals.length === 0 ? (
                 <div className="flex flex-col items-center px-6 py-10 text-center">
                   <EmptyGoalsIllustration className="mb-4 h-32 w-full max-w-64" />
-                  <h3 className="text-sm font-semibold text-neutral-200">No action items yet</h3>
+                  <h3 className="text-sm font-semibold text-neutral-200">No action items here</h3>
                   <p className="mt-2 max-w-sm text-sm text-neutral-500">
-                    Add one small goal for today. Keep it realistic enough that returning to it feels easy.
+                    Change the filter or pick another day from the calendar.
                   </p>
                 </div>
               ) : (
-                goals.map((goal) => (
-                  <article key={goal.id} className="p-5">
-                    <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-                      <div className="min-w-0">
-                        <div className="flex flex-wrap items-center gap-2">
-                          <h3 className="break-words font-semibold text-white">{goal.title}</h3>
-                          <span className="rounded border border-neutral-700 px-2 py-0.5 text-xs capitalize text-neutral-400">
-                            {goal.priority}
-                          </span>
-                        </div>
-                        {goal.notes && (
-                          <p className="mt-2 whitespace-pre-wrap break-words text-sm text-neutral-400">
-                            {goal.notes}
-                          </p>
-                        )}
-                        <p className="mt-3 text-xs text-neutral-500">
-                          {goal.is_timed && goal.scheduled_for
-                            ? `Timed for ${new Date(goal.scheduled_for).toLocaleString()}`
-                            : "Moment-based goal"}
-                        </p>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setActiveGoal(goal);
-                          setCompleted(true);
-                        }}
-                        className="shrink-0 rounded-lg bg-neutral-800 px-4 py-2 text-sm font-semibold transition-colors hover:bg-neutral-700"
+                <div className={actionItemView === "cards" ? "space-y-4 p-4" : ""}>
+                  {groupedGoals.map((group) => (
+                    <section key={group.key}>
+                      <div
+                        className={`sticky top-0 z-10 border-y border-neutral-800 bg-neutral-900/95 px-5 py-2 text-xs font-semibold uppercase tracking-wide text-neutral-400 backdrop-blur ${
+                          actionItemView === "cards" ? "-mx-4 mb-3" : ""
+                        }`}
                       >
-                        Reflect
-                      </button>
-                    </div>
-                  </article>
-                ))
+                        {group.label} <span className="text-neutral-600">({group.goals.length})</span>
+                      </div>
+                      <div
+                        className={
+                          actionItemView === "cards"
+                            ? "grid gap-3 xl:grid-cols-2"
+                            : "divide-y divide-neutral-800"
+                        }
+                      >
+                        {group.goals.map((goal) => {
+                          const isAddressed = addressedGoalIds.has(goal.id);
+                          return (
+                          <article
+                            key={goal.id}
+                            className={
+                              actionItemView === "cards"
+                                ? "rounded-lg border border-white/10 bg-neutral-950/45 p-4"
+                                : "p-5"
+                            }
+                          >
+                            <div
+                              className={`flex flex-col gap-4 ${
+                                actionItemView === "list"
+                                  ? "sm:flex-row sm:items-start sm:justify-between"
+                                  : ""
+                              }`}
+                            >
+                              <button
+                                type="button"
+                                onClick={() => setDetailGoal(goal)}
+                                className="min-w-0 text-left"
+                              >
+                                <div className="flex flex-wrap items-center gap-2">
+                                  <h3 className="break-words font-semibold text-white">{goal.title}</h3>
+                                  {isAddressed && (
+                                    <span className="rounded border border-emerald-700/70 bg-emerald-950/70 px-2 py-0.5 text-xs font-semibold text-emerald-200">
+                                      Addressed
+                                    </span>
+                                  )}
+                                  <span className={`rounded border px-2 py-0.5 text-xs ${priorityMeta[goal.priority].classes}`}>
+                                    <span aria-hidden="true">{priorityMeta[goal.priority].emoji}</span>{" "}
+                                    {priorityMeta[goal.priority].label}
+                                  </span>
+                                </div>
+                                {goal.notes && (
+                                  <p className="mt-2 whitespace-pre-wrap break-words text-sm text-neutral-400">
+                                    {goal.notes}
+                                  </p>
+                                )}
+                                <p className="mt-3 text-xs text-neutral-500">
+                                  {goal.is_timed && goal.scheduled_for
+                                    ? `⏰ Timed for ${new Date(goal.scheduled_for).toLocaleString()}`
+                                    : "🧭 Moment-based goal"}
+                                </p>
+                              </button>
+                              <div
+                                className={`flex shrink-0 gap-2 ${
+                                  actionItemView === "cards" ? "w-full flex-col" : "sm:flex-col"
+                                }`}
+                              >
+                                <button
+                                  type="button"
+                                  onClick={() => startReflection(goal)}
+                                  className={`rounded-lg bg-neutral-800 px-4 py-2 text-sm font-semibold transition-colors hover:bg-neutral-700 ${
+                                    actionItemView === "cards" ? "w-full" : ""
+                                  }`}
+                              >
+                                {isAddressed ? "Re-work" : "Reflect"}
+                              </button>
+                              </div>
+                            </div>
+                          </article>
+                          );
+                        })}
+                      </div>
+                    </section>
+                  ))}
+                </div>
               )}
             </div>
           </section>
         </div>
 
-        <div className="grid gap-6 md:grid-cols-3">
-          <Placeholder
-            title="Where Your Time Is Going"
-            body="Struggle breakdown chart coming soon."
-            variant="chart"
-          />
-          <Placeholder
-            title="Your Day in Motion"
-            body="Location map requires explicit permission."
-            variant="map"
-          />
-          <Placeholder
-            title="Things I Keep Pushing Away"
-            body="Backlog list coming soon."
-            variant="list"
-          />
-        </div>
+        <ProgressSystem goals={goals} logs={goalLogs} />
+        <CompletedReflectionsTable goals={goals} logs={goalLogs} onReuseGoal={handleReuseGoal} />
       </div>
 
       {activeGoal && (
-        <div className="fixed inset-0 z-10 flex items-end bg-black/70 p-4 sm:items-center sm:justify-center">
-          <form
-            onSubmit={handleLogGoal}
-            className="w-full max-w-lg rounded-lg border border-neutral-800 bg-neutral-900 p-5 shadow-2xl"
-          >
-            <h2 className="text-lg font-semibold">{activeGoal.title}</h2>
-            <p className="mt-1 text-sm text-neutral-500">
-              What went well, what got in the way, and does this still feel meaningful?
-            </p>
-
-            <div className="mt-5 grid grid-cols-2 gap-2">
-              <button
-                type="button"
-                onClick={() => setCompleted(true)}
-                className={`rounded-lg border px-3 py-2 text-sm ${
-                  completed
-                    ? "border-emerald-500 bg-emerald-700 text-white"
-                    : "border-neutral-700 bg-neutral-800 text-neutral-300"
-                }`}
-              >
-                Done
-              </button>
-              <button
-                type="button"
-                onClick={() => setCompleted(false)}
-                className={`rounded-lg border px-3 py-2 text-sm ${
-                  !completed
-                    ? "border-amber-500 bg-amber-700 text-white"
-                    : "border-neutral-700 bg-neutral-800 text-neutral-300"
-                }`}
-              >
-                Not done
-              </button>
-            </div>
-
-            <textarea
-              value={reflection}
-              onChange={(e) => setReflection(e.target.value)}
-              rows={5}
-              required
-              maxLength={2000}
-              className="mt-4 w-full resize-none rounded-lg border border-neutral-700 bg-neutral-800 px-3 py-2 text-sm outline-none focus:border-indigo-500"
-              placeholder="Write a short reflection..."
-            />
-
-            <div className="mt-4">
-              <span className="mb-2 block text-sm text-neutral-300">
-                Does this goal still feel meaningful?
-              </span>
-              <div className="grid grid-cols-3 gap-2">
-                {[
-                  { label: "Yes", value: true },
-                  { label: "Unsure", value: null },
-                  { label: "No", value: false },
-                ].map((item) => (
-                  <button
-                    key={item.label}
-                    type="button"
-                    onClick={() => setSoulful(item.value)}
-                    className={`rounded-lg border px-3 py-2 text-sm ${
-                      soulful === item.value
-                        ? "border-indigo-500 bg-indigo-600 text-white"
-                        : "border-neutral-700 bg-neutral-800 text-neutral-300"
-                    }`}
-                  >
-                    {item.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div className="mt-5 flex justify-end gap-3">
-              <button
-                type="button"
-                onClick={() => {
-                  setActiveGoal(null);
-                  setReflection("");
-                }}
-                className="rounded-lg border border-neutral-700 px-4 py-2 text-sm font-semibold"
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                disabled={saving || !reflection.trim()}
-                className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold hover:bg-indigo-500 disabled:opacity-50"
-              >
-                {saving ? "Saving..." : "Save reflection"}
-              </button>
-            </div>
-          </form>
-        </div>
+        <ReflectGoalModal
+          goal={activeGoal}
+          completed={completed}
+          reflection={reflection}
+          soulful={soulful}
+          saving={saving}
+          onCompletedChange={(value) => {
+            setCompleted(value);
+            setSoulful(value ? true : false);
+          }}
+          onReflectionChange={setReflection}
+          onSoulfulChange={setSoulful}
+          onCancel={() => {
+            setActiveGoal(null);
+            setReflection("");
+          }}
+          onSubmit={handleLogGoal}
+        />
       )}
-    </main>
-  );
-}
 
-function Placeholder({
-  title,
-  body,
-  variant,
-}: {
-  title: string;
-  body: string;
-  variant: "chart" | "map" | "list";
-}) {
-  return (
-    <section className="rounded-lg border border-neutral-800 bg-neutral-900 p-5">
-      <InsightIllustration variant={variant} className="mb-4 h-20 w-full" />
-      <h2 className="text-sm font-semibold text-white">{title}</h2>
-      <p className="mt-2 text-sm text-neutral-500">{body}</p>
-    </section>
+      {detailGoal && (
+        <TaskDetailModal
+          goal={detailGoal}
+          saving={saving}
+          onClose={() => setDetailGoal(null)}
+          onSave={handleUpdateGoal}
+          onDelete={handleDeleteGoal}
+        />
+      )}
+    </BackgroundShell>
   );
 }

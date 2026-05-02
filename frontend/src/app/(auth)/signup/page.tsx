@@ -3,6 +3,7 @@
 import { useState, FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { BackgroundShell } from "@/components/background-shell";
 import { api, saveToken } from "@/lib/api";
 
 export default function SignupPage() {
@@ -29,8 +30,8 @@ export default function SignupPage() {
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-neutral-950 px-4">
-      <div className="w-full max-w-md space-y-6">
+    <BackgroundShell className="flex min-h-screen items-center justify-center px-4 text-white" showSwitcher>
+      <div className="relative z-10 w-full max-w-md space-y-6 rounded-lg border border-white/10 bg-neutral-900/85 p-6 shadow-2xl shadow-black/30 backdrop-blur">
         <div className="text-center">
           <h1 className="text-2xl font-bold text-white">Create your account</h1>
           <p className="text-neutral-400 text-sm mt-1">Start your journey — guilt-free.</p>
@@ -90,6 +91,6 @@ export default function SignupPage() {
           </Link>
         </p>
       </div>
-    </main>
+    </BackgroundShell>
   );
 }

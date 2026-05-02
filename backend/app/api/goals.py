@@ -21,7 +21,7 @@ from app.db import get_db
 from app.deps import get_current_user
 from app.models.goal import Goal, GoalLog
 from app.models.user import User
-from app.schemas.goal import GoalCreate, GoalLogCreate, GoalLogOut, GoalOut
+from app.schemas.goal import GoalCreate, GoalLogCreate, GoalLogOut, GoalOut, GoalUpdate
 
 router = APIRouter(prefix="/goals", tags=["goals"])
 
@@ -57,6 +57,49 @@ def create_goal(
     db.commit()
     db.refresh(goal)
     return goal
+
+
+@router.patch("/{goal_id}", response_model=GoalOut)
+def update_goal(
+    goal_id: UUID,
+    data: GoalUpdate,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> Goal:
+    goal = get_owned_goal(goal_id, current_user, db)
+    goal.title = data.title
+    goal.notes = data.notes
+    goal.is_timed = data.is_timed
+    goal.scheduled_for = data.scheduled_for if data.is_timed else None
+    goal.priority = data.priority
+    db.add(goal)
+    db.commit()
+    db.refresh(goal)
+    return goal
+
+
+@router.delete("/{goal_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_goal(
+    goal_id: UUID,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> None:
+    goal = get_owned_goal(goal_id, current_user, db)
+    db.delete(goal)
+    db.commit()
+
+
+@router.get("/logs", response_model=list[GoalLogOut])
+def list_all_goal_logs(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> list[GoalLog]:
+    return (
+        db.query(GoalLog)
+        .filter(GoalLog.user_id == current_user.id)
+        .order_by(GoalLog.created_at.asc())
+        .all()
+    )
 
 
 @router.get("/{goal_id}/logs", response_model=list[GoalLogOut])
