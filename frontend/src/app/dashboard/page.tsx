@@ -623,7 +623,7 @@ export default function DashboardPage() {
                             >
                               <button
                                 type="button"
-                                onClick={() => setDetailGoal(goal)}
+                                onClick={() => router.push(`/tasks/${goal.id}`)}
                                 className="min-w-0 text-left"
                               >
                                 <div className="flex flex-wrap items-center gap-2">

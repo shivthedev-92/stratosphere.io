@@ -102,6 +102,15 @@ def list_all_goal_logs(
     )
 
 
+@router.get("/{goal_id}", response_model=GoalOut)
+def get_goal(
+    goal_id: UUID,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> Goal:
+    return get_owned_goal(goal_id, current_user, db)
+
+
 @router.get("/{goal_id}/logs", response_model=list[GoalLogOut])
 def list_goal_logs(
     goal_id: UUID,

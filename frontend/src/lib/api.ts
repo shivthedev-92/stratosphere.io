@@ -114,7 +114,11 @@ export const api = {
 
   goals: () => request<GoalOut[]>("/goals"),
 
+  goal: (goalId: string) => request<GoalOut>(`/goals/${goalId}`),
+
   goalLogs: () => request<GoalLogOut[]>("/goals/logs"),
+
+  goalLogsForGoal: (goalId: string) => request<GoalLogOut[]>(`/goals/${goalId}/logs`),
 
   createGoal: (goal: GoalCreate) =>
     request<GoalOut>("/goals", {
