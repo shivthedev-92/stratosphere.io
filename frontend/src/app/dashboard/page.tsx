@@ -339,6 +339,20 @@ export default function DashboardPage() {
     }
   }
 
+  async function handleDeleteGoalFromList(goalId: string) {
+    setError("");
+    setSaving(true);
+    try {
+      await api.deleteGoal(goalId);
+      setGoals((current) => current.filter((item) => item.id !== goalId));
+      setGoalLogs((current) => current.filter((log) => log.goal_id !== goalId));
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Could not delete action item");
+    } finally {
+      setSaving(false);
+    }
+  }
+
   if (loading) return <p className="text-neutral-500 p-8">Loading...</p>;
   if (!user) return null;
 
@@ -349,6 +363,17 @@ export default function DashboardPage() {
       .filter((log) => log.completed)
       .map((log) => log.goal_id),
   );
+  const latestLogByGoalId = goalLogs.reduce<Record<string, GoalLogOut>>((latestLogs, log) => {
+    const current = latestLogs[log.goal_id];
+    if (!current || new Date(log.created_at).getTime() > new Date(current.created_at).getTime()) {
+      latestLogs[log.goal_id] = log;
+    }
+    return latestLogs;
+  }, {});
+  const logCountByGoalId = goalLogs.reduce<Record<string, number>>((counts, log) => {
+    counts[log.goal_id] = (counts[log.goal_id] ?? 0) + 1;
+    return counts;
+  }, {});
 
   return (
     <BackgroundShell className="min-h-screen text-white" showSwitcher>
@@ -578,6 +603,8 @@ export default function DashboardPage() {
                       >
                         {group.goals.map((goal) => {
                           const isAddressed = addressedGoalIds.has(goal.id);
+                          const latestLog = latestLogByGoalId[goal.id];
+                          const logCount = logCountByGoalId[goal.id] ?? 0;
                           return (
                           <article
                             key={goal.id}
@@ -621,6 +648,21 @@ export default function DashboardPage() {
                                     ? `⏰ Timed for ${new Date(goal.scheduled_for).toLocaleString()}`
                                     : "🧭 Moment-based goal"}
                                 </p>
+                                {latestLog && (
+                                  <div className="mt-3 rounded-lg border border-white/10 bg-neutral-950/45 px-3 py-2">
+                                    <div className="flex flex-wrap items-center justify-between gap-2">
+                                      <p className="text-xs font-semibold uppercase tracking-wide text-neutral-500">
+                                        Latest reflection
+                                      </p>
+                                      <span className="text-xs text-neutral-500">
+                                        {logCount} {logCount === 1 ? "entry" : "entries"}
+                                      </span>
+                                    </div>
+                                    <p className="mt-1 line-clamp-2 whitespace-pre-wrap break-words text-sm text-neutral-300">
+                                      {latestLog.reflection}
+                                    </p>
+                                  </div>
+                                )}
                               </button>
                               <div
                                 className={`flex shrink-0 gap-2 ${
@@ -636,6 +678,31 @@ export default function DashboardPage() {
                               >
                                 {isAddressed ? "Re-work" : "Reflect"}
                               </button>
+                              <div
+                                className={`flex gap-2 ${
+                                  actionItemView === "cards" ? "w-full" : "justify-end"
+                                }`}
+                              >
+                                <button
+                                  type="button"
+                                  onClick={() => setDetailGoal(goal)}
+                                  aria-label={`Edit ${goal.title}`}
+                                  title="Edit task"
+                                  className="grid h-10 w-10 place-items-center rounded-lg border border-neutral-700 text-sm transition-colors hover:border-neutral-500 hover:bg-neutral-800"
+                                >
+                                  <span aria-hidden="true">✏️</span>
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => handleDeleteGoalFromList(goal.id)}
+                                  disabled={saving}
+                                  aria-label={`Delete ${goal.title}`}
+                                  title="Delete task"
+                                  className="grid h-10 w-10 place-items-center rounded-lg border border-red-900/70 text-sm transition-colors hover:border-red-600 hover:bg-red-950/30 disabled:opacity-50"
+                                >
+                                  <span aria-hidden="true">🗑️</span>
+                                </button>
+                              </div>
                               </div>
                             </div>
                           </article>
