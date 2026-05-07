@@ -55,6 +55,17 @@ export type ChatOut = {
 };
 
 export type Priority = "low" | "medium" | "high";
+export type EmotionLabel =
+  | "happy"
+  | "sad"
+  | "excited"
+  | "calm"
+  | "anxious"
+  | "overwhelmed"
+  | "hopeful"
+  | "tired"
+  | "unable_to_describe"
+  | "other";
 
 export type GoalOut = {
   id: string;
@@ -80,6 +91,7 @@ export type GoalLogCreate = {
   completed: boolean;
   reflection: string;
   soulful?: boolean | null;
+  emotion_label?: EmotionLabel | null;
 };
 
 export type GoalLogOut = {
@@ -88,6 +100,7 @@ export type GoalLogOut = {
   completed: boolean;
   reflection: string;
   soulful: boolean | null;
+  emotion_label: EmotionLabel | null;
   created_at: string;
 };
 

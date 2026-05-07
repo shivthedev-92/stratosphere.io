@@ -140,6 +140,7 @@ def create_goal_log(
         completed=data.completed,
         reflection=data.reflection,
         soulful=data.soulful,
+        emotion_label=data.emotion_label,
     )
     db.add(log)
     db.commit()

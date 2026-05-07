@@ -19,6 +19,18 @@ from uuid import UUID
 from pydantic import BaseModel, Field
 
 Priority = Literal["low", "medium", "high"]
+EmotionLabel = Literal[
+    "happy",
+    "sad",
+    "excited",
+    "calm",
+    "anxious",
+    "overwhelmed",
+    "hopeful",
+    "tired",
+    "unable_to_describe",
+    "other",
+]
 
 
 class GoalCreate(BaseModel):
@@ -53,6 +65,7 @@ class GoalLogCreate(BaseModel):
     completed: bool
     reflection: str = Field(min_length=1, max_length=2000)
     soulful: bool | None = None
+    emotion_label: EmotionLabel | None = None
 
 
 class GoalLogOut(BaseModel):
@@ -61,6 +74,7 @@ class GoalLogOut(BaseModel):
     completed: bool
     reflection: str
     soulful: bool | None
+    emotion_label: EmotionLabel | None
     created_at: datetime
 
     model_config = {"from_attributes": True}

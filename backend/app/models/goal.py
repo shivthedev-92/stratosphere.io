@@ -42,4 +42,5 @@ class GoalLog(Base):
     completed = Column(Boolean, nullable=False)
     reflection = Column(Text, nullable=False)
     soulful = Column(Boolean, nullable=True)
+    emotion_label = Column(String, nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
