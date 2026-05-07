@@ -26,6 +26,7 @@ class Goal(Base):
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     user_id = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
     title = Column(String, nullable=False)
+    emoji = Column(String(16), nullable=True)
     notes = Column(Text, nullable=True)
     is_timed = Column(Boolean, nullable=False, default=False)
     scheduled_for = Column(DateTime(timezone=True), nullable=True)

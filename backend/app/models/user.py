@@ -14,7 +14,7 @@
 
 import uuid
 
-from sqlalchemy import Column, DateTime, String, func
+from sqlalchemy import Column, Date, DateTime, String, func
 from sqlalchemy.dialects.postgresql import UUID
 
 from app.db import Base
@@ -26,6 +26,8 @@ class User(Base):
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     email = Column(String, unique=True, index=True, nullable=False)
     name = Column(String, nullable=False)
+    phone_number = Column(String, nullable=True)
+    date_of_birth = Column(Date, nullable=True)
     age_group = Column(String, nullable=True)
     career_track = Column(String, nullable=True)
     hashed_password = Column(String, nullable=False)

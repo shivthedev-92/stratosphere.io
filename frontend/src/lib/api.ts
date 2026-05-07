@@ -33,6 +33,8 @@ export type UserOut = {
   id: string;
   email: string;
   name: string;
+  phone_number: string | null;
+  date_of_birth: string | null;
   created_at: string;
 };
 
@@ -70,6 +72,7 @@ export type EmotionLabel =
 export type GoalOut = {
   id: string;
   title: string;
+  emoji: string | null;
   notes: string | null;
   is_timed: boolean;
   scheduled_for: string | null;
@@ -79,6 +82,7 @@ export type GoalOut = {
 
 export type GoalCreate = {
   title: string;
+  emoji?: string | null;
   notes?: string | null;
   is_timed: boolean;
   scheduled_for?: string | null;

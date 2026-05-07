@@ -12,7 +12,7 @@
 # Version 0.1.0 | 2024-06
 ############################################################################
 
-from datetime import datetime
+from datetime import date, datetime
 from uuid import UUID
 
 from pydantic import BaseModel, EmailStr
@@ -46,6 +46,14 @@ class UserOut(BaseModel):
     id: UUID
     email: str
     name: str
+    phone_number: str | None
+    date_of_birth: date | None
     created_at: datetime
 
     model_config = {"from_attributes": True}
+
+
+class UserUpdate(BaseModel):
+    name: str
+    phone_number: str | None = None
+    date_of_birth: date | None = None

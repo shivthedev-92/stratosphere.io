@@ -9,7 +9,15 @@ export type UserOut = {
   id: string;
   email: string;
   name: string;
+  phone_number: string | null;
+  date_of_birth: string | null;
   created_at: string;
+};
+
+export type UserUpdate = {
+  name: string;
+  phone_number?: string | null;
+  date_of_birth?: string | null;
 };
 
 export type Priority = "low" | "medium" | "high";
@@ -17,12 +25,24 @@ export type Priority = "low" | "medium" | "high";
 export type GoalOut = {
   id: string;
   title: string;
+  emoji: string | null;
   notes: string | null;
   is_timed: boolean;
   scheduled_for: string | null;
   priority: Priority;
   created_at: string;
 };
+
+export type GoalCreate = {
+  title: string;
+  emoji?: string | null;
+  notes?: string | null;
+  is_timed: boolean;
+  scheduled_for?: string | null;
+  priority: Priority;
+};
+
+export type GoalUpdate = GoalCreate;
 
 export type GoalLogCreate = {
   completed: boolean;
@@ -87,7 +107,32 @@ export const api = {
 
   me: (token: string) => request<UserOut>("/me", token),
 
+  updateMe: (token: string, data: UserUpdate) =>
+    request<UserOut>("/me", token, {
+      method: "PATCH",
+      body: JSON.stringify(data),
+    }),
+
   goals: (token: string) => request<GoalOut[]>("/goals", token),
+
+  goalLogs: (token: string) => request<GoalLogOut[]>("/goals/logs", token),
+
+  createGoal: (token: string, goal: GoalCreate) =>
+    request<GoalOut>("/goals", token, {
+      method: "POST",
+      body: JSON.stringify(goal),
+    }),
+
+  updateGoal: (token: string, goalId: string, goal: GoalUpdate) =>
+    request<GoalOut>(`/goals/${goalId}`, token, {
+      method: "PATCH",
+      body: JSON.stringify(goal),
+    }),
+
+  deleteGoal: (token: string, goalId: string) =>
+    request<void>(`/goals/${goalId}`, token, {
+      method: "DELETE",
+    }),
 
   goalLogsForGoal: (token: string, goalId: string) =>
     request<GoalLogOut[]>(`/goals/${goalId}/logs`, token),

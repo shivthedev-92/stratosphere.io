@@ -35,6 +35,7 @@ EmotionLabel = Literal[
 
 class GoalCreate(BaseModel):
     title: str = Field(min_length=1, max_length=200)
+    emoji: str | None = Field(default=None, max_length=16)
     notes: str | None = Field(default=None, max_length=2000)
     is_timed: bool = False
     scheduled_for: datetime | None = None
@@ -43,6 +44,7 @@ class GoalCreate(BaseModel):
 
 class GoalUpdate(BaseModel):
     title: str = Field(min_length=1, max_length=200)
+    emoji: str | None = Field(default=None, max_length=16)
     notes: str | None = Field(default=None, max_length=2000)
     is_timed: bool = False
     scheduled_for: datetime | None = None
@@ -52,6 +54,7 @@ class GoalUpdate(BaseModel):
 class GoalOut(BaseModel):
     id: UUID
     title: str
+    emoji: str | None
     notes: str | None
     is_timed: bool
     scheduled_for: datetime | None

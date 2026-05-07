@@ -13,14 +13,31 @@
 ############################################################################
 
 from fastapi import APIRouter, Depends
+from sqlalchemy.orm import Session
 
+from app.db import get_db
 from app.deps import get_current_user
 from app.models.user import User
-from app.schemas.auth import UserOut
+from app.schemas.auth import UserOut, UserUpdate
 
 router = APIRouter(tags=["users"])
 
 
 @router.get("/me", response_model=UserOut)
 def me(current_user: User = Depends(get_current_user)) -> User:
+    return current_user
+
+
+@router.patch("/me", response_model=UserOut)
+def update_me(
+    data: UserUpdate,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> User:
+    current_user.name = data.name.strip()
+    current_user.phone_number = data.phone_number.strip() if data.phone_number else None
+    current_user.date_of_birth = data.date_of_birth
+    db.add(current_user)
+    db.commit()
+    db.refresh(current_user)
     return current_user

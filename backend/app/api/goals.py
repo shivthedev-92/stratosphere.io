@@ -48,6 +48,7 @@ def create_goal(
     goal = Goal(
         user_id=current_user.id,
         title=data.title,
+        emoji=data.emoji,
         notes=data.notes,
         is_timed=data.is_timed,
         scheduled_for=data.scheduled_for if data.is_timed else None,
@@ -68,6 +69,7 @@ def update_goal(
 ) -> Goal:
     goal = get_owned_goal(goal_id, current_user, db)
     goal.title = data.title
+    goal.emoji = data.emoji
     goal.notes = data.notes
     goal.is_timed = data.is_timed
     goal.scheduled_for = data.scheduled_for if data.is_timed else None
