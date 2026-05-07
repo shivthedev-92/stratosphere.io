@@ -27,3 +27,4 @@ pnpm-debug.log*
 .codex
 .codex/
 .claude/
+ZPROJECT_ASSETS/*
