@@ -35,7 +35,15 @@ export type UserOut = {
   name: string;
   phone_number: string | null;
   date_of_birth: string | null;
+  in_app_notifications_enabled: boolean;
   created_at: string;
+};
+
+export type UserUpdate = {
+  name: string;
+  phone_number?: string | null;
+  date_of_birth?: string | null;
+  in_app_notifications_enabled: boolean;
 };
 
 export type TokenOut = {
@@ -108,6 +116,21 @@ export type GoalLogOut = {
   created_at: string;
 };
 
+export type NotificationOut = {
+  id: string;
+  title: string;
+  body: string;
+  category: string;
+  due_at: string | null;
+  acknowledged_at: string | null;
+  read_at: string | null;
+  created_at: string;
+};
+
+export type NotificationSummaryOut = {
+  unread_count: number;
+};
+
 export const api = {
   signup: (email: string, password: string, name: string) =>
     request<TokenOut>("/auth/signup", {
@@ -128,6 +151,33 @@ export const api = {
     }),
 
   me: () => request<UserOut>("/me"),
+
+  updateMe: (data: UserUpdate) =>
+    request<UserOut>("/me", {
+      method: "PATCH",
+      body: JSON.stringify(data),
+    }),
+
+  notifications: () => request<NotificationOut[]>("/notifications"),
+
+  dueNotifications: () => request<NotificationOut[]>("/notifications/due"),
+
+  notificationSummary: () => request<NotificationSummaryOut>("/notifications/summary"),
+
+  markNotificationRead: (notificationId: string) =>
+    request<NotificationOut>(`/notifications/${notificationId}/read`, {
+      method: "PATCH",
+    }),
+
+  acknowledgeNotification: (notificationId: string) =>
+    request<NotificationOut>(`/notifications/${notificationId}/acknowledge`, {
+      method: "PATCH",
+    }),
+
+  markAllNotificationsRead: () =>
+    request<NotificationSummaryOut>("/notifications/read-all", {
+      method: "PATCH",
+    }),
 
   goals: () => request<GoalOut[]>("/goals"),
 

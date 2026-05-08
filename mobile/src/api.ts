@@ -11,6 +11,7 @@ export type UserOut = {
   name: string;
   phone_number: string | null;
   date_of_birth: string | null;
+  in_app_notifications_enabled: boolean;
   created_at: string;
 };
 
@@ -18,6 +19,7 @@ export type UserUpdate = {
   name: string;
   phone_number?: string | null;
   date_of_birth?: string | null;
+  in_app_notifications_enabled: boolean;
 };
 
 export type Priority = "low" | "medium" | "high";
@@ -73,6 +75,21 @@ export type EmotionLabel =
   | "unable_to_describe"
   | "other";
 
+export type NotificationOut = {
+  id: string;
+  title: string;
+  body: string;
+  category: string;
+  due_at: string | null;
+  acknowledged_at: string | null;
+  read_at: string | null;
+  created_at: string;
+};
+
+export type NotificationSummaryOut = {
+  unread_count: number;
+};
+
 async function request<T>(path: string, token?: string, init: RequestInit = {}): Promise<T> {
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
@@ -111,6 +128,28 @@ export const api = {
     request<UserOut>("/me", token, {
       method: "PATCH",
       body: JSON.stringify(data),
+    }),
+
+  notifications: (token: string) => request<NotificationOut[]>("/notifications", token),
+
+  dueNotifications: (token: string) => request<NotificationOut[]>("/notifications/due", token),
+
+  notificationSummary: (token: string) =>
+    request<NotificationSummaryOut>("/notifications/summary", token),
+
+  markNotificationRead: (token: string, notificationId: string) =>
+    request<NotificationOut>(`/notifications/${notificationId}/read`, token, {
+      method: "PATCH",
+    }),
+
+  acknowledgeNotification: (token: string, notificationId: string) =>
+    request<NotificationOut>(`/notifications/${notificationId}/acknowledge`, token, {
+      method: "PATCH",
+    }),
+
+  markAllNotificationsRead: (token: string) =>
+    request<NotificationSummaryOut>("/notifications/read-all", token, {
+      method: "PATCH",
     }),
 
   goals: (token: string) => request<GoalOut[]>("/goals", token),

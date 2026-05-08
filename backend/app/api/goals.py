@@ -20,6 +20,7 @@ from sqlalchemy.orm import Session
 from app.db import get_db
 from app.deps import get_current_user
 from app.models.goal import Goal, GoalLog
+from app.models.notification import Notification
 from app.models.user import User
 from app.schemas.goal import GoalCreate, GoalLogCreate, GoalLogOut, GoalOut, GoalUpdate
 
@@ -55,6 +56,16 @@ def create_goal(
         priority=data.priority,
     )
     db.add(goal)
+    if current_user.in_app_notifications_enabled:
+        title = "Task reminder set" if goal.is_timed and goal.scheduled_for else "Action item added"
+        notification = Notification(
+            user_id=current_user.id,
+            title=title,
+            body=goal.title,
+            category="reminder" if goal.is_timed and goal.scheduled_for else "task",
+            due_at=goal.scheduled_for if goal.is_timed else None,
+        )
+        db.add(notification)
     db.commit()
     db.refresh(goal)
     return goal
@@ -135,7 +146,7 @@ def create_goal_log(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ) -> GoalLog:
-    get_owned_goal(goal_id, current_user, db)
+    goal = get_owned_goal(goal_id, current_user, db)
     log = GoalLog(
         user_id=current_user.id,
         goal_id=goal_id,
@@ -145,6 +156,15 @@ def create_goal_log(
         emotion_label=data.emotion_label,
     )
     db.add(log)
+    if current_user.in_app_notifications_enabled:
+        db.add(
+            Notification(
+                user_id=current_user.id,
+                title="Reflection saved",
+                body=goal.title,
+                category="reflection",
+            )
+        )
     db.commit()
     db.refresh(log)
     return log

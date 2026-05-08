@@ -23,6 +23,7 @@ import {
   clearToken,
   type GoalLogOut,
   type GoalOut,
+  type NotificationOut,
   type Priority,
   type UserOut,
 } from "@/lib/api";
@@ -161,6 +162,9 @@ export default function DashboardPage() {
   const [user, setUser] = useState<UserOut | null>(null);
   const [goals, setGoals] = useState<GoalOut[]>([]);
   const [goalLogs, setGoalLogs] = useState<GoalLogOut[]>([]);
+  const [notifications, setNotifications] = useState<NotificationOut[]>([]);
+  const [unreadNotifications, setUnreadNotifications] = useState(0);
+  const [showNotifications, setShowNotifications] = useState(false);
   const [title, setTitle] = useState("");
   const [notes, setNotes] = useState("");
   const [isTimed, setIsTimed] = useState(false);
@@ -181,11 +185,26 @@ export default function DashboardPage() {
   const [actionListHeight, setActionListHeight] = useState<number | null>(null);
 
   useEffect(() => {
-    Promise.all([api.me(), api.goals(), api.goalLogs()])
-      .then(([userData, goalData, logData]) => {
+    Promise.all([
+      api.me(),
+      api.goals(),
+      api.goalLogs(),
+      api.notifications(),
+      api.notificationSummary(),
+      api.dueNotifications(),
+    ])
+      .then(([userData, goalData, logData, notificationData, notificationSummary, dueNotificationData]) => {
         setUser(userData);
         setGoals(goalData);
         setGoalLogs(logData);
+        setNotifications([
+          ...dueNotificationData,
+          ...notificationData.filter(
+            (notification) =>
+              !dueNotificationData.some((dueNotification) => dueNotification.id === notification.id),
+          ),
+        ]);
+        setUnreadNotifications(Math.max(notificationSummary.unread_count, dueNotificationData.length));
       })
       .catch(() => router.push("/login"))
       .finally(() => setLoading(false));
@@ -226,6 +245,24 @@ export default function DashboardPage() {
   function handleLogout() {
     clearToken();
     router.push("/");
+  }
+
+  async function handleMarkAllNotificationsRead() {
+    await api.markAllNotificationsRead();
+    setUnreadNotifications(0);
+    setNotifications((current) =>
+      current.map((notification) => ({
+        ...notification,
+        read_at: notification.read_at ?? new Date().toISOString(),
+      })),
+    );
+  }
+
+  async function handleAcknowledgeNotification(notification: NotificationOut) {
+    const updated = await api.acknowledgeNotification(notification.id);
+    setNotifications((current) => current.map((item) => (item.id === updated.id ? updated : item)));
+    const summary = await api.notificationSummary();
+    setUnreadNotifications(summary.unread_count);
   }
 
   function handleViewChange(view: ActionItemView) {
@@ -389,6 +426,18 @@ export default function DashboardPage() {
             </div>
           </div>
           <div className="flex flex-wrap gap-3">
+            <button
+              onClick={() => setShowNotifications((current) => !current)}
+              className="relative rounded-lg border border-neutral-700 px-3 py-2 text-sm font-semibold transition-colors hover:border-neutral-500"
+              aria-label="Notifications"
+            >
+              🔔
+              {unreadNotifications > 0 ? (
+                <span className="absolute -right-2 -top-2 grid h-5 min-w-5 place-items-center rounded-full bg-red-500 px-1 text-[10px] font-black text-white">
+                  {Math.min(unreadNotifications, 9)}
+                </span>
+              ) : null}
+            </button>
             <Link
               href="/chat"
               className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold transition-colors hover:bg-indigo-500"
@@ -403,6 +452,61 @@ export default function DashboardPage() {
             </button>
           </div>
         </header>
+
+        {showNotifications ? (
+          <section className="rounded-lg border border-white/10 bg-neutral-900/90 p-5 shadow-lg shadow-black/15 backdrop-blur">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <h2 className="text-lg font-bold">Notifications</h2>
+                <p className="mt-1 text-sm text-neutral-400">{unreadNotifications} unread updates.</p>
+              </div>
+              <button
+                onClick={handleMarkAllNotificationsRead}
+                className="rounded-lg border border-neutral-700 px-3 py-2 text-sm font-semibold transition-colors hover:border-neutral-500"
+              >
+                Read all
+              </button>
+            </div>
+            <div className="mt-4 divide-y divide-white/10">
+              {notifications.length === 0 ? (
+                <p className="py-4 text-sm text-neutral-400">No notifications yet.</p>
+              ) : (
+                notifications.slice(0, 8).map((notification) => (
+                  <div key={notification.id} className="flex gap-3 py-3">
+                    <span
+                      className={`mt-1 h-2.5 w-2.5 rounded-full ${
+                        notification.read_at ? "bg-neutral-600" : "bg-sky-400"
+                      }`}
+                    />
+                    <div>
+                      <p className="text-sm font-bold text-white">{notification.title}</p>
+                      <p className="mt-1 text-sm text-neutral-400">{notification.body}</p>
+                      <p className="mt-1 text-xs text-neutral-500">
+                        {new Date(notification.created_at).toLocaleString()}
+                      </p>
+                      {notification.category === "reminder" && !notification.acknowledged_at ? (
+                        <div className="mt-3 flex gap-2">
+                          <button
+                            onClick={() => handleAcknowledgeNotification(notification)}
+                            className="rounded-md bg-indigo-600 px-3 py-1.5 text-xs font-bold text-white transition-colors hover:bg-indigo-500"
+                          >
+                            Yes
+                          </button>
+                          <button
+                            onClick={() => handleAcknowledgeNotification(notification)}
+                            className="rounded-md border border-neutral-700 px-3 py-1.5 text-xs font-bold text-neutral-200 transition-colors hover:border-neutral-500"
+                          >
+                            No
+                          </button>
+                        </div>
+                      ) : null}
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </section>
+        ) : null}
 
         <section className="rounded-lg border border-white/10 bg-neutral-900/80 p-5 shadow-lg shadow-black/15 backdrop-blur">
           <p className="text-center text-sm italic text-neutral-300">

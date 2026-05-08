@@ -37,6 +37,7 @@ def update_me(
     current_user.name = data.name.strip()
     current_user.phone_number = data.phone_number.strip() if data.phone_number else None
     current_user.date_of_birth = data.date_of_birth
+    current_user.in_app_notifications_enabled = data.in_app_notifications_enabled
     db.add(current_user)
     db.commit()
     db.refresh(current_user)

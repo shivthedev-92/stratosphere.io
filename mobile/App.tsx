@@ -21,6 +21,7 @@ import {
   type EmotionLabel,
   type GoalLogOut,
   type GoalOut,
+  type NotificationOut,
   type Priority,
   type UserOut,
 } from "./src/api";
@@ -139,12 +140,29 @@ function getTaskDatePickerValue(value: string) {
   return value ? getDatePickerValue(value) : new Date();
 }
 
-function formatTaskScheduledForDate(value: string) {
-  return `${value}T09:00:00`;
+function formatTimeInput(date: Date) {
+  const hours = `${date.getHours()}`.padStart(2, "0");
+  const minutes = `${date.getMinutes()}`.padStart(2, "0");
+  return `${hours}:${minutes}`;
+}
+
+function getTimePickerValue(value: string) {
+  const [hours, minutes] = value.split(":").map(Number);
+  const date = new Date();
+  date.setHours(Number.isFinite(hours) ? hours : 9, Number.isFinite(minutes) ? minutes : 0, 0, 0);
+  return date;
+}
+
+function formatTaskScheduledForDate(dateValue: string, timeValue: string) {
+  return `${dateValue}T${timeValue || "09:00"}:00`;
 }
 
 function getTaskScheduledDate(goal: GoalOut) {
   return goal.is_timed && goal.scheduled_for ? formatDateInput(new Date(goal.scheduled_for)) : "";
+}
+
+function getTaskScheduledTime(goal: GoalOut) {
+  return goal.is_timed && goal.scheduled_for ? formatTimeInput(new Date(goal.scheduled_for)) : "09:00";
 }
 
 function getCountryCodeOption(value: string) {
@@ -207,12 +225,15 @@ export default function App() {
   const [user, setUser] = useState<UserOut | null>(null);
   const [goals, setGoals] = useState<GoalOut[]>([]);
   const [allGoalLogs, setAllGoalLogs] = useState<GoalLogOut[]>([]);
+  const [notifications, setNotifications] = useState<NotificationOut[]>([]);
+  const [unreadNotifications, setUnreadNotifications] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [backendOnline, setBackendOnline] = useState<boolean | null>(null);
   const [selectedGoal, setSelectedGoal] = useState<GoalOut | null>(null);
   const [dayViewDate, setDayViewDate] = useState<Date | null>(null);
   const [showSettings, setShowSettings] = useState(false);
+  const [showNotifications, setShowNotifications] = useState(false);
   const [goalLogs, setGoalLogs] = useState<GoalLogOut[]>([]);
   const [logsLoading, setLogsLoading] = useState(false);
   const [reflection, setReflection] = useState("");
@@ -228,7 +249,9 @@ export default function App() {
   const [taskNotes, setTaskNotes] = useState("");
   const [taskPriority, setTaskPriority] = useState<Priority>("medium");
   const [taskScheduledDate, setTaskScheduledDate] = useState("");
+  const [taskScheduledTime, setTaskScheduledTime] = useState("09:00");
   const [showTaskDatePicker, setShowTaskDatePicker] = useState(false);
+  const [showTaskTimePicker, setShowTaskTimePicker] = useState(false);
   const [showDashboardAddTask, setShowDashboardAddTask] = useState(false);
   const [showDayAddTask, setShowDayAddTask] = useState(false);
   const [editingGoal, setEditingGoal] = useState(false);
@@ -237,6 +260,7 @@ export default function App() {
   const [profileCountryCode, setProfileCountryCode] = useState("+91");
   const [profileLocalPhone, setProfileLocalPhone] = useState("");
   const [profileDob, setProfileDob] = useState("");
+  const [profileNotificationsEnabled, setProfileNotificationsEnabled] = useState(true);
   const [showDobPicker, setShowDobPicker] = useState(false);
   const [showCountryCodeMenu, setShowCountryCodeMenu] = useState(false);
 
@@ -285,10 +309,13 @@ export default function App() {
     setLoading(true);
     setError("");
     try {
-      const [userData, goalData, logData] = await Promise.all([
+      const [userData, goalData, logData, notificationData, notificationSummary, dueNotificationData] = await Promise.all([
         api.me(nextToken),
         api.goals(nextToken),
         api.goalLogs(nextToken),
+        api.notifications(nextToken),
+        api.notificationSummary(nextToken),
+        api.dueNotifications(nextToken),
       ]);
       setUser(userData);
       const parsedPhone = splitPhoneNumber(userData.phone_number);
@@ -296,8 +323,17 @@ export default function App() {
       setProfileCountryCode(parsedPhone.countryCode);
       setProfileLocalPhone(parsedPhone.localPhone);
       setProfileDob(userData.date_of_birth ?? "");
+      setProfileNotificationsEnabled(userData.in_app_notifications_enabled);
       setGoals(goalData);
       setAllGoalLogs(logData);
+      const mergedNotifications = [
+        ...dueNotificationData,
+        ...notificationData.filter(
+          (notification) => !dueNotificationData.some((dueNotification) => dueNotification.id === notification.id),
+        ),
+      ];
+      setNotifications(mergedNotifications);
+      setUnreadNotifications(Math.max(notificationSummary.unread_count, dueNotificationData.length));
       setToken(nextToken);
       await SecureStore.setItemAsync(TOKEN_KEY, nextToken);
     } catch (err) {
@@ -306,6 +342,8 @@ export default function App() {
       setUser(null);
       setGoals([]);
       setAllGoalLogs([]);
+      setNotifications([]);
+      setUnreadNotifications(0);
       setSelectedGoal(null);
       setGoalLogs([]);
       setError(err instanceof Error ? err.message : "Could not load dashboard.");
@@ -359,6 +397,8 @@ export default function App() {
     setUser(null);
     setGoals([]);
     setAllGoalLogs([]);
+    setNotifications([]);
+    setUnreadNotifications(0);
     setSelectedGoal(null);
     setGoalLogs([]);
     setPassword("");
@@ -374,8 +414,10 @@ export default function App() {
         name: profileName.trim(),
         phone_number: formatPhoneForStorage(profileCountryCode, profileLocalPhone),
         date_of_birth: profileDob || null,
+        in_app_notifications_enabled: profileNotificationsEnabled,
       });
       setUser(updated);
+      setProfileNotificationsEnabled(updated.in_app_notifications_enabled);
       setEditingProfile(false);
       setShowCountryCodeMenu(false);
     } catch (err) {
@@ -396,7 +438,9 @@ export default function App() {
     setTaskNotes("");
     setTaskPriority("medium");
     setTaskScheduledDate("");
+    setTaskScheduledTime("09:00");
     setShowTaskDatePicker(false);
+    setShowTaskTimePicker(false);
   }
 
   async function handleCreateTask() {
@@ -409,7 +453,7 @@ export default function App() {
         emoji: taskEmoji,
         notes: taskNotes.trim() || null,
         is_timed: Boolean(taskScheduledDate),
-        scheduled_for: taskScheduledDate ? formatTaskScheduledForDate(taskScheduledDate) : null,
+        scheduled_for: taskScheduledDate ? formatTaskScheduledForDate(taskScheduledDate, taskScheduledTime) : null,
         priority: taskPriority,
       });
       const createdTaskDate = taskScheduledDate;
@@ -437,7 +481,9 @@ export default function App() {
     setTaskNotes(goal.notes ?? "");
     setTaskPriority(goal.priority);
     setTaskScheduledDate(getTaskScheduledDate(goal));
+    setTaskScheduledTime(getTaskScheduledTime(goal));
     setShowTaskDatePicker(false);
+    setShowTaskTimePicker(false);
   }
 
   async function openGoal(goal: GoalOut, mode: "view" | "edit" = "view") {
@@ -509,7 +555,7 @@ export default function App() {
         emoji: taskEmoji,
         notes: taskNotes.trim() || null,
         is_timed: Boolean(taskScheduledDate),
-        scheduled_for: taskScheduledDate ? formatTaskScheduledForDate(taskScheduledDate) : null,
+        scheduled_for: taskScheduledDate ? formatTaskScheduledForDate(taskScheduledDate, taskScheduledTime) : null,
         priority: taskPriority,
       });
       setSelectedGoal(updated);
@@ -550,6 +596,7 @@ export default function App() {
     setProfileCountryCode(parsedPhone.countryCode);
     setProfileLocalPhone(parsedPhone.localPhone);
     setProfileDob(user.date_of_birth ?? "");
+    setProfileNotificationsEnabled(user.in_app_notifications_enabled);
     setShowDobPicker(false);
     setShowCountryCodeMenu(false);
   }
@@ -682,6 +729,21 @@ export default function App() {
                 ) : null}
               </View>
             ) : null}
+            <Text style={styles.fieldLabel}>In-app notifications</Text>
+            <View style={styles.choiceRow}>
+              <Pressable
+                style={[styles.choiceButton, profileNotificationsEnabled && styles.choiceButtonActive]}
+                onPress={() => setProfileNotificationsEnabled(true)}
+              >
+                <Text style={profileNotificationsEnabled ? styles.choiceTextActive : styles.choiceText}>Yes</Text>
+              </Pressable>
+              <Pressable
+                style={[styles.choiceButton, !profileNotificationsEnabled && styles.choiceButtonActive]}
+                onPress={() => setProfileNotificationsEnabled(false)}
+              >
+                <Text style={!profileNotificationsEnabled ? styles.choiceTextActive : styles.choiceText}>No</Text>
+              </Pressable>
+            </View>
             <Pressable
               disabled={loading || !profileName.trim()}
               style={[styles.primaryButton, (loading || !profileName.trim()) && styles.disabledButton]}
@@ -768,11 +830,13 @@ export default function App() {
           </Pressable>
           {taskScheduledDate ? (
             <Pressable
-              style={styles.clearDobButton}
-              onPress={() => {
-                setTaskScheduledDate("");
-                setShowTaskDatePicker(false);
-              }}
+                  style={styles.clearDobButton}
+                  onPress={() => {
+                    setTaskScheduledDate("");
+                    setTaskScheduledTime("09:00");
+                    setShowTaskDatePicker(false);
+                    setShowTaskTimePicker(false);
+                  }}
             >
               <Text style={styles.secondaryButtonText}>Clear</Text>
             </Pressable>
@@ -798,6 +862,39 @@ export default function App() {
             ) : null}
           </View>
         ) : null}
+        {taskScheduledDate ? (
+          <>
+            <Text style={styles.fieldLabel}>Reminder time</Text>
+            <View style={styles.dobRow}>
+              <Pressable
+                style={styles.dobSelector}
+                onPress={() => setShowTaskTimePicker((current) => !current)}
+              >
+                <Text style={styles.dobValue}>{taskScheduledTime}</Text>
+              </Pressable>
+            </View>
+            {showTaskTimePicker ? (
+              <View style={styles.datePickerBox}>
+                <DateTimePicker
+                  value={getTimePickerValue(taskScheduledTime)}
+                  mode="time"
+                  display={Platform.OS === "ios" ? "spinner" : "default"}
+                  themeVariant="dark"
+                  textColor="#ffffff"
+                  onChange={(_, selectedDate) => {
+                    if (Platform.OS !== "ios") setShowTaskTimePicker(false);
+                    if (selectedDate) setTaskScheduledTime(formatTimeInput(selectedDate));
+                  }}
+                />
+                {Platform.OS === "ios" ? (
+                  <Pressable style={styles.secondaryButton} onPress={() => setShowTaskTimePicker(false)}>
+                    <Text style={styles.secondaryButtonText}>Done</Text>
+                  </Pressable>
+                ) : null}
+              </View>
+            ) : null}
+          </>
+        ) : null}
         {error ? <Text style={styles.errorText}>{error}</Text> : null}
         <Pressable
           disabled={loading || !taskTitle.trim()}
@@ -806,6 +903,82 @@ export default function App() {
         >
           <Text style={styles.primaryButtonText}>{loading ? "Adding..." : "Add item"}</Text>
         </Pressable>
+      </View>
+    );
+  }
+
+  async function handleMarkAllNotificationsRead() {
+    if (!token) return;
+    try {
+      await api.markAllNotificationsRead(token);
+      setNotifications((current) =>
+        current.map((notification) => ({
+          ...notification,
+          read_at: notification.read_at ?? new Date().toISOString(),
+        })),
+      );
+      setUnreadNotifications(0);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not update notifications.");
+    }
+  }
+
+  async function handleAcknowledgeNotification(notification: NotificationOut) {
+    if (!token) return;
+    try {
+      const updated = await api.acknowledgeNotification(token, notification.id);
+      setNotifications((current) =>
+        current.map((item) => (item.id === updated.id ? updated : item)),
+      );
+      const summary = await api.notificationSummary(token);
+      setUnreadNotifications(summary.unread_count);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not acknowledge notification.");
+    }
+  }
+
+  function renderNotificationsPanel() {
+    return (
+      <View style={styles.card}>
+        <View style={styles.sectionHeader}>
+          <View>
+            <Text style={styles.cardTitle}>Notifications</Text>
+            <Text style={styles.mutedText}>{unreadNotifications} unread updates.</Text>
+          </View>
+          <Pressable style={styles.secondaryButtonCompact} onPress={handleMarkAllNotificationsRead}>
+            <Text style={styles.secondaryButtonText}>Read all</Text>
+          </Pressable>
+        </View>
+        {notifications.length === 0 ? (
+          <Text style={styles.emptyText}>No notifications yet.</Text>
+        ) : (
+          notifications.slice(0, 8).map((notification) => (
+            <View key={notification.id} style={styles.notificationItem}>
+              <View style={[styles.notificationDot, notification.read_at && styles.notificationDotRead]} />
+              <View style={styles.notificationTextGroup}>
+                <Text style={styles.notificationTitle}>{notification.title}</Text>
+                <Text style={styles.notificationBody}>{notification.body}</Text>
+                <Text style={styles.goalMeta}>{formatLogDate(notification.created_at)}</Text>
+                {notification.category === "reminder" && !notification.acknowledged_at ? (
+                  <View style={styles.notificationActions}>
+                    <Pressable
+                      style={styles.notificationAckButton}
+                      onPress={() => handleAcknowledgeNotification(notification)}
+                    >
+                      <Text style={styles.primaryButtonText}>Yes</Text>
+                    </Pressable>
+                    <Pressable
+                      style={styles.notificationDismissButton}
+                      onPress={() => handleAcknowledgeNotification(notification)}
+                    >
+                      <Text style={styles.secondaryButtonText}>No</Text>
+                    </Pressable>
+                  </View>
+                ) : null}
+              </View>
+            </View>
+          ))
+        )}
       </View>
     );
   }
@@ -1298,16 +1471,31 @@ export default function App() {
             <Text style={styles.title}>Hello, {user.name}</Text>
             <Text style={styles.subtitle}>{user.email}</Text>
           </View>
-          <Pressable
-            style={styles.avatarButton}
-            onPress={() => {
-              resetProfileForm();
-              setShowSettings(true);
-            }}
-          >
-            <Text style={styles.avatarText}>{user.name.trim().charAt(0).toUpperCase() || "U"}</Text>
-          </Pressable>
+          <View style={styles.dashboardHeaderActions}>
+            <Pressable
+              style={styles.notificationButton}
+              onPress={() => setShowNotifications((current) => !current)}
+            >
+              <Text style={styles.notificationButtonText}>🔔</Text>
+              {unreadNotifications > 0 ? (
+                <View style={styles.notificationBadge}>
+                  <Text style={styles.notificationBadgeText}>{Math.min(unreadNotifications, 9)}</Text>
+                </View>
+              ) : null}
+            </Pressable>
+            <Pressable
+              style={styles.avatarButton}
+              onPress={() => {
+                resetProfileForm();
+                setShowSettings(true);
+              }}
+            >
+              <Text style={styles.avatarText}>{user.name.trim().charAt(0).toUpperCase() || "U"}</Text>
+            </Pressable>
+          </View>
         </View>
+
+        {showNotifications ? renderNotificationsPanel() : null}
 
         <View style={styles.statsRow}>
           <View style={styles.statCard}>
@@ -1613,6 +1801,11 @@ const styles = StyleSheet.create({
     gap: 16,
     justifyContent: "space-between",
   },
+  dashboardHeaderActions: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: 10,
+  },
   detailHeader: {
     gap: 10,
   },
@@ -1800,6 +1993,36 @@ const styles = StyleSheet.create({
     fontSize: 17,
     fontWeight: "900",
   },
+  notificationButton: {
+    alignItems: "center",
+    borderColor: "#404040",
+    borderRadius: 999,
+    borderWidth: 1,
+    height: 44,
+    justifyContent: "center",
+    position: "relative",
+    width: 44,
+  },
+  notificationButtonText: {
+    fontSize: 18,
+    lineHeight: 22,
+  },
+  notificationBadge: {
+    alignItems: "center",
+    backgroundColor: "#ef4444",
+    borderRadius: 999,
+    height: 17,
+    justifyContent: "center",
+    position: "absolute",
+    right: -3,
+    top: -3,
+    width: 17,
+  },
+  notificationBadgeText: {
+    color: "#ffffff",
+    fontSize: 10,
+    fontWeight: "900",
+  },
   helperText: {
     color: "#737373",
     fontSize: 13,
@@ -1944,6 +2167,58 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     marginTop: 16,
     paddingVertical: 12,
+  },
+  notificationItem: {
+    alignItems: "flex-start",
+    borderTopColor: "#2f2f2f",
+    borderTopWidth: 1,
+    flexDirection: "row",
+    gap: 10,
+    paddingVertical: 12,
+  },
+  notificationDot: {
+    backgroundColor: "#60a5fa",
+    borderRadius: 999,
+    height: 9,
+    marginTop: 5,
+    width: 9,
+  },
+  notificationDotRead: {
+    backgroundColor: "#404040",
+  },
+  notificationTextGroup: {
+    flex: 1,
+  },
+  notificationTitle: {
+    color: "#ffffff",
+    fontSize: 14,
+    fontWeight: "900",
+  },
+  notificationBody: {
+    color: "#a3a3a3",
+    fontSize: 13,
+    lineHeight: 19,
+    marginTop: 3,
+  },
+  notificationActions: {
+    flexDirection: "row",
+    gap: 8,
+    marginTop: 10,
+  },
+  notificationAckButton: {
+    alignItems: "center",
+    backgroundColor: "#2563eb",
+    borderRadius: 8,
+    flex: 1,
+    paddingVertical: 8,
+  },
+  notificationDismissButton: {
+    alignItems: "center",
+    borderColor: "#404040",
+    borderRadius: 8,
+    borderWidth: 1,
+    flex: 1,
+    paddingVertical: 8,
   },
   emotionGrid: {
     flexDirection: "row",

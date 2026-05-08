@@ -48,6 +48,7 @@ class UserOut(BaseModel):
     name: str
     phone_number: str | None
     date_of_birth: date | None
+    in_app_notifications_enabled: bool
     created_at: datetime
 
     model_config = {"from_attributes": True}
@@ -57,3 +58,4 @@ class UserUpdate(BaseModel):
     name: str
     phone_number: str | None = None
     date_of_birth: date | None = None
+    in_app_notifications_enabled: bool = True
