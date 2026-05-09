@@ -6,6 +6,8 @@ import {
   ActivityIndicator,
   Keyboard,
   KeyboardAvoidingView,
+  ImageBackground,
+  Modal,
   Platform,
   Pressable,
   ScrollView,
@@ -18,6 +20,8 @@ import {
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 import {
   api,
+  type ChatMessage,
+  type ChatSessionOut,
   type EmotionLabel,
   type GoalLogOut,
   type GoalOut,
@@ -28,6 +32,35 @@ import {
 import { API_BASE_URL } from "./src/config";
 
 const TOKEN_KEY = "stratosphere_access_token";
+const THEME_KEY = "stratosphere_mobile_theme";
+const APP_BACKGROUND_IMAGE = require("./assets/app-background.jpg");
+const THEME_OPTIONS = [
+  {
+    label: "Dusk",
+    value: "dusk",
+    image: APP_BACKGROUND_IMAGE,
+    overlay: "rgba(10, 10, 10, 0.78)",
+    imageOpacity: 0.34,
+    swatch: "#f9a8d4",
+  },
+  {
+    label: "Dark",
+    value: "dark",
+    image: null,
+    overlay: "#0a0a0a",
+    imageOpacity: 0,
+    swatch: "#171717",
+  },
+  {
+    label: "Blue",
+    value: "blue",
+    image: null,
+    overlay: "#07111f",
+    imageOpacity: 0,
+    swatch: "#2563eb",
+  },
+] as const;
+type ThemeValue = (typeof THEME_OPTIONS)[number]["value"];
 const EMOTION_OPTIONS: Array<{ label: string; value: EmotionLabel }> = [
   { label: "Happy", value: "happy" },
   { label: "Sad", value: "sad" },
@@ -46,9 +79,32 @@ const PRIORITY_OPTIONS: Array<{ label: string; value: Priority }> = [
   { label: "High", value: "high" },
 ];
 const PRIORITY_DOT_COLORS: Record<Priority, string> = {
-  high: "#f87171",
-  medium: "#facc15",
-  low: "#38bdf8",
+  high: "#f59e0b",
+  medium: "#38bdf8",
+  low: "#10b981",
+};
+const PRIORITY_BADGE_STYLES: Record<Priority, { backgroundColor: string; borderColor: string; color: string; emoji: string; label: string }> = {
+  low: {
+    backgroundColor: "#022c22",
+    borderColor: "#047857",
+    color: "#a7f3d0",
+    emoji: "🌱",
+    label: "Low",
+  },
+  medium: {
+    backgroundColor: "#082f49",
+    borderColor: "#0369a1",
+    color: "#bae6fd",
+    emoji: "⚡",
+    label: "Medium",
+  },
+  high: {
+    backgroundColor: "#451a03",
+    borderColor: "#b45309",
+    color: "#fde68a",
+    emoji: "🔥",
+    label: "High",
+  },
 };
 const WEEKDAY_LABELS = ["S", "M", "T", "W", "T", "F", "S"];
 const TASK_EMOJI_OPTIONS = ["✨", "🧠", "💪", "📚", "🏃", "💼", "🏠", "❤️", "💡", "🎯"];
@@ -58,6 +114,11 @@ const COUNTRY_CODE_OPTIONS = [
   { label: "UK", value: "+44" },
   { label: "UAE", value: "+971" },
   { label: "Australia", value: "+61" },
+];
+const COACH_STARTER_PROMPTS = [
+  "Help me choose what to focus on next.",
+  "What pattern do you see in my recent reflections?",
+  "Help me make today's action items feel lighter.",
 ];
 
 function getDateKey(value: string | null) {
@@ -217,6 +278,41 @@ function getTaskEmoji(goal: GoalOut) {
   return goal.emoji || "✨";
 }
 
+function getPriorityBadgeStyle(priority: Priority) {
+  const meta = PRIORITY_BADGE_STYLES[priority];
+  return {
+    backgroundColor: meta.backgroundColor,
+    borderColor: meta.borderColor,
+    color: meta.color,
+  };
+}
+
+function getPriorityLabel(priority: Priority) {
+  const meta = PRIORITY_BADGE_STYLES[priority];
+  return `${meta.emoji} ${meta.label}`;
+}
+
+function getTaskStatus(goal: GoalOut) {
+  if (!goal.completed) {
+    return {
+      icon: "○",
+      style: {
+        backgroundColor: "#171717",
+        borderColor: "#404040",
+        color: "#d4d4d4",
+      },
+    };
+  }
+  return {
+    icon: "✓",
+    style: {
+      backgroundColor: "#052e16",
+      borderColor: "#16a34a",
+      color: "#bbf7d0",
+    },
+  };
+}
+
 export default function App() {
   const [booting, setBooting] = useState(true);
   const [token, setToken] = useState<string | null>(null);
@@ -230,16 +326,18 @@ export default function App() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [backendOnline, setBackendOnline] = useState<boolean | null>(null);
+  const [themeValue, setThemeValue] = useState<ThemeValue>("dusk");
   const [selectedGoal, setSelectedGoal] = useState<GoalOut | null>(null);
   const [dayViewDate, setDayViewDate] = useState<Date | null>(null);
   const [showSettings, setShowSettings] = useState(false);
+  const [showAssistant, setShowAssistant] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const [goalLogs, setGoalLogs] = useState<GoalLogOut[]>([]);
   const [logsLoading, setLogsLoading] = useState(false);
   const [reflection, setReflection] = useState("");
   const [completed, setCompleted] = useState(true);
   const [soulful, setSoulful] = useState<boolean | null>(true);
-  const [taskFilter, setTaskFilter] = useState<"today" | "selected" | "all">("today");
+  const [taskFilter, setTaskFilter] = useState<"today" | "all" | "completed">("today");
   const [analyticsTab, setAnalyticsTab] = useState<"progress" | "reflections">("progress");
   const [calendarMonth, setCalendarMonth] = useState(() => new Date());
   const [selectedCalendarDate, setSelectedCalendarDate] = useState(() => new Date());
@@ -255,6 +353,7 @@ export default function App() {
   const [showDashboardAddTask, setShowDashboardAddTask] = useState(false);
   const [showDayAddTask, setShowDayAddTask] = useState(false);
   const [editingGoal, setEditingGoal] = useState(false);
+  const [showReflectionForm, setShowReflectionForm] = useState(false);
   const [editingProfile, setEditingProfile] = useState(false);
   const [profileName, setProfileName] = useState("");
   const [profileCountryCode, setProfileCountryCode] = useState("+91");
@@ -263,6 +362,13 @@ export default function App() {
   const [profileNotificationsEnabled, setProfileNotificationsEnabled] = useState(true);
   const [showDobPicker, setShowDobPicker] = useState(false);
   const [showCountryCodeMenu, setShowCountryCodeMenu] = useState(false);
+  const [chatHistory, setChatHistory] = useState<ChatMessage[]>([]);
+  const [chatInput, setChatInput] = useState("");
+  const [chatLoading, setChatLoading] = useState(false);
+  const [chatError, setChatError] = useState("");
+  const [chatSessions, setChatSessions] = useState<ChatSessionOut[]>([]);
+  const [activeChatSessionId, setActiveChatSessionId] = useState<string | null>(null);
+  const [activeChatGoalId, setActiveChatGoalId] = useState<string | null>(null);
 
   const todayGoals = useMemo(() => {
     const todayKey = getDateKey(null);
@@ -272,8 +378,6 @@ export default function App() {
   const selectedDateGoals = useMemo(() => {
     return goals.filter((goal) => getDateKey(getGoalDate(goal)) === selectedDateKey);
   }, [goals, selectedDateKey]);
-  const visibleGoals =
-    taskFilter === "today" ? todayGoals : taskFilter === "selected" ? selectedDateGoals : goals;
   const goalsByDateKey = useMemo(() => {
     return goals.reduce<Record<string, GoalOut[]>>((groupedGoals, goal) => {
       const dateKey = getDateKey(getGoalDate(goal));
@@ -291,7 +395,19 @@ export default function App() {
       return latestLogs;
     }, {});
   }, [allGoalLogs]);
-  const completedGoalCount = goals.filter((goal) => latestLogByGoalId[goal.id]?.completed).length;
+  const completedGoals = useMemo(() => {
+    return goals.filter((goal) => goal.completed);
+  }, [goals]);
+  const visibleGoals =
+    taskFilter === "today" ? todayGoals : taskFilter === "completed" ? completedGoals : goals;
+  const recentGoalLogs = useMemo(() => {
+    return [...allGoalLogs]
+      .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+      .slice(0, 5);
+  }, [allGoalLogs]);
+  const goalsById = useMemo(() => new Map(goals.map((goal) => [goal.id, goal])), [goals]);
+  const activeTheme = THEME_OPTIONS.find((option) => option.value === themeValue) ?? THEME_OPTIONS[0];
+  const completedGoalCount = goals.filter((goal) => goal.completed).length;
   const openGoalCount = Math.max(goals.length - completedGoalCount, 0);
   const reflectionChartData = useMemo(() => {
     return Array.from({ length: 7 }, (_, index) => {
@@ -309,13 +425,14 @@ export default function App() {
     setLoading(true);
     setError("");
     try {
-      const [userData, goalData, logData, notificationData, notificationSummary, dueNotificationData] = await Promise.all([
+      const [userData, goalData, logData, notificationData, notificationSummary, dueNotificationData, chatSessionData] = await Promise.all([
         api.me(nextToken),
         api.goals(nextToken),
         api.goalLogs(nextToken),
         api.notifications(nextToken),
         api.notificationSummary(nextToken),
         api.dueNotifications(nextToken),
+        api.chatSessions(nextToken),
       ]);
       setUser(userData);
       const parsedPhone = splitPhoneNumber(userData.phone_number);
@@ -334,6 +451,7 @@ export default function App() {
       ];
       setNotifications(mergedNotifications);
       setUnreadNotifications(Math.max(notificationSummary.unread_count, dueNotificationData.length));
+      setChatSessions(chatSessionData);
       setToken(nextToken);
       await SecureStore.setItemAsync(TOKEN_KEY, nextToken);
     } catch (err) {
@@ -344,6 +462,10 @@ export default function App() {
       setAllGoalLogs([]);
       setNotifications([]);
       setUnreadNotifications(0);
+      setChatSessions([]);
+      setChatHistory([]);
+      setActiveChatSessionId(null);
+      setActiveChatGoalId(null);
       setSelectedGoal(null);
       setGoalLogs([]);
       setError(err instanceof Error ? err.message : "Could not load dashboard.");
@@ -364,6 +486,10 @@ export default function App() {
   useEffect(() => {
     async function restoreSession() {
       await checkBackend();
+      const savedTheme = await SecureStore.getItemAsync(THEME_KEY);
+      if (savedTheme && THEME_OPTIONS.some((option) => option.value === savedTheme)) {
+        setThemeValue(savedTheme as ThemeValue);
+      }
       const savedToken = await SecureStore.getItemAsync(TOKEN_KEY);
       if (savedToken) {
         await loadDashboard(savedToken);
@@ -373,6 +499,11 @@ export default function App() {
 
     restoreSession();
   }, []);
+
+  async function handleThemeChange(nextTheme: ThemeValue) {
+    setThemeValue(nextTheme);
+    await SecureStore.setItemAsync(THEME_KEY, nextTheme);
+  }
 
   async function handleLogin(e?: FormEvent) {
     e?.preventDefault();
@@ -399,6 +530,11 @@ export default function App() {
     setAllGoalLogs([]);
     setNotifications([]);
     setUnreadNotifications(0);
+    setChatSessions([]);
+    setChatHistory([]);
+    setActiveChatSessionId(null);
+    setActiveChatGoalId(null);
+    setShowAssistant(false);
     setSelectedGoal(null);
     setGoalLogs([]);
     setPassword("");
@@ -464,7 +600,7 @@ export default function App() {
       if (createdTaskDate) {
         setSelectedCalendarDate(getDatePickerValue(createdTaskDate));
         setCalendarMonth(getDatePickerValue(createdTaskDate));
-        setTaskFilter("selected");
+        setTaskFilter("all");
       } else {
         setTaskFilter("all");
       }
@@ -490,6 +626,7 @@ export default function App() {
     if (!token) return;
     setSelectedGoal(goal);
     setEditingGoal(mode === "edit");
+    setShowReflectionForm(false);
     if (mode === "edit") fillTaskForm(goal);
     setLogsLoading(true);
     setError("");
@@ -505,11 +642,15 @@ export default function App() {
 
   async function handleAddReflection() {
     if (!token || !selectedGoal || !reflection.trim()) return;
+    if (selectedGoal.completed) {
+      setError("Completed tasks cannot receive new reflections.");
+      return;
+    }
     setLogsLoading(true);
     setError("");
     try {
       const log = await api.createGoalLog(token, selectedGoal.id, {
-        completed,
+        completed: false,
         reflection: reflection.trim(),
         soulful,
         emotion_label: emotionLabel,
@@ -519,6 +660,7 @@ export default function App() {
       setCompleted(true);
       setSoulful(true);
       setEmotionLabel(null);
+      setShowReflectionForm(false);
       await loadDashboard(token);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not save journal entry.");
@@ -535,6 +677,7 @@ export default function App() {
     setSoulful(true);
     setEmotionLabel(null);
     setEditingGoal(false);
+    setShowReflectionForm(false);
     resetTaskForm();
     setError("");
   }
@@ -542,6 +685,7 @@ export default function App() {
   function beginEditGoal() {
     if (!selectedGoal) return;
     setEditingGoal(true);
+    setShowReflectionForm(false);
     fillTaskForm(selectedGoal);
   }
 
@@ -574,6 +718,30 @@ export default function App() {
     await handleDeleteGoal(selectedGoal);
   }
 
+  async function handleSetTaskCompleted(nextCompleted: boolean) {
+    if (!token || !selectedGoal || loading) return;
+    setLoading(true);
+    setError("");
+    try {
+      const updated = await api.updateGoal(token, selectedGoal.id, {
+        title: selectedGoal.title,
+        emoji: selectedGoal.emoji,
+        notes: selectedGoal.notes,
+        is_timed: selectedGoal.is_timed,
+        scheduled_for: selectedGoal.scheduled_for,
+        priority: selectedGoal.priority,
+        completed: nextCompleted,
+      });
+      setSelectedGoal(updated);
+      setShowReflectionForm(false);
+      await loadDashboard(token);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not update task status.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
   async function handleDeleteGoal(goal: GoalOut) {
     if (!token) return;
     setLoading(true);
@@ -587,6 +755,86 @@ export default function App() {
     } finally {
       setLoading(false);
     }
+  }
+
+  async function sendCoachMessage(message: string) {
+    if (!token || !message.trim() || chatLoading) return;
+    const userMessage = message.trim();
+    const updatedHistory: ChatMessage[] = [...chatHistory, { role: "user", content: userMessage }];
+    setChatHistory(updatedHistory);
+    setChatInput("");
+    setChatError("");
+    setChatLoading(true);
+
+    try {
+      const response = await api.chat(token, userMessage, chatHistory, activeChatSessionId, activeChatGoalId);
+      setActiveChatSessionId(response.session_id);
+      setChatHistory([...updatedHistory, { role: "assistant", content: response.reply }]);
+      await loadChatSessions(token);
+    } catch (err) {
+      setChatError(err instanceof Error ? err.message : "Could not reach the AI assistant.");
+    } finally {
+      setChatLoading(false);
+    }
+  }
+
+  async function loadChatSessions(nextToken = token) {
+    if (!nextToken) return;
+    try {
+      const sessions = await api.chatSessions(nextToken);
+      setChatSessions(sessions);
+    } catch (err) {
+      setChatError(err instanceof Error ? err.message : "Could not load chat history.");
+    }
+  }
+
+  async function openAssistant(goal?: GoalOut) {
+    setShowAssistant(true);
+    setShowNotifications(false);
+    setChatError("");
+    if (goal) {
+      setActiveChatGoalId(goal.id);
+      const existingSession = chatSessions.find((session) => session.goal_id === goal.id);
+      if (existingSession) {
+        await openChatSession(existingSession.id);
+        return;
+      }
+      setActiveChatSessionId(null);
+      setChatHistory([
+        {
+          role: "assistant",
+          content: `I can help you think through "${goal.title}". What would you like to decide or reflect on?`,
+        },
+      ]);
+    } else {
+      setActiveChatGoalId(null);
+    }
+    await loadChatSessions();
+  }
+
+  async function openChatSession(sessionId: string) {
+    if (!token) return;
+    setChatLoading(true);
+    setChatError("");
+    try {
+      const session = await api.chatSession(token, sessionId);
+      setActiveChatSessionId(session.id);
+      setActiveChatGoalId(session.goal_id);
+      setChatHistory(session.messages.map((message) => ({ role: message.role, content: message.content })));
+      setShowAssistant(true);
+    } catch (err) {
+      setChatError(err instanceof Error ? err.message : "Could not open chat.");
+    } finally {
+      setChatLoading(false);
+    }
+  }
+
+  function startNewChat() {
+    setActiveChatSessionId(null);
+    setActiveChatGoalId(null);
+    setChatHistory([]);
+    setChatInput("");
+    setChatError("");
   }
 
   function resetProfileForm() {
@@ -772,6 +1020,29 @@ export default function App() {
     );
   }
 
+  function renderAppearanceSettings() {
+    return (
+      <View style={styles.card}>
+        <Text style={styles.cardTitle}>Appearance</Text>
+        <Text style={styles.mutedText}>Choose the background theme for this device.</Text>
+        <View style={styles.themeGrid}>
+          {THEME_OPTIONS.map((option) => (
+            <Pressable
+              key={option.value}
+              style={[styles.themeOption, themeValue === option.value && styles.themeOptionActive]}
+              onPress={() => handleThemeChange(option.value)}
+            >
+              <View style={[styles.themeSwatch, { backgroundColor: option.swatch }]} />
+              <Text style={themeValue === option.value ? styles.themeTextActive : styles.themeText}>
+                {option.label}
+              </Text>
+            </Pressable>
+          ))}
+        </View>
+      </View>
+    );
+  }
+
   function renderAddTaskCard(title = "Add Action Item", subtitle = "Capture a task or moment you want to revisit.") {
     return (
       <View style={styles.addTaskPanel}>
@@ -939,51 +1210,64 @@ export default function App() {
 
   function renderNotificationsPanel() {
     return (
-      <View style={styles.card}>
-        <View style={styles.sectionHeader}>
-          <View>
-            <Text style={styles.cardTitle}>Notifications</Text>
-            <Text style={styles.mutedText}>{unreadNotifications} unread updates.</Text>
-          </View>
-          <Pressable style={styles.secondaryButtonCompact} onPress={handleMarkAllNotificationsRead}>
-            <Text style={styles.secondaryButtonText}>Read all</Text>
-          </Pressable>
-        </View>
-        {notifications.length === 0 ? (
-          <Text style={styles.emptyText}>No notifications yet.</Text>
-        ) : (
-          notifications.slice(0, 8).map((notification) => (
-            <View key={notification.id} style={styles.notificationItem}>
-              <View style={[styles.notificationDot, notification.read_at && styles.notificationDotRead]} />
-              <View style={styles.notificationTextGroup}>
-                <Text style={styles.notificationTitle}>{notification.title}</Text>
-                <Text style={styles.notificationBody}>{notification.body}</Text>
-                <Text style={styles.goalMeta}>{formatLogDate(notification.created_at)}</Text>
-                {notification.category === "reminder" && !notification.acknowledged_at ? (
-                  <View style={styles.notificationActions}>
-                    <Pressable
-                      style={styles.notificationAckButton}
-                      onPress={() => handleAcknowledgeNotification(notification)}
-                    >
-                      <Text style={styles.primaryButtonText}>Yes</Text>
-                    </Pressable>
-                    <Pressable
-                      style={styles.notificationDismissButton}
-                      onPress={() => handleAcknowledgeNotification(notification)}
-                    >
-                      <Text style={styles.secondaryButtonText}>No</Text>
-                    </Pressable>
-                  </View>
-                ) : null}
+      <Modal visible={showNotifications} transparent animationType="fade" onRequestClose={() => setShowNotifications(false)}>
+        <View style={styles.modalOverlay}>
+          <Pressable style={styles.modalBackdrop} onPress={() => setShowNotifications(false)} />
+          <View style={styles.notificationModal}>
+            <View style={styles.sectionHeader}>
+              <View>
+                <Text style={styles.cardTitle}>Notifications</Text>
+                <Text style={styles.mutedText}>{unreadNotifications} unread updates.</Text>
               </View>
+              <Pressable style={styles.secondaryButtonCompact} onPress={handleMarkAllNotificationsRead}>
+                <Text style={styles.secondaryButtonText}>Read all</Text>
+              </Pressable>
             </View>
-          ))
-        )}
-      </View>
+            <ScrollView style={styles.notificationList} contentContainerStyle={styles.notificationListContent}>
+              {notifications.length === 0 ? (
+                <Text style={styles.emptyText}>No notifications yet.</Text>
+              ) : (
+                notifications.slice(0, 20).map((notification) => (
+                  <View key={notification.id} style={styles.notificationItem}>
+                    <View style={[styles.notificationDot, notification.read_at && styles.notificationDotRead]} />
+                    <View style={styles.notificationTextGroup}>
+                      <Text style={styles.notificationTitle}>{notification.title}</Text>
+                      <Text style={styles.notificationBody}>{notification.body}</Text>
+                      <Text style={styles.goalMeta}>{formatLogDate(notification.created_at)}</Text>
+                      {notification.category === "reminder" && !notification.acknowledged_at ? (
+                        <View style={styles.notificationActions}>
+                          <Pressable
+                            style={styles.notificationAckButton}
+                            onPress={() => handleAcknowledgeNotification(notification)}
+                          >
+                            <Text style={styles.primaryButtonText}>Yes</Text>
+                          </Pressable>
+                          <Pressable
+                            style={styles.notificationDismissButton}
+                            onPress={() => handleAcknowledgeNotification(notification)}
+                          >
+                            <Text style={styles.secondaryButtonText}>No</Text>
+                          </Pressable>
+                        </View>
+                      ) : null}
+                    </View>
+                  </View>
+                ))
+              )}
+            </ScrollView>
+            <Pressable style={styles.secondaryButton} onPress={() => setShowNotifications(false)}>
+              <Text style={styles.secondaryButtonText}>Close</Text>
+            </Pressable>
+          </View>
+        </View>
+      </Modal>
     );
   }
 
   function renderGoalCard(goal: GoalOut) {
+    const latestLog = latestLogByGoalId[goal.id];
+    const taskStatus = getTaskStatus(goal);
+
     return (
       <View key={goal.id} style={styles.goalCard}>
         <View style={styles.goalHeader}>
@@ -991,36 +1275,54 @@ export default function App() {
             <Text style={styles.taskEmoji}>{getTaskEmoji(goal)}</Text>
             <Text style={styles.goalTitle}>{goal.title}</Text>
           </View>
-          <Text style={styles.priorityPill}>{goal.priority}</Text>
+          <View style={styles.goalBadgeRow}>
+            <Text style={[styles.priorityPill, getPriorityBadgeStyle(goal.priority)]}>
+              {getPriorityLabel(goal.priority)}
+            </Text>
+            <Text style={[styles.statusPill, taskStatus.style]}>{taskStatus.icon}</Text>
+          </View>
         </View>
         {goal.notes ? <Text style={styles.goalNotes}>{goal.notes}</Text> : null}
-        {latestLogByGoalId[goal.id] ? (
+        {latestLog ? (
           <View style={styles.latestLogBox}>
             <View style={styles.latestLogHeader}>
               <Text style={styles.latestLogLabel}>Latest reflection</Text>
-              {latestLogByGoalId[goal.id].emotion_label ? (
+              {latestLog.emotion_label ? (
                 <Text style={styles.emotionPill}>
-                  {getEmotionLabel(latestLogByGoalId[goal.id].emotion_label)}
+                  {getEmotionLabel(latestLog.emotion_label)}
                 </Text>
               ) : null}
             </View>
             <Text style={styles.latestLogText} numberOfLines={2}>
-              {latestLogByGoalId[goal.id].reflection}
+              {latestLog.reflection}
             </Text>
           </View>
         ) : null}
         <View style={styles.goalFooter}>
           <Text style={styles.goalMeta}>{formatGoalDate(goal)}</Text>
           <View style={styles.taskCardActions}>
-            <Pressable style={styles.iconActionButton} onPress={() => openGoal(goal, "edit")}>
-              <Text style={styles.iconActionText}>✏️</Text>
-            </Pressable>
+            {!goal.completed ? (
+              <>
+                <Pressable style={styles.iconActionButton} onPress={() => openAssistant(goal)}>
+                  <Text style={styles.iconActionText}>🤖</Text>
+                </Pressable>
+                <Pressable style={styles.iconActionButton} onPress={() => openGoal(goal, "edit")}>
+                  <Text style={styles.iconActionText}>✏️</Text>
+                </Pressable>
+              </>
+            ) : null}
             <Pressable style={styles.iconDangerButton} disabled={loading} onPress={() => handleDeleteGoal(goal)}>
               <Text style={styles.iconActionText}>🗑️</Text>
             </Pressable>
-            <Pressable style={styles.reflectButton} onPress={() => openGoal(goal)}>
-              <Text style={styles.reflectButtonText}>Reflect</Text>
-            </Pressable>
+            {!goal.completed ? (
+              <Pressable style={styles.reflectButton} onPress={() => openGoal(goal)}>
+                <Text style={styles.reflectButtonText}>Reflect</Text>
+              </Pressable>
+            ) : (
+              <Pressable style={styles.reflectButton} onPress={() => openGoal(goal)}>
+                <Text style={styles.reflectButtonText}>View</Text>
+              </Pressable>
+            )}
           </View>
         </View>
       </View>
@@ -1029,7 +1331,7 @@ export default function App() {
 
   if (booting) {
     return (
-      <AppShell>
+      <AppShell theme={activeTheme}>
         <View style={styles.centered}>
           <ActivityIndicator color="#60a5fa" />
           <Text style={styles.mutedText}>Starting Stratosphere...</Text>
@@ -1040,7 +1342,7 @@ export default function App() {
 
   if (!token || !user) {
     return (
-      <AppShell>
+      <AppShell theme={activeTheme}>
         <ScreenScroll>
           <View style={styles.header}>
             <Text style={styles.eyebrow}>Phase 2</Text>
@@ -1096,9 +1398,191 @@ export default function App() {
     );
   }
 
+  if (showAssistant) {
+    return (
+      <AppShell theme={activeTheme}>
+        <ScreenScroll>
+          <View style={styles.detailHeader}>
+            <Pressable
+              style={styles.backButton}
+              onPress={() => {
+                setShowAssistant(false);
+                setChatError("");
+                Keyboard.dismiss();
+              }}
+            >
+              <Text style={styles.secondaryButtonText}>Back</Text>
+            </Pressable>
+            <Text style={styles.eyebrow}>Ollama Life Coach</Text>
+            <Text style={styles.title}>AI Assistant</Text>
+            <Text style={styles.subtitle}>Task-aware support from your FastAPI backend.</Text>
+          </View>
+
+          <View style={styles.card}>
+            <View style={styles.sectionHeader}>
+              <View>
+                <Text style={styles.cardTitle}>Chat history</Text>
+                <Text style={styles.mutedText}>Resume a previous conversation or start fresh.</Text>
+              </View>
+              <Pressable style={styles.secondaryButtonCompact} onPress={startNewChat}>
+                <Text style={styles.secondaryButtonText}>New</Text>
+              </Pressable>
+            </View>
+            {chatSessions.length === 0 ? (
+              <Text style={styles.emptyText}>No saved chats yet.</Text>
+            ) : (
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chatSessionList}>
+                {chatSessions.slice(0, 12).map((session) => (
+                  <Pressable
+                    key={session.id}
+                    style={[
+                      styles.chatSessionChip,
+                      activeChatSessionId === session.id && styles.chatSessionChipActive,
+                    ]}
+                    onPress={() => openChatSession(session.id)}
+                  >
+                    <Text
+                      style={
+                        activeChatSessionId === session.id
+                          ? styles.chatSessionChipTextActive
+                          : styles.chatSessionChipText
+                      }
+                      numberOfLines={1}
+                    >
+                      {session.goal_id ? "🤖 " : ""}
+                      {session.title}
+                    </Text>
+                  </Pressable>
+                ))}
+              </ScrollView>
+            )}
+          </View>
+
+          <View style={styles.card}>
+            <Text style={styles.cardTitle}>Chat</Text>
+            <Text style={styles.mutedText}>
+              The assistant can reference your current action items and recent reflections.
+            </Text>
+
+            <View style={styles.chatStarterGrid}>
+              {COACH_STARTER_PROMPTS.map((prompt) => (
+                <Pressable
+                  key={prompt}
+                  disabled={chatLoading}
+                  style={styles.chatStarterButton}
+                  onPress={() => sendCoachMessage(prompt)}
+                >
+                  <Text style={styles.chatStarterText}>{prompt}</Text>
+                </Pressable>
+              ))}
+            </View>
+
+            <View style={styles.chatMessages}>
+              {chatHistory.length === 0 ? (
+                <Text style={styles.emptyText}>Ask what to focus on, how to restart, or what your reflections show.</Text>
+              ) : (
+                chatHistory.map((message, index) => (
+                  <View
+                    key={`${message.role}-${index}`}
+                    style={[
+                      styles.chatBubble,
+                      message.role === "user" ? styles.chatBubbleUser : styles.chatBubbleAssistant,
+                    ]}
+                  >
+                    <Text
+                      style={
+                        message.role === "user" ? styles.chatBubbleTextUser : styles.chatBubbleTextAssistant
+                      }
+                    >
+                      {message.content}
+                    </Text>
+                  </View>
+                ))
+              )}
+              {chatLoading ? (
+                <View style={[styles.chatBubble, styles.chatBubbleAssistant]}>
+                  <Text style={styles.chatBubbleTextAssistant}>Thinking...</Text>
+                </View>
+              ) : null}
+            </View>
+
+            <TextInput
+              value={chatInput}
+              onChangeText={setChatInput}
+              multiline
+              placeholder="Ask about your tasks, blockers, or next step..."
+              placeholderTextColor="#737373"
+              style={styles.chatInput}
+            />
+            {chatError ? <Text style={styles.errorText}>{chatError}</Text> : null}
+            <Pressable
+              disabled={chatLoading || !chatInput.trim()}
+              style={[styles.primaryButton, (chatLoading || !chatInput.trim()) && styles.disabledButton]}
+              onPress={() => sendCoachMessage(chatInput)}
+            >
+              <Text style={styles.primaryButtonText}>{chatLoading ? "Sending..." : "Send"}</Text>
+            </Pressable>
+          </View>
+
+          <View style={styles.card}>
+            <View style={styles.sectionHeader}>
+              <View>
+                <Text style={styles.cardTitle}>Context sent</Text>
+                <Text style={styles.mutedText}>FastAPI attaches this task data before calling Ollama.</Text>
+              </View>
+              <Text style={styles.goalMeta}>{goals.length} tasks</Text>
+            </View>
+            {goals.slice(0, 5).map((goal) => {
+              const latestLog = latestLogByGoalId[goal.id];
+              return (
+                <View key={goal.id} style={styles.contextTaskItem}>
+                  <Text style={styles.contextTaskTitle} numberOfLines={2}>
+                    {getTaskEmoji(goal)} {goal.title}
+                  </Text>
+                  <Text style={styles.goalMeta}>
+                    {goal.priority} priority · {formatGoalDate(goal)}
+                  </Text>
+	                  {latestLog ? (
+	                    <Text style={styles.contextTaskReflection} numberOfLines={2}>
+	                      {getEmotionLabel(latestLog.emotion_label) ?? "No emotion"} · {getLogMeaning(latestLog)} ·{" "}
+	                      {latestLog.reflection}
+	                    </Text>
+                  ) : (
+                    <Text style={styles.goalMeta}>No reflection yet.</Text>
+                  )}
+                </View>
+              );
+            })}
+          </View>
+
+          <View style={styles.card}>
+            <Text style={styles.cardTitle}>Recent reflections</Text>
+            {recentGoalLogs.length === 0 ? (
+              <Text style={styles.emptyText}>No journal entries yet.</Text>
+            ) : (
+              recentGoalLogs.map((log) => {
+                const goal = goalsById.get(log.goal_id);
+                return (
+                  <View key={log.id} style={styles.recentReflectionItem}>
+                    <Text style={styles.contextTaskTitle} numberOfLines={1}>
+                      {goal?.title ?? "Task removed"}
+	                    </Text>
+	                    <Text style={styles.goalMeta}>
+	                      {getEmotionLabel(log.emotion_label) ?? "No emotion"} · {getLogMeaning(log)}
+	                    </Text>
+                  </View>
+                );
+              })
+            )}
+          </View>
+        </ScreenScroll>
+      </AppShell>
+    );
+  }
+
   if (showSettings) {
     return (
-      <AppShell>
+      <AppShell theme={activeTheme}>
         <ScreenScroll>
           <View style={styles.detailHeader}>
             <Pressable
@@ -1116,6 +1600,7 @@ export default function App() {
             <Text style={styles.subtitle}>{user.email}</Text>
           </View>
           {renderProfileSettings()}
+          {renderAppearanceSettings()}
           <View style={styles.card}>
             <Text style={styles.cardTitle}>Session</Text>
             <Text style={styles.mutedText}>Sign out from this mobile device.</Text>
@@ -1133,7 +1618,7 @@ export default function App() {
     const dayGoals = goals.filter((goal) => getDateKey(getGoalDate(goal)) === dayKey);
 
     return (
-      <AppShell>
+      <AppShell theme={activeTheme}>
         <ScreenScroll>
           <View style={styles.detailHeader}>
             <Pressable style={styles.backButton} onPress={() => setDayViewDate(null)}>
@@ -1186,9 +1671,10 @@ export default function App() {
     const sortedLogs = [...goalLogs].sort(
       (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
     );
+    const selectedTaskStatus = getTaskStatus(selectedGoal);
 
     return (
-      <AppShell>
+      <AppShell theme={activeTheme}>
         <ScreenScroll>
           <View style={styles.detailHeader}>
             <Pressable style={styles.backButton} onPress={closeGoal}>
@@ -1199,7 +1685,10 @@ export default function App() {
               {getTaskEmoji(selectedGoal)} {selectedGoal.title}
             </Text>
             <View style={styles.detailMetaRow}>
-              <Text style={styles.priorityPill}>{selectedGoal.priority}</Text>
+              <Text style={[styles.priorityPill, getPriorityBadgeStyle(selectedGoal.priority)]}>
+                {getPriorityLabel(selectedGoal.priority)}
+              </Text>
+              <Text style={[styles.statusPill, selectedTaskStatus.style]}>{selectedTaskStatus.icon}</Text>
               <Text style={styles.detailMetaText}>{formatGoalDate(selectedGoal)}</Text>
               <Text style={styles.detailMetaText}>
                 {sortedLogs.length} {sortedLogs.length === 1 ? "entry" : "entries"}
@@ -1214,18 +1703,72 @@ export default function App() {
             </View>
           ) : null}
 
+          {!selectedGoal.completed ? (
+            <View style={styles.card}>
+              <Text style={styles.cardTitle}>Task status</Text>
+              <Text style={styles.mutedText}>Mark the task complete only when the task itself is finished.</Text>
+              <View style={styles.choiceRow}>
+                <Pressable
+                  style={[styles.choiceButton, !selectedGoal.completed && styles.choiceButtonActive]}
+                  onPress={() => handleSetTaskCompleted(false)}
+                >
+                  <Text style={!selectedGoal.completed ? styles.choiceTextActive : styles.choiceText}>○ Not done</Text>
+                </Pressable>
+                <Pressable
+                  style={styles.choiceButton}
+                  disabled={loading}
+                  onPress={() => handleSetTaskCompleted(true)}
+                >
+                  <Text style={styles.choiceText}>✓ Done</Text>
+                </Pressable>
+              </View>
+              {error ? <Text style={styles.errorText}>{error}</Text> : null}
+            </View>
+          ) : null}
+
+          <View style={styles.journalActionBar}>
+            {!selectedGoal.completed ? (
+              <>
+                <Pressable
+                  style={[styles.journalEntryButton, showReflectionForm && styles.journalEntryButtonActive]}
+                  onPress={() => {
+                    setShowReflectionForm((current) => !current);
+                    setEditingGoal(false);
+                  }}
+                >
+                  <Text style={styles.journalEntryButtonText}>
+                    {showReflectionForm ? "Close Journal Entry" : "Add Journal Entry"}
+                  </Text>
+                </Pressable>
+                <Pressable
+                  style={[styles.iconHeaderButton, editingGoal && styles.iconHeaderButtonActive]}
+                  onPress={() => {
+                    if (editingGoal) {
+                      setEditingGoal(false);
+                      resetTaskForm();
+                    } else {
+                      beginEditGoal();
+                    }
+                  }}
+                >
+                  <Text style={styles.iconActionText}>✏️</Text>
+                </Pressable>
+              </>
+            ) : null}
+            <Pressable style={styles.iconDangerButton} disabled={loading} onPress={handleDeleteTask}>
+              <Text style={styles.iconActionText}>🗑️</Text>
+            </Pressable>
+          </View>
+
+          {editingGoal && !selectedGoal.completed ? (
           <View style={styles.card}>
             <View style={styles.sectionHeader}>
               <View>
-                <Text style={styles.cardTitle}>Task controls</Text>
+                <Text style={styles.cardTitle}>Edit task</Text>
                 <Text style={styles.mutedText}>Update or remove this action item.</Text>
               </View>
-              <Pressable style={styles.secondaryButtonCompact} onPress={beginEditGoal}>
-                <Text style={styles.secondaryButtonText}>Edit</Text>
-              </Pressable>
             </View>
 
-            {editingGoal ? (
               <View>
                 <TextInput
                   value={taskTitle}
@@ -1283,7 +1826,9 @@ export default function App() {
                       style={styles.clearDobButton}
                       onPress={() => {
                         setTaskScheduledDate("");
+                        setTaskScheduledTime("09:00");
                         setShowTaskDatePicker(false);
+                        setShowTaskTimePicker(false);
                       }}
                     >
                       <Text style={styles.secondaryButtonText}>Clear</Text>
@@ -1310,6 +1855,39 @@ export default function App() {
                     ) : null}
                   </View>
                 ) : null}
+                {taskScheduledDate ? (
+                  <>
+                    <Text style={styles.fieldLabel}>Reminder time</Text>
+                    <View style={styles.dobRow}>
+                      <Pressable
+                        style={styles.dobSelector}
+                        onPress={() => setShowTaskTimePicker((current) => !current)}
+                      >
+                        <Text style={styles.dobValue}>{taskScheduledTime}</Text>
+                      </Pressable>
+                    </View>
+                    {showTaskTimePicker ? (
+                      <View style={styles.datePickerBox}>
+                        <DateTimePicker
+                          value={getTimePickerValue(taskScheduledTime)}
+                          mode="time"
+                          display={Platform.OS === "ios" ? "spinner" : "default"}
+                          themeVariant="dark"
+                          textColor="#ffffff"
+                          onChange={(_, selectedDate) => {
+                            if (Platform.OS !== "ios") setShowTaskTimePicker(false);
+                            if (selectedDate) setTaskScheduledTime(formatTimeInput(selectedDate));
+                          }}
+                        />
+                        {Platform.OS === "ios" ? (
+                          <Pressable style={styles.secondaryButton} onPress={() => setShowTaskTimePicker(false)}>
+                            <Text style={styles.secondaryButtonText}>Done</Text>
+                          </Pressable>
+                        ) : null}
+                      </View>
+                    ) : null}
+                  </>
+                ) : null}
                 <View style={styles.actionRow}>
                   <Pressable
                     style={styles.secondaryActionButton}
@@ -1329,40 +1907,12 @@ export default function App() {
                   </Pressable>
                 </View>
               </View>
-            ) : (
-              <View style={styles.actionRow}>
-                <Pressable style={styles.secondaryActionButton} onPress={beginEditGoal}>
-                  <Text style={styles.secondaryButtonText}>Edit task</Text>
-                </Pressable>
-                <Pressable style={styles.deleteButton} disabled={loading} onPress={handleDeleteTask}>
-                  <Text style={styles.deleteButtonText}>{loading ? "Deleting..." : "Delete"}</Text>
-                </Pressable>
-              </View>
-            )}
           </View>
+          ) : null}
 
+          {showReflectionForm && !selectedGoal.completed ? (
           <View style={styles.card}>
             <Text style={styles.cardTitle}>Add journal entry</Text>
-            <View style={styles.choiceRow}>
-              <Pressable
-                style={[styles.choiceButton, completed && styles.choiceButtonActive]}
-                onPress={() => {
-                  setCompleted(true);
-                  setSoulful(true);
-                }}
-              >
-                <Text style={completed ? styles.choiceTextActive : styles.choiceText}>Done</Text>
-              </Pressable>
-              <Pressable
-                style={[styles.choiceButton, !completed && styles.choiceButtonActive]}
-                onPress={() => {
-                  setCompleted(false);
-                  setSoulful(false);
-                }}
-              >
-                <Text style={!completed ? styles.choiceTextActive : styles.choiceText}>Not done</Text>
-              </Pressable>
-            </View>
             <TextInput
               value={reflection}
               onChangeText={setReflection}
@@ -1418,6 +1968,7 @@ export default function App() {
               </Text>
             </Pressable>
           </View>
+          ) : null}
 
           <View style={styles.card}>
             <View style={styles.sectionHeader}>
@@ -1444,7 +1995,6 @@ export default function App() {
                         <Text style={styles.goalMeta}>{formatLogDate(log.created_at)}</Text>
                       </View>
                       <View style={styles.logPillRow}>
-                        <Text style={styles.logPill}>{log.completed ? "Completed" : "Not done"}</Text>
                         <Text style={styles.logPill}>{getLogMeaning(log)}</Text>
                         {log.emotion_label ? (
                           <Text style={styles.emotionPill}>{getEmotionLabel(log.emotion_label)}</Text>
@@ -1463,15 +2013,25 @@ export default function App() {
   }
 
   return (
-    <AppShell>
+    <AppShell theme={activeTheme}>
       <ScreenScroll>
         <View style={styles.dashboardHeader}>
-          <View>
+          <View style={styles.dashboardHeaderText}>
             <Text style={styles.eyebrow}>Today</Text>
-            <Text style={styles.title}>Hello, {user.name}</Text>
-            <Text style={styles.subtitle}>{user.email}</Text>
+            <Text style={styles.dashboardTitle} numberOfLines={2}>
+              Hello, {user.name}
+            </Text>
+            <Text style={styles.dashboardSubtitle} numberOfLines={1}>
+              {user.email}
+            </Text>
           </View>
           <View style={styles.dashboardHeaderActions}>
+            <Pressable
+              style={styles.notificationButton}
+              onPress={() => openAssistant()}
+            >
+              <Text style={styles.notificationButtonText}>🤖</Text>
+            </Pressable>
             <Pressable
               style={styles.notificationButton}
               onPress={() => setShowNotifications((current) => !current)}
@@ -1495,7 +2055,7 @@ export default function App() {
           </View>
         </View>
 
-        {showNotifications ? renderNotificationsPanel() : null}
+        {renderNotificationsPanel()}
 
         <View style={styles.statsRow}>
           <View style={styles.statCard}>
@@ -1548,7 +2108,7 @@ export default function App() {
               const dayPriorities = PRIORITY_OPTIONS.map((item) => item.value).filter((priority) =>
                 dayGoals.some((goal) => goal.priority === priority),
               );
-              const isSelected = day.dateKey === selectedDateKey && taskFilter === "selected";
+              const isSelected = day.dateKey === selectedDateKey;
               const isToday = day.dateKey === getDateKey(null);
 
               return (
@@ -1674,8 +2234,8 @@ export default function App() {
               <Text style={styles.cardTitle}>
                 {taskFilter === "today"
                   ? "Today's Action Items"
-                  : taskFilter === "selected"
-                    ? `${formatSelectedDateLabel(selectedCalendarDate)} Action Items`
+                  : taskFilter === "completed"
+                    ? "Completed Items"
                     : "All Action Items"}
               </Text>
               <Text style={styles.mutedText}>Pulled from the FastAPI backend.</Text>
@@ -1712,6 +2272,14 @@ export default function App() {
                 All ({goals.length})
               </Text>
             </Pressable>
+            <Pressable
+              style={[styles.filterButton, taskFilter === "completed" && styles.filterButtonActive]}
+              onPress={() => setTaskFilter("completed")}
+            >
+              <Text style={taskFilter === "completed" ? styles.filterTextActive : styles.filterText}>
+                Completed ({completedGoals.length})
+              </Text>
+            </Pressable>
           </View>
 
           {loading ? <ActivityIndicator color="#60a5fa" style={styles.inlineLoader} /> : null}
@@ -1728,8 +2296,8 @@ export default function App() {
               <Text style={styles.emptyText}>
                 {taskFilter === "today"
                   ? "No action items for today."
-                  : taskFilter === "selected"
-                    ? "No action items for this date."
+                  : taskFilter === "completed"
+                    ? "No completed items yet."
                     : "No action items yet."}
               </Text>
             ) : (
@@ -1742,13 +2310,29 @@ export default function App() {
   );
 }
 
-function AppShell({ children }: { children: React.ReactNode }) {
-  return (
-    <SafeAreaProvider>
+function AppShell({ children, theme }: { children: React.ReactNode; theme: (typeof THEME_OPTIONS)[number] }) {
+  const content = (
+    <View style={[styles.backgroundOverlay, { backgroundColor: theme.overlay }]}>
       <SafeAreaView style={styles.screen}>
         <StatusBar style="light" />
         {children}
       </SafeAreaView>
+    </View>
+  );
+
+  return (
+    <SafeAreaProvider>
+      {theme.image ? (
+        <ImageBackground
+          source={theme.image}
+          style={styles.backgroundImage}
+          imageStyle={[styles.backgroundImageAsset, { opacity: theme.imageOpacity }]}
+        >
+          {content}
+        </ImageBackground>
+      ) : (
+        <View style={styles.backgroundImage}>{content}</View>
+      )}
     </SafeAreaProvider>
   );
 }
@@ -1775,7 +2359,18 @@ function ScreenScroll({ children }: { children: React.ReactNode }) {
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
+    backgroundColor: "transparent",
+  },
+  backgroundImage: {
+    flex: 1,
     backgroundColor: "#0a0a0a",
+  },
+  backgroundImageAsset: {
+    opacity: 0.34,
+  },
+  backgroundOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(10, 10, 10, 0.78)",
   },
   keyboardAvoiding: {
     flex: 1,
@@ -1801,8 +2396,13 @@ const styles = StyleSheet.create({
     gap: 16,
     justifyContent: "space-between",
   },
+  dashboardHeaderText: {
+    flex: 1,
+    minWidth: 0,
+  },
   dashboardHeaderActions: {
     alignItems: "center",
+    flexShrink: 0,
     flexDirection: "row",
     gap: 10,
   },
@@ -1841,11 +2441,25 @@ const styles = StyleSheet.create({
     fontWeight: "800",
     letterSpacing: 0,
   },
+  dashboardTitle: {
+    color: "#ffffff",
+    flexShrink: 1,
+    fontSize: 30,
+    fontWeight: "800",
+    letterSpacing: 0,
+    lineHeight: 36,
+  },
   subtitle: {
     color: "#a3a3a3",
     fontSize: 16,
     lineHeight: 24,
     marginTop: 10,
+  },
+  dashboardSubtitle: {
+    color: "#a3a3a3",
+    fontSize: 15,
+    lineHeight: 22,
+    marginTop: 8,
   },
   card: {
     backgroundColor: "#171717",
@@ -2023,6 +2637,29 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontWeight: "900",
   },
+  modalOverlay: {
+    flex: 1,
+    justifyContent: "flex-end",
+  },
+  modalBackdrop: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "rgba(0, 0, 0, 0.68)",
+  },
+  notificationModal: {
+    backgroundColor: "#171717",
+    borderColor: "#2f2f2f",
+    borderTopLeftRadius: 18,
+    borderTopRightRadius: 18,
+    borderWidth: 1,
+    maxHeight: "78%",
+    padding: 18,
+  },
+  notificationList: {
+    maxHeight: 430,
+  },
+  notificationListContent: {
+    paddingBottom: 6,
+  },
   helperText: {
     color: "#737373",
     fontSize: 13,
@@ -2103,10 +2740,125 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     textAlignVertical: "top",
   },
+  chatStarterGrid: {
+    gap: 8,
+    marginTop: 14,
+  },
+  chatSessionList: {
+    gap: 8,
+    paddingRight: 4,
+  },
+  chatSessionChip: {
+    borderColor: "#404040",
+    borderRadius: 999,
+    borderWidth: 1,
+    maxWidth: 220,
+    paddingHorizontal: 12,
+    paddingVertical: 9,
+  },
+  chatSessionChipActive: {
+    backgroundColor: "#2563eb",
+    borderColor: "#60a5fa",
+  },
+  chatSessionChipText: {
+    color: "#d4d4d4",
+    fontSize: 13,
+    fontWeight: "800",
+  },
+  chatSessionChipTextActive: {
+    color: "#ffffff",
+    fontSize: 13,
+    fontWeight: "900",
+  },
+  chatStarterButton: {
+    backgroundColor: "#0f0f0f",
+    borderColor: "#2f2f2f",
+    borderRadius: 10,
+    borderWidth: 1,
+    paddingHorizontal: 12,
+    paddingVertical: 11,
+  },
+  chatStarterText: {
+    color: "#d4d4d4",
+    fontSize: 13,
+    fontWeight: "800",
+    lineHeight: 18,
+  },
+  chatMessages: {
+    gap: 10,
+    marginTop: 16,
+  },
+  chatBubble: {
+    borderRadius: 14,
+    maxWidth: "92%",
+    paddingHorizontal: 13,
+    paddingVertical: 11,
+  },
+  chatBubbleUser: {
+    alignSelf: "flex-end",
+    backgroundColor: "#2563eb",
+  },
+  chatBubbleAssistant: {
+    alignSelf: "flex-start",
+    backgroundColor: "#262626",
+    borderColor: "#404040",
+    borderWidth: 1,
+  },
+  chatBubbleTextUser: {
+    color: "#ffffff",
+    fontSize: 14,
+    fontWeight: "700",
+    lineHeight: 20,
+  },
+  chatBubbleTextAssistant: {
+    color: "#f5f5f5",
+    fontSize: 14,
+    lineHeight: 20,
+  },
+  chatInput: {
+    backgroundColor: "#262626",
+    borderColor: "#404040",
+    borderRadius: 10,
+    borderWidth: 1,
+    color: "#ffffff",
+    fontSize: 15,
+    lineHeight: 21,
+    marginTop: 16,
+    minHeight: 84,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    textAlignVertical: "top",
+  },
   actionRow: {
     flexDirection: "row",
     gap: 10,
     marginTop: 16,
+  },
+  journalActionBar: {
+    alignSelf: "flex-start",
+    alignItems: "center",
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 10,
+  },
+  journalEntryButton: {
+    alignItems: "center",
+    borderColor: "#404040",
+    borderRadius: 9,
+    borderWidth: 1,
+    minHeight: 36,
+    justifyContent: "center",
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+  },
+  journalEntryButtonActive: {
+    backgroundColor: "#2563eb",
+    borderColor: "#60a5fa",
+  },
+  journalEntryButtonText: {
+    color: "#ffffff",
+    fontSize: 13,
+    fontWeight: "900",
   },
   emojiPickerRow: {
     flexDirection: "row",
@@ -2534,6 +3286,41 @@ const styles = StyleSheet.create({
     fontWeight: "800",
     marginTop: 2,
   },
+  themeGrid: {
+    flexDirection: "row",
+    gap: 10,
+    marginTop: 14,
+  },
+  themeOption: {
+    alignItems: "center",
+    borderColor: "#404040",
+    borderRadius: 10,
+    borderWidth: 1,
+    flex: 1,
+    gap: 8,
+    paddingVertical: 12,
+  },
+  themeOptionActive: {
+    backgroundColor: "#075985",
+    borderColor: "#38bdf8",
+  },
+  themeSwatch: {
+    borderColor: "#ffffff",
+    borderRadius: 999,
+    borderWidth: 1,
+    height: 24,
+    width: 24,
+  },
+  themeText: {
+    color: "#d4d4d4",
+    fontSize: 13,
+    fontWeight: "800",
+  },
+  themeTextActive: {
+    color: "#ffffff",
+    fontSize: 13,
+    fontWeight: "900",
+  },
   dobRow: {
     alignItems: "center",
     flexDirection: "row",
@@ -2660,16 +3447,30 @@ const styles = StyleSheet.create({
     lineHeight: 23,
   },
   priorityPill: {
-    borderColor: "#0369a1",
     borderRadius: 7,
     borderWidth: 1,
-    color: "#bae6fd",
     fontSize: 12,
     fontWeight: "800",
     overflow: "hidden",
     paddingHorizontal: 8,
     paddingVertical: 3,
-    textTransform: "capitalize",
+  },
+  statusPill: {
+    minWidth: 28,
+    textAlign: "center",
+    borderRadius: 7,
+    borderWidth: 1,
+    fontSize: 12,
+    fontWeight: "900",
+    overflow: "hidden",
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+  },
+  goalBadgeRow: {
+    alignItems: "center",
+    flexDirection: "row",
+    flexShrink: 0,
+    gap: 6,
   },
   goalNotes: {
     color: "#a3a3a3",
@@ -2681,6 +3482,30 @@ const styles = StyleSheet.create({
     color: "#737373",
     fontSize: 13,
   },
+  contextTaskItem: {
+    borderTopColor: "#2f2f2f",
+    borderTopWidth: 1,
+    gap: 6,
+    paddingVertical: 12,
+  },
+  contextTaskTitle: {
+    color: "#ffffff",
+    fontSize: 14,
+    fontWeight: "900",
+    lineHeight: 20,
+  },
+  contextTaskReflection: {
+    color: "#a3a3a3",
+    fontSize: 13,
+    lineHeight: 19,
+  },
+  recentReflectionItem: {
+    borderLeftColor: "#60a5fa",
+    borderLeftWidth: 2,
+    gap: 4,
+    marginTop: 12,
+    paddingLeft: 10,
+  },
   goalFooter: {
     alignItems: "center",
     flexDirection: "row",
@@ -2691,8 +3516,10 @@ const styles = StyleSheet.create({
   taskCardActions: {
     alignItems: "center",
     flexDirection: "row",
+    flexWrap: "wrap",
     flexShrink: 0,
     gap: 8,
+    justifyContent: "flex-end",
   },
   iconActionButton: {
     alignItems: "center",

@@ -49,6 +49,7 @@ class GoalUpdate(BaseModel):
     is_timed: bool = False
     scheduled_for: datetime | None = None
     priority: Priority = "medium"
+    completed: bool | None = None
 
 
 class GoalOut(BaseModel):
@@ -59,6 +60,8 @@ class GoalOut(BaseModel):
     is_timed: bool
     scheduled_for: datetime | None
     priority: Priority
+    completed: bool
+    completed_at: datetime | None
     created_at: datetime
 
     model_config = {"from_attributes": True}

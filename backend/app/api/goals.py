@@ -12,6 +12,7 @@
 # Version 0.1.0 | 2024-06
 ############################################################################
 
+from datetime import datetime, timezone
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -85,6 +86,9 @@ def update_goal(
     goal.is_timed = data.is_timed
     goal.scheduled_for = data.scheduled_for if data.is_timed else None
     goal.priority = data.priority
+    if data.completed is not None and goal.completed != data.completed:
+        goal.completed = data.completed
+        goal.completed_at = datetime.now(timezone.utc) if data.completed else None
     db.add(goal)
     db.commit()
     db.refresh(goal)

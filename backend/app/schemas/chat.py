@@ -13,8 +13,10 @@
 ############################################################################
 
 from typing import Literal
+from uuid import UUID
 
 from pydantic import BaseModel
+from datetime import datetime
 
 
 class ChatMessage(BaseModel):
@@ -23,9 +25,40 @@ class ChatMessage(BaseModel):
 
 
 class ChatIn(BaseModel):
-    history: list[ChatMessage] = []
     message: str
+    history: list[ChatMessage] = []
+    session_id: UUID | None = None
+    goal_id: UUID | None = None
 
 
 class ChatOut(BaseModel):
     reply: str
+    session_id: UUID
+
+
+class ChatSessionCreate(BaseModel):
+    title: str | None = None
+    goal_id: UUID | None = None
+
+
+class ChatSessionOut(BaseModel):
+    id: UUID
+    title: str
+    goal_id: UUID | None
+    created_at: datetime
+    updated_at: datetime
+
+    model_config = {"from_attributes": True}
+
+
+class ChatMessageOut(BaseModel):
+    id: UUID
+    role: Literal["user", "assistant"]
+    content: str
+    created_at: datetime
+
+    model_config = {"from_attributes": True}
+
+
+class ChatSessionDetailOut(ChatSessionOut):
+    messages: list[ChatMessageOut]

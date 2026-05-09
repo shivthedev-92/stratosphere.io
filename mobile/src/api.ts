@@ -32,6 +32,8 @@ export type GoalOut = {
   is_timed: boolean;
   scheduled_for: string | null;
   priority: Priority;
+  completed: boolean;
+  completed_at: string | null;
   created_at: string;
 };
 
@@ -44,7 +46,9 @@ export type GoalCreate = {
   priority: Priority;
 };
 
-export type GoalUpdate = GoalCreate;
+export type GoalUpdate = GoalCreate & {
+  completed?: boolean | null;
+};
 
 export type GoalLogCreate = {
   completed: boolean;
@@ -90,6 +94,33 @@ export type NotificationSummaryOut = {
   unread_count: number;
 };
 
+export type ChatMessage = {
+  role: "user" | "assistant";
+  content: string;
+};
+
+export type ChatOut = {
+  reply: string;
+  session_id: string;
+};
+
+export type ChatSessionOut = {
+  id: string;
+  title: string;
+  goal_id: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type ChatMessageOut = ChatMessage & {
+  id: string;
+  created_at: string;
+};
+
+export type ChatSessionDetailOut = ChatSessionOut & {
+  messages: ChatMessageOut[];
+};
+
 async function request<T>(path: string, token?: string, init: RequestInit = {}): Promise<T> {
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
@@ -110,7 +141,12 @@ async function request<T>(path: string, token?: string, init: RequestInit = {}):
     throw new Error(body?.detail ?? `HTTP ${response.status}`);
   }
 
-  return response.json() as Promise<T>;
+  if (response.status === 204) {
+    return undefined as T;
+  }
+
+  const text = await response.text();
+  return (text ? JSON.parse(text) : undefined) as T;
 }
 
 export const api = {
@@ -180,5 +216,22 @@ export const api = {
     request<GoalLogOut>(`/goals/${goalId}/logs`, token, {
       method: "POST",
       body: JSON.stringify(log),
+    }),
+
+  chatSessions: (token: string) => request<ChatSessionOut[]>("/chat/sessions", token),
+
+  chatSession: (token: string, sessionId: string) =>
+    request<ChatSessionDetailOut>(`/chat/sessions/${sessionId}`, token),
+
+  createChatSession: (token: string, data: { title?: string | null; goal_id?: string | null }) =>
+    request<ChatSessionOut>("/chat/sessions", token, {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+
+  chat: (token: string, message: string, history: ChatMessage[], sessionId?: string | null, goalId?: string | null) =>
+    request<ChatOut>("/chat", token, {
+      method: "POST",
+      body: JSON.stringify({ message, history, session_id: sessionId ?? null, goal_id: goalId ?? null }),
     }),
 };

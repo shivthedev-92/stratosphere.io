@@ -26,7 +26,11 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
     const body = await res.json().catch(() => ({}));
     throw new Error(body?.detail ?? `HTTP ${res.status}`);
   }
-  return res.json() as Promise<T>;
+  if (res.status === 204) {
+    return undefined as T;
+  }
+  const text = await res.text();
+  return (text ? JSON.parse(text) : undefined) as T;
 }
 
 export type UserOut = {
@@ -62,6 +66,24 @@ export type ChatMessage = {
 
 export type ChatOut = {
   reply: string;
+  session_id: string;
+};
+
+export type ChatSessionOut = {
+  id: string;
+  title: string;
+  goal_id: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type ChatMessageOut = ChatMessage & {
+  id: string;
+  created_at: string;
+};
+
+export type ChatSessionDetailOut = ChatSessionOut & {
+  messages: ChatMessageOut[];
 };
 
 export type Priority = "low" | "medium" | "high";
@@ -85,6 +107,8 @@ export type GoalOut = {
   is_timed: boolean;
   scheduled_for: string | null;
   priority: Priority;
+  completed: boolean;
+  completed_at: string | null;
   created_at: string;
 };
 
@@ -97,7 +121,9 @@ export type GoalCreate = {
   priority: Priority;
 };
 
-export type GoalUpdate = GoalCreate;
+export type GoalUpdate = GoalCreate & {
+  completed?: boolean | null;
+};
 
 export type GoalLogCreate = {
   completed: boolean;
@@ -210,9 +236,19 @@ export const api = {
       body: JSON.stringify(log),
     }),
 
-  chat: (message: string, history: ChatMessage[]) =>
+  chatSessions: () => request<ChatSessionOut[]>("/chat/sessions"),
+
+  chatSession: (sessionId: string) => request<ChatSessionDetailOut>(`/chat/sessions/${sessionId}`),
+
+  createChatSession: (data: { title?: string | null; goal_id?: string | null }) =>
+    request<ChatSessionOut>("/chat/sessions", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+
+  chat: (message: string, history: ChatMessage[], sessionId?: string | null, goalId?: string | null) =>
     request<ChatOut>("/chat", {
       method: "POST",
-      body: JSON.stringify({ message, history }),
+      body: JSON.stringify({ message, history, session_id: sessionId ?? null, goal_id: goalId ?? null }),
     }),
 };

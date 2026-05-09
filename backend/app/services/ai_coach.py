@@ -15,6 +15,7 @@
 from typing import Protocol, runtime_checkable
 
 import httpx
+from fastapi import HTTPException
 
 from app.config import settings
 from app.schemas.chat import ChatMessage
@@ -53,25 +54,53 @@ Never lecture. Keep responses focused and actionable."""
 
 @runtime_checkable
 class CoachProvider(Protocol):
-    async def reply(self, history: list[ChatMessage], user_message: str) -> str: ...
+    async def reply(
+        self,
+        history: list[ChatMessage],
+        user_message: str,
+        task_context: str | None = None,
+    ) -> str: ...
 
 #==============#
 # Ollama Coach |
 #==============#
 
 class OllamaCoach:
-    async def reply(self, history: list[ChatMessage], user_message: str) -> str:
+    async def reply(
+        self,
+        history: list[ChatMessage],
+        user_message: str,
+        task_context: str | None = None,
+    ) -> str:
         messages = [{"role": "system", "content": SYSTEM_PROMPT}]
+        if task_context:
+            messages.append({"role": "system", "content": task_context})
         for msg in history:
             messages.append({"role": msg.role, "content": msg.content})
         messages.append({"role": "user", "content": user_message})
 
         async with httpx.AsyncClient(timeout=120.0) as client:
-            response = await client.post(
-                f"{settings.OLLAMA_HOST}/api/chat",
-                json={"model": settings.OLLAMA_MODEL, "messages": messages, "stream": False},
-            )
-            response.raise_for_status()
+            try:
+                response = await client.post(
+                    f"{settings.OLLAMA_HOST}/api/chat",
+                    json={
+                        "model": settings.OLLAMA_MODEL,
+                        "messages": messages,
+                        "stream": False,
+                        "options": {
+                            "temperature": 0.4,
+                            "num_predict": 350,
+                        },
+                    },
+                )
+                response.raise_for_status()
+            except httpx.TimeoutException as exc:
+                raise HTTPException(
+                    status_code=504,
+                    detail="The local AI model took too long to respond. Try a shorter message or use a smaller Ollama model.",
+                ) from exc
+            except httpx.HTTPError as exc:
+                raise HTTPException(status_code=502, detail="The local AI model is not responding correctly.") from exc
             return response.json()["message"]["content"]
 
 
@@ -90,9 +119,15 @@ class AnthropicCoach:
 
         self._client = AsyncAnthropic(api_key=settings.ANTHROPIC_API_KEY)
 
-    async def reply(self, history: list[ChatMessage], user_message: str) -> str:
+    async def reply(
+        self,
+        history: list[ChatMessage],
+        user_message: str,
+        task_context: str | None = None,
+    ) -> str:
         messages = [{"role": msg.role, "content": msg.content} for msg in history]
         messages.append({"role": "user", "content": user_message})
+        system_prompt = SYSTEM_PROMPT if not task_context else f"{SYSTEM_PROMPT}\n\n{task_context}"
 
         response = await self._client.messages.create(
             model=settings.ANTHROPIC_MODEL,
@@ -100,7 +135,7 @@ class AnthropicCoach:
             system=[
                 {
                     "type": "text",
-                    "text": SYSTEM_PROMPT,
+                    "text": system_prompt,
                     "cache_control": {"type": "ephemeral"},
                 }
             ],

@@ -454,58 +454,73 @@ export default function DashboardPage() {
         </header>
 
         {showNotifications ? (
-          <section className="rounded-lg border border-white/10 bg-neutral-900/90 p-5 shadow-lg shadow-black/15 backdrop-blur">
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <h2 className="text-lg font-bold">Notifications</h2>
-                <p className="mt-1 text-sm text-neutral-400">{unreadNotifications} unread updates.</p>
+          <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/70 p-4 sm:items-center">
+            <button
+              className="absolute inset-0 cursor-default"
+              aria-label="Close notifications"
+              onClick={() => setShowNotifications(false)}
+            />
+            <section className="relative z-10 max-h-[82vh] w-full max-w-xl rounded-lg border border-white/10 bg-neutral-900 p-5 shadow-2xl shadow-black/50">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <h2 className="text-lg font-bold">Notifications</h2>
+                  <p className="mt-1 text-sm text-neutral-400">{unreadNotifications} unread updates.</p>
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={handleMarkAllNotificationsRead}
+                    className="rounded-lg border border-neutral-700 px-3 py-2 text-sm font-semibold transition-colors hover:border-neutral-500"
+                  >
+                    Read all
+                  </button>
+                  <button
+                    onClick={() => setShowNotifications(false)}
+                    className="rounded-lg border border-neutral-700 px-3 py-2 text-sm font-semibold transition-colors hover:border-neutral-500"
+                  >
+                    Close
+                  </button>
+                </div>
               </div>
-              <button
-                onClick={handleMarkAllNotificationsRead}
-                className="rounded-lg border border-neutral-700 px-3 py-2 text-sm font-semibold transition-colors hover:border-neutral-500"
-              >
-                Read all
-              </button>
-            </div>
-            <div className="mt-4 divide-y divide-white/10">
-              {notifications.length === 0 ? (
-                <p className="py-4 text-sm text-neutral-400">No notifications yet.</p>
-              ) : (
-                notifications.slice(0, 8).map((notification) => (
-                  <div key={notification.id} className="flex gap-3 py-3">
-                    <span
-                      className={`mt-1 h-2.5 w-2.5 rounded-full ${
-                        notification.read_at ? "bg-neutral-600" : "bg-sky-400"
-                      }`}
-                    />
-                    <div>
-                      <p className="text-sm font-bold text-white">{notification.title}</p>
-                      <p className="mt-1 text-sm text-neutral-400">{notification.body}</p>
-                      <p className="mt-1 text-xs text-neutral-500">
-                        {new Date(notification.created_at).toLocaleString()}
-                      </p>
-                      {notification.category === "reminder" && !notification.acknowledged_at ? (
-                        <div className="mt-3 flex gap-2">
-                          <button
-                            onClick={() => handleAcknowledgeNotification(notification)}
-                            className="rounded-md bg-indigo-600 px-3 py-1.5 text-xs font-bold text-white transition-colors hover:bg-indigo-500"
-                          >
-                            Yes
-                          </button>
-                          <button
-                            onClick={() => handleAcknowledgeNotification(notification)}
-                            className="rounded-md border border-neutral-700 px-3 py-1.5 text-xs font-bold text-neutral-200 transition-colors hover:border-neutral-500"
-                          >
-                            No
-                          </button>
-                        </div>
-                      ) : null}
+              <div className="mt-4 max-h-[58vh] overflow-y-auto divide-y divide-white/10 pr-1">
+                {notifications.length === 0 ? (
+                  <p className="py-4 text-sm text-neutral-400">No notifications yet.</p>
+                ) : (
+                  notifications.slice(0, 20).map((notification) => (
+                    <div key={notification.id} className="flex gap-3 py-3">
+                      <span
+                        className={`mt-1 h-2.5 w-2.5 shrink-0 rounded-full ${
+                          notification.read_at ? "bg-neutral-600" : "bg-sky-400"
+                        }`}
+                      />
+                      <div>
+                        <p className="text-sm font-bold text-white">{notification.title}</p>
+                        <p className="mt-1 text-sm text-neutral-400">{notification.body}</p>
+                        <p className="mt-1 text-xs text-neutral-500">
+                          {new Date(notification.created_at).toLocaleString()}
+                        </p>
+                        {notification.category === "reminder" && !notification.acknowledged_at ? (
+                          <div className="mt-3 flex gap-2">
+                            <button
+                              onClick={() => handleAcknowledgeNotification(notification)}
+                              className="rounded-md bg-indigo-600 px-3 py-1.5 text-xs font-bold text-white transition-colors hover:bg-indigo-500"
+                            >
+                              Yes
+                            </button>
+                            <button
+                              onClick={() => handleAcknowledgeNotification(notification)}
+                              className="rounded-md border border-neutral-700 px-3 py-1.5 text-xs font-bold text-neutral-200 transition-colors hover:border-neutral-500"
+                            >
+                              No
+                            </button>
+                          </div>
+                        ) : null}
+                      </div>
                     </div>
-                  </div>
-                ))
-              )}
-            </div>
-          </section>
+                  ))
+                )}
+              </div>
+            </section>
+          </div>
         ) : null}
 
         <section className="rounded-lg border border-white/10 bg-neutral-900/80 p-5 shadow-lg shadow-black/15 backdrop-blur">
