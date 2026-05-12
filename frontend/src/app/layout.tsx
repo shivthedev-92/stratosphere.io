@@ -19,6 +19,9 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "Stratosphere — Your Productivity Coach",
   description: "Build habits, manage your day, and find your rhythm — guilt-free.",
+  icons: {
+    icon: "/icon.svg",
+  },
 };
 
 

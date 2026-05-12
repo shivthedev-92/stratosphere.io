@@ -369,6 +369,11 @@ export default function App() {
   const [chatSessions, setChatSessions] = useState<ChatSessionOut[]>([]);
   const [activeChatSessionId, setActiveChatSessionId] = useState<string | null>(null);
   const [activeChatGoalId, setActiveChatGoalId] = useState<string | null>(null);
+  const [supportSubject, setSupportSubject] = useState("");
+  const [supportMessage, setSupportMessage] = useState("");
+  const [supportStatus, setSupportStatus] = useState("");
+  const [supportError, setSupportError] = useState("");
+  const [supportSaving, setSupportSaving] = useState(false);
 
   const todayGoals = useMemo(() => {
     const todayKey = getDateKey(null);
@@ -849,6 +854,29 @@ export default function App() {
     setShowCountryCodeMenu(false);
   }
 
+  async function handleCreateSupportTicket() {
+    if (!token || !user || !supportSubject.trim() || supportMessage.trim().length < 10) return;
+    setSupportSaving(true);
+    setSupportStatus("");
+    setSupportError("");
+    try {
+      await api.createSupportTicket(token, {
+        name: user.name,
+        email: user.email,
+        subject: supportSubject.trim(),
+        message: supportMessage.trim(),
+        source: "mobile",
+      });
+      setSupportSubject("");
+      setSupportMessage("");
+      setSupportStatus("Thanks. Your support ticket has been received.");
+    } catch (err) {
+      setSupportError(err instanceof Error ? err.message : "Could not send your message.");
+    } finally {
+      setSupportSaving(false);
+    }
+  }
+
   function renderProfileSettings() {
     if (!user) return null;
 
@@ -1039,6 +1067,45 @@ export default function App() {
             </Pressable>
           ))}
         </View>
+      </View>
+    );
+  }
+
+  function renderContactSettings() {
+    return (
+      <View style={styles.card}>
+        <Text style={styles.cardTitle}>Contact us</Text>
+        <Text style={styles.mutedText}>Raise a support ticket for issues, feedback, or beta testing notes.</Text>
+        <TextInput
+          value={supportSubject}
+          onChangeText={setSupportSubject}
+          placeholder="Subject"
+          placeholderTextColor="#737373"
+          maxLength={180}
+          style={styles.input}
+        />
+        <TextInput
+          value={supportMessage}
+          onChangeText={setSupportMessage}
+          multiline
+          placeholder="Share the issue, device, and what you expected to happen."
+          placeholderTextColor="#737373"
+          maxLength={4000}
+          style={styles.textAreaSmall}
+        />
+        {supportError ? <Text style={styles.errorText}>{supportError}</Text> : null}
+        {supportStatus ? <Text style={styles.successText}>{supportStatus}</Text> : null}
+        <Pressable
+          disabled={supportSaving || !supportSubject.trim() || supportMessage.trim().length < 10}
+          style={[
+            styles.primaryButton,
+            (supportSaving || !supportSubject.trim() || supportMessage.trim().length < 10) &&
+              styles.disabledButton,
+          ]}
+          onPress={handleCreateSupportTicket}
+        >
+          <Text style={styles.primaryButtonText}>{supportSaving ? "Sending..." : "Raise ticket"}</Text>
+        </Pressable>
       </View>
     );
   }
@@ -1601,6 +1668,7 @@ export default function App() {
           </View>
           {renderProfileSettings()}
           {renderAppearanceSettings()}
+          {renderContactSettings()}
           <View style={styles.card}>
             <Text style={styles.cardTitle}>Session</Text>
             <Text style={styles.mutedText}>Sign out from this mobile device.</Text>
@@ -2673,6 +2741,12 @@ const styles = StyleSheet.create({
   },
   errorText: {
     color: "#fca5a5",
+    fontSize: 14,
+    lineHeight: 20,
+    marginTop: 12,
+  },
+  successText: {
+    color: "#86efac",
     fontSize: 14,
     lineHeight: 20,
     marginTop: 12,

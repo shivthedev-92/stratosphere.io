@@ -28,6 +28,7 @@ import {
   type UserOut,
 } from "@/lib/api";
 import { BackgroundShell } from "@/components/background-shell";
+import { ContactForm } from "@/components/contact-form";
 import { CompletedReflectionsTable } from "@/components/completed-reflections-table";
 import { EmptyGoalsIllustration } from "@/components/illustrations";
 import { MonthPriorityCalendar } from "@/components/month-priority-calendar";
@@ -165,6 +166,7 @@ export default function DashboardPage() {
   const [notifications, setNotifications] = useState<NotificationOut[]>([]);
   const [unreadNotifications, setUnreadNotifications] = useState(0);
   const [showNotifications, setShowNotifications] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
   const [title, setTitle] = useState("");
   const [notes, setNotes] = useState("");
   const [isTimed, setIsTimed] = useState(false);
@@ -417,9 +419,15 @@ export default function DashboardPage() {
       <div className="relative z-10 mx-auto flex w-full max-w-6xl flex-col gap-8 px-4 py-6 sm:px-8 sm:py-10">
         <header className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-4">
-            <div className="grid h-14 w-14 shrink-0 place-items-center rounded-lg border border-white/15 bg-neutral-900/80 text-base font-bold shadow-lg shadow-black/20">
+            <button
+              type="button"
+              onClick={() => setShowSettings(true)}
+              className="grid h-14 w-14 shrink-0 place-items-center rounded-lg border border-white/15 bg-neutral-900/80 text-base font-bold shadow-lg shadow-black/20 transition-colors hover:border-sky-500"
+              aria-label="Open profile settings"
+              title="Profile settings"
+            >
               {getInitials(user.name) || "U"}
-            </div>
+            </button>
             <div>
               <p className="text-sm text-neutral-400">{getDayEmoji()} Today</p>
               <h1 className="text-2xl font-bold">Hello, {user.name}</h1>
@@ -444,6 +452,12 @@ export default function DashboardPage() {
             >
               Life Coach
             </Link>
+            <button
+              onClick={() => setShowSettings(true)}
+              className="rounded-lg border border-neutral-700 px-4 py-2 text-sm font-semibold transition-colors hover:border-neutral-500"
+            >
+              Settings
+            </button>
             <button
               onClick={handleLogout}
               className="rounded-lg border border-neutral-700 px-4 py-2 text-sm font-semibold transition-colors hover:border-neutral-500"
@@ -518,6 +532,49 @@ export default function DashboardPage() {
                     </div>
                   ))
                 )}
+              </div>
+            </section>
+          </div>
+        ) : null}
+
+        {showSettings ? (
+          <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/70 p-4 sm:items-center">
+            <button
+              className="absolute inset-0 cursor-default"
+              aria-label="Close settings"
+              onClick={() => setShowSettings(false)}
+            />
+            <section className="relative z-10 max-h-[82vh] w-full max-w-2xl overflow-y-auto rounded-lg border border-white/10 bg-neutral-900 p-5 shadow-2xl shadow-black/50">
+              <div className="mb-5 flex items-start justify-between gap-4">
+                <div>
+                  <h2 className="text-lg font-bold">Profile settings</h2>
+                  <p className="mt-1 text-sm text-neutral-400">Manage your account details and support requests.</p>
+                </div>
+                <button
+                  onClick={() => setShowSettings(false)}
+                  className="rounded-lg border border-neutral-700 px-3 py-2 text-sm font-semibold transition-colors hover:border-neutral-500"
+                >
+                  Close
+                </button>
+              </div>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="rounded-lg border border-white/10 bg-neutral-950/60 p-4">
+                  <p className="text-xs font-bold uppercase text-neutral-500">Name</p>
+                  <p className="mt-2 break-words text-sm font-semibold text-white">{user.name}</p>
+                </div>
+                <div className="rounded-lg border border-white/10 bg-neutral-950/60 p-4">
+                  <p className="text-xs font-bold uppercase text-neutral-500">Email</p>
+                  <p className="mt-2 break-words text-sm font-semibold text-white">{user.email}</p>
+                </div>
+              </div>
+              <div className="mt-6 rounded-lg border border-white/10 bg-neutral-950/60 p-4">
+                <h3 className="text-base font-bold">Contact us</h3>
+                <p className="mt-1 text-sm text-neutral-400">
+                  Raise a ticket from your signed-in account so support requests stay tied to the right user.
+                </p>
+                <div className="mt-5">
+                  <ContactForm defaultName={user.name} defaultEmail={user.email} source="web" />
+                </div>
               </div>
             </section>
           </div>

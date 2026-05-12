@@ -1,0 +1,329 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Stratosphere Project Workflow</title>
+    <style>
+      body {
+        color: #1f2937;
+        font-family: Arial, Helvetica, sans-serif;
+        font-size: 11pt;
+        line-height: 1.45;
+      }
+      h1 {
+        color: #0f172a;
+        font-size: 26pt;
+        margin-bottom: 0;
+      }
+      h2 {
+        border-bottom: 1px solid #d1d5db;
+        color: #1d4ed8;
+        font-size: 17pt;
+        margin-top: 24pt;
+        padding-bottom: 4pt;
+      }
+      h3 {
+        color: #111827;
+        font-size: 13pt;
+        margin-top: 16pt;
+      }
+      table {
+        border-collapse: collapse;
+        margin: 10pt 0 18pt;
+        width: 100%;
+      }
+      th,
+      td {
+        border: 1px solid #d1d5db;
+        padding: 7pt;
+        vertical-align: top;
+      }
+      th {
+        background: #eff6ff;
+        color: #111827;
+        font-weight: bold;
+      }
+      .subtitle {
+        color: #4b5563;
+        font-size: 13pt;
+        margin-top: 4pt;
+      }
+      .note {
+        background: #f8fafc;
+        border-left: 4px solid #2563eb;
+        margin: 12pt 0;
+        padding: 10pt;
+      }
+      .small {
+        color: #6b7280;
+        font-size: 9pt;
+      }
+      ul {
+        margin-top: 6pt;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Stratosphere Productivity App</h1>
+    <p class="subtitle">Project workflow, feature summary, and current product scope</p>
+    <p class="small">Prepared on 12 May 2026</p>
+
+    <div class="note">
+      <strong>Product idea:</strong> Stratosphere is a productivity and reflection app that helps users plan daily
+      action items, add journal reflections, understand emotional context, and receive task-aware support from an AI
+      life coach.
+    </div>
+
+    <h2>1. Project Overview</h2>
+    <p>
+      The project currently has three main surfaces: a web application, a React Native mobile app, and a FastAPI
+      backend. The web app includes the authenticated productivity experience and a promotional site. The mobile app is
+      the iPhone-first experience for daily task management. The backend stores users, tasks, journal entries,
+      notifications, chat history, and support tickets.
+    </p>
+
+    <table>
+      <tr>
+        <th>Layer</th>
+        <th>Technology</th>
+        <th>Role</th>
+      </tr>
+      <tr>
+        <td>Backend</td>
+        <td>FastAPI, SQLAlchemy, Alembic, PostgreSQL</td>
+        <td>Authentication, profile, tasks, journal logs, notifications, AI chat, support tickets.</td>
+      </tr>
+      <tr>
+        <td>Web frontend</td>
+        <td>Next.js, TypeScript, Tailwind CSS</td>
+        <td>Promotional site, login/signup, dashboard, task workflow, AI coach, contact/support.</td>
+      </tr>
+      <tr>
+        <td>Mobile app</td>
+        <td>Expo React Native, TypeScript</td>
+        <td>iPhone-focused task workflow, calendar, journal, notifications, profile settings, AI assistant.</td>
+      </tr>
+      <tr>
+        <td>AI assistant</td>
+        <td>Ollama through FastAPI</td>
+        <td>Task-aware coaching based on user action items and recent reflections.</td>
+      </tr>
+    </table>
+
+    <h2>2. Core User Workflow</h2>
+    <h3>2.1 Account and access</h3>
+    <ul>
+      <li>User signs up or logs in from the web app.</li>
+      <li>Mobile app uses the same backend account and token-based authentication.</li>
+      <li>User profile includes name, phone number, date of birth, and in-app notification preference.</li>
+      <li>Profile settings are available inside the app experience, with support/contact nested there.</li>
+    </ul>
+
+    <h3>2.2 Daily planning</h3>
+    <ul>
+      <li>User creates an action item with title, notes, emoji, priority, optional calendar date, and optional time.</li>
+      <li>Tasks can be low, medium, or high priority, with colored badges and priority dots on calendar days.</li>
+      <li>Today, All, and Completed views help the user filter their current task list.</li>
+      <li>Calendar day selection opens a day-level view with all action items for that date.</li>
+    </ul>
+
+    <h3>2.3 Task journal</h3>
+    <ul>
+      <li>User opens a task and adds journal entries over time.</li>
+      <li>Each journal entry can include reflection text, meaningfulness, and an emotion label.</li>
+      <li>The task journal displays entries as a vertical timeline.</li>
+      <li>Completed tasks no longer accept new reflections; users can review or delete them.</li>
+    </ul>
+
+    <h3>2.4 Completion flow</h3>
+    <ul>
+      <li>Journal entries capture reflections, feelings, and progress context.</li>
+      <li>Task completion is explicit at the task level using done/not-done status.</li>
+      <li>Completed tasks are shown separately in the Completed section.</li>
+    </ul>
+
+    <h2>3. Web Application Features</h2>
+    <table>
+      <tr>
+        <th>Feature</th>
+        <th>Status</th>
+        <th>Notes</th>
+      </tr>
+      <tr>
+        <td>Promotional site</td>
+        <td>Implemented</td>
+        <td>Root page explains the product, core features, call to action, and public contact form.</td>
+      </tr>
+      <tr>
+        <td>Authentication</td>
+        <td>Implemented</td>
+        <td>Signup, login, password reset request, token persistence.</td>
+      </tr>
+      <tr>
+        <td>Dashboard</td>
+        <td>Implemented</td>
+        <td>Task creation, task list, calendar, progress components, notifications, and task controls.</td>
+      </tr>
+      <tr>
+        <td>Task detail</td>
+        <td>Implemented</td>
+        <td>Single task view with task context, logs, edit, delete, and reflection actions.</td>
+      </tr>
+      <tr>
+        <td>AI life coach</td>
+        <td>Implemented</td>
+        <td>Chat page with task-aware context and persisted chat sessions.</td>
+      </tr>
+      <tr>
+        <td>Contact/support</td>
+        <td>Implemented</td>
+        <td>Public contact remains on promotional site. Authenticated support is kept inside profile/settings.</td>
+      </tr>
+    </table>
+
+    <h2>4. Mobile App Features</h2>
+    <table>
+      <tr>
+        <th>Feature</th>
+        <th>Status</th>
+        <th>Notes</th>
+      </tr>
+      <tr>
+        <td>Login</td>
+        <td>Implemented</td>
+        <td>Mobile app signs into the same FastAPI backend.</td>
+      </tr>
+      <tr>
+        <td>Calendar-first dashboard</td>
+        <td>Implemented</td>
+        <td>Calendar displays priority dots and opens day-level task views.</td>
+      </tr>
+      <tr>
+        <td>Task creation/edit/delete</td>
+        <td>Implemented</td>
+        <td>Users can add, edit, delete, schedule, and prioritize tasks.</td>
+      </tr>
+      <tr>
+        <td>Journal timeline</td>
+        <td>Implemented</td>
+        <td>Timeline shows user logs, emotion labels, meaningfulness, and reflection text.</td>
+      </tr>
+      <tr>
+        <td>Notifications</td>
+        <td>Implemented</td>
+        <td>In-app notification modal with due reminders and acknowledgement actions.</td>
+      </tr>
+      <tr>
+        <td>Profile settings</td>
+        <td>Implemented</td>
+        <td>Name, phone number with country code, date of birth picker, notification preference, and appearance theme.</td>
+      </tr>
+      <tr>
+        <td>Contact/support</td>
+        <td>Implemented</td>
+        <td>Support ticket form is inside mobile Settings.</td>
+      </tr>
+      <tr>
+        <td>AI assistant</td>
+        <td>Implemented</td>
+        <td>Mobile chat history, task-specific assistant entry, and task context preview.</td>
+      </tr>
+    </table>
+
+    <h2>5. Backend Capabilities</h2>
+    <ul>
+      <li>User authentication and token-based access control.</li>
+      <li>User profile fields: name, phone number, date of birth, and notification preference.</li>
+      <li>Goal/action item CRUD with priority, schedule, emoji, and completion fields.</li>
+      <li>Goal logs for journal reflections, meaningfulness, and emotion labels.</li>
+      <li>In-app notifications with read, due, and acknowledgement states.</li>
+      <li>Persistent AI chat sessions and messages.</li>
+      <li>Support tickets submitted from public website, web app settings, or mobile settings.</li>
+      <li>Alembic migrations maintain database evolution.</li>
+    </ul>
+
+    <h2>6. AI Assistant Workflow</h2>
+    <p>
+      The AI assistant sends user messages to the FastAPI backend. The backend gathers relevant task and reflection
+      context, then calls the local Ollama model. Responses are returned to the client and persisted in chat sessions so
+      users can resume previous conversations.
+    </p>
+    <ul>
+      <li>General assistant chat can reference current action items and recent reflections.</li>
+      <li>Task-specific robot buttons open a conversation focused on an individual task.</li>
+      <li>Chat sessions are stored and resumable.</li>
+      <li>Production deployment still needs a final AI hosting decision.</li>
+    </ul>
+
+    <h2>7. Contact and Support Workflow</h2>
+    <p>
+      The promotional website keeps a public Contact us form for prospects or unauthenticated visitors. Inside the app,
+      support is intentionally placed under profile/settings so tickets are tied to authenticated users and reduce
+      irrelevant submissions.
+    </p>
+    <table>
+      <tr>
+        <th>Context</th>
+        <th>Support entry point</th>
+      </tr>
+      <tr>
+        <td>Promotional website</td>
+        <td>Public Contact us page and form.</td>
+      </tr>
+      <tr>
+        <td>Authenticated web app</td>
+        <td>Profile settings modal, then Contact us section.</td>
+      </tr>
+      <tr>
+        <td>Mobile app</td>
+        <td>Settings screen, then Contact us section.</td>
+      </tr>
+    </table>
+
+    <h2>8. Current Deployment Considerations</h2>
+    <ul>
+      <li>Host the FastAPI backend with a production PostgreSQL database.</li>
+      <li>Run Alembic migrations during deployment.</li>
+      <li>Deploy the Next.js promotional and web app frontend.</li>
+      <li>Configure CORS for production web and mobile clients.</li>
+      <li>Decide whether Ollama remains self-hosted or moves to a hosted AI provider.</li>
+      <li>Set production secrets for JWT, database URL, CORS origins, and AI service configuration.</li>
+      <li>Prepare Expo/EAS build settings for iOS and TestFlight beta testing.</li>
+      <li>Complete App Store metadata, screenshots, privacy notes, and support URL.</li>
+    </ul>
+
+    <h2>9. Suggested Next Steps</h2>
+    <ol>
+      <li>Finalize deployment architecture for backend, database, web frontend, and AI runtime.</li>
+      <li>Run a full QA pass across web and mobile workflows.</li>
+      <li>Prepare beta testing checklist and known edge cases.</li>
+      <li>Complete App Store assets, screenshots, support URL, and privacy policy draft.</li>
+      <li>Decide production support-ticket handling: admin page, email forwarding, or external helpdesk integration.</li>
+      <li>Commit the promotional/contact/support-ticket changes once reviewed.</li>
+    </ol>
+
+    <h2>10. Current Local URLs</h2>
+    <table>
+      <tr>
+        <th>Service</th>
+        <th>URL</th>
+      </tr>
+      <tr>
+        <td>FastAPI backend</td>
+        <td>http://localhost:8001</td>
+      </tr>
+      <tr>
+        <td>Promotional website</td>
+        <td>http://localhost:3000/</td>
+      </tr>
+      <tr>
+        <td>Contact page</td>
+        <td>http://localhost:3000/contact</td>
+      </tr>
+      <tr>
+        <td>Authenticated dashboard</td>
+        <td>http://localhost:3000/dashboard</td>
+      </tr>
+    </table>
+  </body>
+</html>

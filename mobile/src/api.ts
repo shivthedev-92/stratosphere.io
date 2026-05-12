@@ -121,6 +121,20 @@ export type ChatSessionDetailOut = ChatSessionOut & {
   messages: ChatMessageOut[];
 };
 
+export type SupportTicketCreate = {
+  name?: string | null;
+  email?: string | null;
+  subject: string;
+  message: string;
+  source: "mobile";
+};
+
+export type SupportTicketOut = SupportTicketCreate & {
+  id: string;
+  status: string;
+  created_at: string;
+};
+
 async function request<T>(path: string, token?: string, init: RequestInit = {}): Promise<T> {
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
@@ -233,5 +247,11 @@ export const api = {
     request<ChatOut>("/chat", token, {
       method: "POST",
       body: JSON.stringify({ message, history, session_id: sessionId ?? null, goal_id: goalId ?? null }),
+    }),
+
+  createSupportTicket: (token: string, ticket: SupportTicketCreate) =>
+    request<SupportTicketOut>("/support/tickets", token, {
+      method: "POST",
+      body: JSON.stringify(ticket),
     }),
 };

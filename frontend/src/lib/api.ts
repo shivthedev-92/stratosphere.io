@@ -157,6 +157,20 @@ export type NotificationSummaryOut = {
   unread_count: number;
 };
 
+export type SupportTicketCreate = {
+  name?: string | null;
+  email?: string | null;
+  subject: string;
+  message: string;
+  source: "web" | "mobile" | "marketing";
+};
+
+export type SupportTicketOut = SupportTicketCreate & {
+  id: string;
+  status: string;
+  created_at: string;
+};
+
 export const api = {
   signup: (email: string, password: string, name: string) =>
     request<TokenOut>("/auth/signup", {
@@ -250,5 +264,11 @@ export const api = {
     request<ChatOut>("/chat", {
       method: "POST",
       body: JSON.stringify({ message, history, session_id: sessionId ?? null, goal_id: goalId ?? null }),
+    }),
+
+  createSupportTicket: (ticket: SupportTicketCreate) =>
+    request<SupportTicketOut>("/support/tickets", {
+      method: "POST",
+      body: JSON.stringify(ticket),
     }),
 };

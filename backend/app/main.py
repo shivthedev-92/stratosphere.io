@@ -15,7 +15,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api import auth, chat, goals, me, notifications
+from app.api import auth, chat, goals, me, notifications, support
 from app.config import settings
 
 #====================#
@@ -41,6 +41,7 @@ app.include_router(me.router)
 app.include_router(goals.router)
 app.include_router(notifications.router)
 app.include_router(chat.router)
+app.include_router(support.router)
 
 #=======================#
 # Health Check Endpoint |
