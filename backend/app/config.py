@@ -49,7 +49,11 @@ class Settings(BaseSettings):
         value = self.CORS_ORIGINS.strip()
         if value.startswith("[") and value.endswith("]"):
             value = value.strip("[]")
-        return [origin.strip().strip('"').strip("'") for origin in value.split(",") if origin.strip()]
+        return [
+            origin.strip().strip('"').strip("'").rstrip("/")
+            for origin in value.split(",")
+            if origin.strip()
+        ]
 
 
 settings = Settings()
