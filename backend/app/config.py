@@ -37,10 +37,19 @@ class Settings(BaseSettings):
 
     CORS_ORIGINS: list[str] = ["http://localhost:3000"]
 
+    @field_validator("DATABASE_URL", mode="before")
+    @classmethod
+    def normalize_database_url(cls, v: str) -> str:
+        if isinstance(v, str) and v.startswith("postgresql://"):
+            return v.replace("postgresql://", "postgresql+psycopg://", 1)
+        return v
+
     @field_validator("CORS_ORIGINS", mode="before")
     @classmethod
     def parse_cors(cls, v: str | list) -> list[str]:
         if isinstance(v, str):
+            if v.startswith("[") and v.endswith("]"):
+                return [origin.strip().strip('"').strip("'") for origin in v.strip("[]").split(",")]
             return [origin.strip() for origin in v.split(",")]
         return v
 
