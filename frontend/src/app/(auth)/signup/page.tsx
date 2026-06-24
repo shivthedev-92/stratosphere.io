@@ -4,7 +4,7 @@ import { useState, FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { BackgroundShell } from "@/components/background-shell";
-import { api, saveToken } from "@/lib/api";
+import { api } from "@/lib/api";
 
 export default function SignupPage() {
   const router = useRouter();
@@ -19,8 +19,7 @@ export default function SignupPage() {
     setError("");
     setLoading(true);
     try {
-      const { access_token } = await api.signup(email, password, name);
-      saveToken(access_token);
+      await api.signup(email, password, name);
       router.push("/dashboard");
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Signup failed");
@@ -83,6 +82,11 @@ export default function SignupPage() {
             {loading ? "Creating account…" : "Create account"}
           </button>
         </form>
+
+        <p className="text-center text-xs leading-5 text-neutral-500">
+          By creating an account, you acknowledge the{" "}
+          <Link href="/privacy" className="text-indigo-400 hover:underline">privacy notice</Link>.
+        </p>
 
         <p className="text-center text-sm text-neutral-500">
           Already have an account?{" "}

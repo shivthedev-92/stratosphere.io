@@ -15,22 +15,64 @@
 from datetime import date, datetime
 from uuid import UUID
 
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, Field, field_validator
 
 
 class SignupIn(BaseModel):
     email: EmailStr
-    password: str
-    name: str
+    password: str = Field(min_length=8, max_length=72)
+    name: str = Field(min_length=1, max_length=160)
+
+    @field_validator("email", mode="after")
+    @classmethod
+    def normalize_email(cls, value: EmailStr) -> str:
+        return str(value).strip().lower()
+
+    @field_validator("name", mode="after")
+    @classmethod
+    def normalize_name(cls, value: str) -> str:
+        value = value.strip()
+        if not value:
+            raise ValueError("Name cannot be blank")
+        return value
+
+    @field_validator("password", mode="after")
+    @classmethod
+    def enforce_bcrypt_limit(cls, value: str) -> str:
+        if len(value.encode("utf-8")) > 72:
+            raise ValueError("Password must be at most 72 bytes")
+        return value
 
 
 class LoginIn(BaseModel):
     email: EmailStr
     password: str
 
+    @field_validator("email", mode="after")
+    @classmethod
+    def normalize_email(cls, value: EmailStr) -> str:
+        return str(value).strip().lower()
+
 
 class PasswordResetRequestIn(BaseModel):
     email: EmailStr
+
+    @field_validator("email", mode="after")
+    @classmethod
+    def normalize_email(cls, value: EmailStr) -> str:
+        return str(value).strip().lower()
+
+
+class PasswordResetConfirmIn(BaseModel):
+    token: str = Field(min_length=32, max_length=256)
+    password: str = Field(min_length=8, max_length=72)
+
+    @field_validator("password", mode="after")
+    @classmethod
+    def enforce_bcrypt_limit(cls, value: str) -> str:
+        if len(value.encode("utf-8")) > 72:
+            raise ValueError("Password must be at most 72 bytes")
+        return value
 
 
 class MessageOut(BaseModel):
@@ -55,7 +97,15 @@ class UserOut(BaseModel):
 
 
 class UserUpdate(BaseModel):
-    name: str
-    phone_number: str | None = None
+    name: str = Field(min_length=1, max_length=160)
+    phone_number: str | None = Field(default=None, max_length=40)
     date_of_birth: date | None = None
     in_app_notifications_enabled: bool = True
+
+    @field_validator("name", mode="after")
+    @classmethod
+    def normalize_name(cls, value: str) -> str:
+        value = value.strip()
+        if not value:
+            raise ValueError("Name cannot be blank")
+        return value

@@ -12,16 +12,17 @@
 # Version 0.1.0 | 2024-06
 ############################################################################
 
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends, HTTPException, Request, status
 from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError
 from sqlalchemy.orm import Session
 
+from app.config import settings
 from app.db import get_db
 from app.models.user import User
 from app.security import decode_access_token
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login", auto_error=False)
 
 
 #==================#
@@ -29,7 +30,8 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
 #==================#
 
 def get_current_user(
-    token: str = Depends(oauth2_scheme),
+    request: Request,
+    token: str | None = Depends(oauth2_scheme),
     db: Session = Depends(get_db),
 ) -> User:
     credentials_exception = HTTPException(
@@ -37,8 +39,11 @@ def get_current_user(
         detail="Invalid credentials",
         headers={"WWW-Authenticate": "Bearer"},
     )
+    access_token = token or request.cookies.get(settings.ACCESS_COOKIE_NAME)
+    if not access_token:
+        raise credentials_exception
     try:
-        user_id = decode_access_token(token)
+        user_id = decode_access_token(access_token)
     except JWTError:
         raise credentials_exception
 

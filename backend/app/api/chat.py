@@ -78,7 +78,10 @@ def get_chat_session(
     session = get_owned_session(session_id, current_user, db)
     messages = (
         db.query(ChatMessageRecord)
-        .filter(ChatMessageRecord.session_id == session.id, ChatMessageRecord.user_id == current_user.id)
+        .filter(
+            ChatMessageRecord.session_id == session.id,
+            ChatMessageRecord.user_id == current_user.id,
+        )
         .order_by(ChatMessageRecord.created_at.asc())
         .all()
     )
@@ -94,12 +97,18 @@ async def chat(
     session = get_or_create_session(data, current_user, db)
     saved_messages = (
         db.query(ChatMessageRecord)
-        .filter(ChatMessageRecord.session_id == session.id, ChatMessageRecord.user_id == current_user.id)
-        .order_by(ChatMessageRecord.created_at.asc())
+        .filter(
+            ChatMessageRecord.session_id == session.id,
+            ChatMessageRecord.user_id == current_user.id,
+        )
+        .order_by(ChatMessageRecord.created_at.desc())
         .limit(30)
         .all()
     )
-    history = [ChatMessage(role=message.role, content=message.content) for message in saved_messages]
+    saved_messages.reverse()
+    history = [
+        ChatMessage(role=message.role, content=message.content) for message in saved_messages
+    ]
     if not history:
         history = data.history[-20:]
 
@@ -135,7 +144,10 @@ def get_or_create_session(data: ChatIn, current_user: User, db: Session) -> Chat
     if data.session_id:
         session = get_owned_session(data.session_id, current_user, db)
         if data.goal_id and session.goal_id and session.goal_id != data.goal_id:
-            raise HTTPException(status_code=400, detail="Chat session is already linked to a different task")
+            raise HTTPException(
+                status_code=400,
+                detail="Chat session is already linked to a different task",
+            )
         if data.goal_id and not session.goal_id:
             get_owned_goal(data.goal_id, current_user, db)
             session.goal_id = data.goal_id
@@ -221,7 +233,8 @@ def build_task_context(current_user: User, db: Session, focus_goal_id: UUID | No
         if latest_log:
             status = "task completed" if goal.completed else "task open"
         lines.append(
-            f"{index}. {emoji}{goal.title} | priority={goal.priority} | scheduled_for={scheduled_for} | latest_status={status}"
+            f"{index}. {emoji}{goal.title} | priority={goal.priority} | "
+            f"scheduled_for={scheduled_for} | latest_status={status}"
         )
         if goal.notes:
             lines.append(f"   Notes: {truncate_text(goal.notes, 180)}")
@@ -237,7 +250,8 @@ def build_task_context(current_user: User, db: Session, focus_goal_id: UUID | No
             created_at = log.created_at.isoformat() if log.created_at else "unknown date"
             emotion = log.emotion_label or "not set"
             lines.append(
-                f"- {created_at}: emotion={emotion}, reflection={truncate_text(log.reflection, 160)}"
+                f"- {created_at}: emotion={emotion}, "
+                f"reflection={truncate_text(log.reflection, 160)}"
             )
 
     return "\n".join(lines)

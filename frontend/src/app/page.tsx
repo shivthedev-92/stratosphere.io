@@ -166,6 +166,10 @@ export default function Home() {
             <ContactForm source="marketing" />
           </div>
         </section>
+        <footer className="mx-auto flex w-full max-w-6xl items-center justify-between gap-4 px-6 py-8 text-sm text-neutral-500">
+          <span>Stratosphere recruiter demonstration</span>
+          <Link href="/privacy" className="hover:text-neutral-300">Privacy</Link>
+        </footer>
       </main>
     </BackgroundShell>
   );

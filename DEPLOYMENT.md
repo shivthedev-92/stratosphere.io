@@ -1,134 +1,150 @@
-# Stratosphere Deployment Guide
+# AWS Recruiter Demo Deployment
 
-This setup is for a recruiter/demo deployment without buying a domain.
+This guide deploys Stratosphere to one EC2 instance. It is intentionally small and inexpensive,
+not highly available. The instance runs Caddy, Next.js, FastAPI, and PostgreSQL with Docker Compose.
 
-## Target Architecture
+## Architecture
 
-| Layer | Host | Notes |
+```text
+Browser --HTTPS--> Caddy --> Next.js
+                         \-> /api/* --> FastAPI --> PostgreSQL
+```
+
+Caddy obtains and renews the TLS certificate. PostgreSQL is not published to the internet. The web
+client uses an HttpOnly, Secure, SameSite cookie; the mobile client can continue using bearer tokens.
+
+## AWS Free Tier note
+
+AWS accounts created on or after July 15, 2025 use credits rather than the old 12-month allowance.
+The free plan ends after six months or when credits are exhausted. Confirm eligibility in the Billing
+console before creating resources and create a zero-dollar or low-dollar AWS Budget first.
+
+## 1. Create the EC2 host
+
+Recommended demo configuration:
+
+- Ubuntu Server 24.04 LTS, 64-bit x86
+- `t3.small` when shown as Free Tier eligible; otherwise choose an eligible micro/small type
+- 20 GiB encrypted `gp3` root volume
+- Elastic IP only if you need a stable address; release it when the demo is removed
+- IAM role allowing uploads only to a dedicated backup S3 bucket, if backups are enabled
+
+Security group inbound rules:
+
+| Port | Source | Purpose |
 | --- | --- | --- |
-| Backend API | Render Web Service | FastAPI served by Uvicorn |
-| Database | Render PostgreSQL | Alembic migrations run on service start |
-| Web app | Netlify | Next.js promotional site and authenticated web app |
-| Mobile app | Local Expo for now | Can point to Render API later |
+| 22 | Your IP only | Administration |
+| 80 | `0.0.0.0/0`, `::/0` | TLS certificate and redirect |
+| 443 | `0.0.0.0/0`, `::/0` | Application |
 
-## 1. Render Backend + Database
+Do not open ports 3000, 5432, or 8000.
 
-Use the root `render.yaml` blueprint, or create manually.
+## 2. Install Docker
 
-### Render Blueprint
-
-1. Push this repo to GitHub.
-2. In Render, choose **New > Blueprint**.
-3. Select the repo.
-4. Render should detect `render.yaml`.
-5. Create the `stratosphere-api` web service and `stratosphere-db` database.
-
-### Render Service Settings
-
-If creating manually:
-
-| Setting | Value |
-| --- | --- |
-| Root directory | `backend` |
-| Build command | `pip install -r requirements.txt` |
-| Start command | `alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port $PORT` |
-| Health check path | `/health` |
-
-### Required Render Environment Variables
-
-| Key | Value |
-| --- | --- |
-| `DATABASE_URL` | Render PostgreSQL internal connection string |
-| `JWT_SECRET` | Generate a long random secret |
-| `JWT_ALGORITHM` | `HS256` |
-| `JWT_EXPIRE_MINUTES` | `10080` |
-| `CORS_ORIGINS` | Your Netlify URL, for example `https://your-site.netlify.app` |
-| `AI_PROVIDER` | `ollama` for demo placeholder, or `anthropic` if using hosted API |
-| `OLLAMA_HOST` | `http://localhost:11434` unless self-hosting Ollama |
-| `OLLAMA_MODEL` | `hermes3:3b` |
-
-Render's PostgreSQL URL can be `postgresql://...`; the backend normalizes it to `postgresql+psycopg://...`.
-
-## 2. Netlify Frontend
-
-1. In Netlify, choose **Add new site > Import an existing project**.
-2. Select this repo.
-3. Netlify should read `netlify.toml`.
-4. Add environment variable:
-
-| Key | Value |
-| --- | --- |
-| `NEXT_PUBLIC_API_BASE_URL` | Your Render API URL, for example `https://stratosphere-api.onrender.com` |
-
-5. Deploy the site.
-
-## 3. Connect CORS
-
-After Netlify gives you a URL:
-
-1. Copy the Netlify URL.
-2. Go to Render `stratosphere-api > Environment`.
-3. Set:
-
-```text
-CORS_ORIGINS=https://your-site.netlify.app
-```
-
-For multiple origins:
-
-```text
-CORS_ORIGINS=https://your-site.netlify.app,http://localhost:3000
-```
-
-4. Redeploy/restart the Render backend.
-
-## 4. Demo Test Checklist
-
-Test these on the Netlify URL:
-
-1. Promotional page loads.
-2. Contact sales/support form submits.
-3. Signup creates a user.
-4. Login works.
-5. Dashboard loads.
-6. Create action item.
-7. Edit/delete action item.
-8. Add journal reflection.
-9. Notifications modal opens.
-10. Profile settings opens.
-11. Settings contact form submits.
-
-## 5. AI Coach Demo Note
-
-The AI coach currently defaults to local Ollama. Render free services do not include a local Ollama server.
-
-For recruiter demo, keep the AI page visible but explain:
-
-- The app has FastAPI-to-Ollama integration in local/dev mode.
-- Production AI can be enabled later with a hosted model provider or a separate Ollama server.
-
-If using Anthropic later, set:
-
-```text
-AI_PROVIDER=anthropic
-ANTHROPIC_API_KEY=<your-api-key>
-ANTHROPIC_MODEL=<chosen-model>
-```
-
-## 6. Useful Local Commands
-
-Backend:
+SSH into the instance and install Docker from Docker's official Ubuntu repository. Add the Ubuntu user
+to the `docker` group, log out, and reconnect. Verify with:
 
 ```bash
-cd backend
-uv run alembic upgrade head
-uv run uvicorn app.main:app --host 0.0.0.0 --port 8001
+docker version
+docker compose version
 ```
 
-Frontend:
+On a small instance, add 2 GiB of swap before building the Next.js image to avoid an out-of-memory
+failure during `next build`.
+
+## 3. Configure DNS and secrets
+
+Use a domain you control when possible. For a temporary demo without a purchased domain, a hostname
+such as `<PUBLIC_IP>.sslip.io` resolves to the embedded public IP. Do not include `http://` in
+`SITE_ADDRESS`.
 
 ```bash
-cd frontend
-npm run build
-npm run dev
+git clone <your-repository-url> stratosphere.io
+cd stratosphere.io
+cp .env.aws.example .env.aws
+chmod 600 .env.aws
 ```
+
+Edit `.env.aws`:
+
+```text
+SITE_ADDRESS=<PUBLIC_IP>.sslip.io
+PUBLIC_URL=https://<PUBLIC_IP>.sslip.io
+POSTGRES_PASSWORD=<long random value>
+JWT_SECRET=<at least 32 random bytes>
+```
+
+Generate secrets with `openssl rand -hex 32`. The production Compose file disables public API docs
+and the AI coach by default.
+
+## 4. Deploy
+
+```bash
+docker compose --env-file .env.aws -f docker-compose.aws.yml up -d --build
+docker compose --env-file .env.aws -f docker-compose.aws.yml ps
+docker compose --env-file .env.aws -f docker-compose.aws.yml logs --tail=100 api caddy
+```
+
+Migrations run automatically before the API starts. Confirm:
+
+```bash
+curl -fsS https://<hostname>/api/health
+```
+
+Then complete the smoke-test checklist below.
+
+## 5. Optional email and AI
+
+Password reset works end-to-end when SMTP is configured. AWS SES SMTP credentials can be supplied as:
+
+```text
+SMTP_HOST=email-smtp.<region>.amazonaws.com
+SMTP_PORT=587
+SMTP_USERNAME=<SES SMTP username>
+SMTP_PASSWORD=<SES SMTP password>
+SMTP_FROM_EMAIL=<verified sender>
+SMTP_USE_TLS=true
+```
+
+SES sandbox accounts can only send to verified recipients. Without SMTP, reset requests intentionally
+return the same generic response but no email is delivered.
+
+To enable the hosted AI coach, set `AI_PROVIDER=anthropic` and provide `ANTHROPIC_API_KEY`. User task
+and reflection context is sent to that provider. Do not run Ollama on this small shared instance.
+
+## 6. Backups and updates
+
+Create a database backup before every deployment:
+
+```bash
+docker compose --env-file .env.aws -f docker-compose.aws.yml exec -T db \
+  pg_dump -U stratosphere -d stratosphere --format=custom > stratosphere.dump
+```
+
+Copy the dump to a private, encrypted S3 bucket if the demo contains data. Test restoration before
+depending on backups. To update:
+
+```bash
+git pull --ff-only
+docker compose --env-file .env.aws -f docker-compose.aws.yml up -d --build
+docker image prune -f
+```
+
+## 7. Smoke test
+
+1. Landing page and privacy page load over HTTPS.
+2. Signup, logout, and login work.
+3. Create, edit, complete, reflect on, and delete a task.
+4. Cross-account task IDs return 404.
+5. Notification actions work and missing IDs return 404.
+6. Public support submission works and throttles repeated requests.
+7. AI coach shows a controlled disabled message unless configured.
+8. Password-reset email and consumption work if SMTP is configured.
+9. Account deletion removes the user and prevents subsequent login.
+10. Reboot the instance and confirm all containers recover.
+
+## 8. Teardown
+
+Export any required data, then terminate the EC2 instance, release its Elastic IP, delete unused EBS
+snapshots, remove the backup bucket if appropriate, and verify the AWS Billing console shows no active
+resources.

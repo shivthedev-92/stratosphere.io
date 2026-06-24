@@ -28,7 +28,12 @@ class User(Base):
     name = Column(String, nullable=False)
     phone_number = Column(String, nullable=True)
     date_of_birth = Column(Date, nullable=True)
-    in_app_notifications_enabled = Column(Boolean, nullable=False, default=True, server_default="true")
+    in_app_notifications_enabled = Column(
+        Boolean,
+        nullable=False,
+        default=True,
+        server_default="true",
+    )
     age_group = Column(String, nullable=True)
     career_track = Column(String, nullable=True)
     hashed_password = Column(String, nullable=False)

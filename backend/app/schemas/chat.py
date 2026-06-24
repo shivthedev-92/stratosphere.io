@@ -12,21 +12,21 @@
 # Version 0.1.0 | 2024-06
 ############################################################################
 
+from datetime import datetime
 from typing import Literal
 from uuid import UUID
 
-from pydantic import BaseModel
-from datetime import datetime
+from pydantic import BaseModel, Field
 
 
 class ChatMessage(BaseModel):
     role: Literal["user", "assistant"]
-    content: str
+    content: str = Field(min_length=1, max_length=8000)
 
 
 class ChatIn(BaseModel):
-    message: str
-    history: list[ChatMessage] = []
+    message: str = Field(min_length=1, max_length=8000)
+    history: list[ChatMessage] = Field(default_factory=list, max_length=30)
     session_id: UUID | None = None
     goal_id: UUID | None = None
 
@@ -37,7 +37,7 @@ class ChatOut(BaseModel):
 
 
 class ChatSessionCreate(BaseModel):
-    title: str | None = None
+    title: str | None = Field(default=None, max_length=200)
     goal_id: UUID | None = None
 
 

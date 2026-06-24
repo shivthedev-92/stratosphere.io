@@ -28,12 +28,23 @@ class Settings(BaseSettings):
     JWT_SECRET: str
     JWT_ALGORITHM: str = "HS256"
     JWT_EXPIRE_MINUTES: int = 60 * 24 * 7
+    ACCESS_COOKIE_NAME: str = "stratosphere_access_token"
+    ACCESS_COOKIE_SECURE: bool = False
+    API_DOCS_ENABLED: bool = True
 
-    AI_PROVIDER: Literal["ollama", "anthropic"] = "ollama"
+    AI_PROVIDER: Literal["disabled", "ollama", "anthropic"] = "ollama"
     OLLAMA_HOST: str = "http://localhost:11434"
     OLLAMA_MODEL: str = "llama3.1:8b"
     ANTHROPIC_API_KEY: str | None = None
     ANTHROPIC_MODEL: str = "claude-opus-4-7"
+
+    FRONTEND_URL: str = "http://localhost:3000"
+    SMTP_HOST: str | None = None
+    SMTP_PORT: int = 587
+    SMTP_USERNAME: str | None = None
+    SMTP_PASSWORD: str | None = None
+    SMTP_FROM_EMAIL: str | None = None
+    SMTP_USE_TLS: bool = True
 
     CORS_ORIGINS: str = "http://localhost:3000"
 

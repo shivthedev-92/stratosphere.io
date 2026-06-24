@@ -97,10 +97,16 @@ class OllamaCoach:
             except httpx.TimeoutException as exc:
                 raise HTTPException(
                     status_code=504,
-                    detail="The local AI model took too long to respond. Try a shorter message or use a smaller Ollama model.",
+                    detail=(
+                        "The local AI model took too long to respond. "
+                        "Try a shorter message or use a smaller Ollama model."
+                    ),
                 ) from exc
             except httpx.HTTPError as exc:
-                raise HTTPException(status_code=502, detail="The local AI model is not responding correctly.") from exc
+                raise HTTPException(
+                    status_code=502,
+                    detail="The local AI model is not responding correctly.",
+                ) from exc
             return response.json()["message"]["content"]
 
 
@@ -145,6 +151,8 @@ class AnthropicCoach:
 
 
 def get_coach() -> CoachProvider:
+    if settings.AI_PROVIDER == "disabled":
+        raise HTTPException(status_code=503, detail="The AI coach is disabled for this deployment.")
     if settings.AI_PROVIDER == "anthropic":
         return AnthropicCoach()
     return OllamaCoach()

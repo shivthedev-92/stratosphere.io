@@ -10,7 +10,7 @@
 from datetime import UTC, datetime
 from uuid import UUID
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app.db import get_db
@@ -84,8 +84,10 @@ def mark_notification_read(
     notification = (
         db.query(Notification)
         .filter(Notification.id == notification_id, Notification.user_id == current_user.id)
-        .one()
+        .first()
     )
+    if notification is None:
+        raise HTTPException(status_code=404, detail="Notification not found")
     if notification.read_at is None:
         notification.read_at = datetime.now(UTC)
         db.add(notification)
@@ -103,8 +105,10 @@ def acknowledge_notification(
     notification = (
         db.query(Notification)
         .filter(Notification.id == notification_id, Notification.user_id == current_user.id)
-        .one()
+        .first()
     )
+    if notification is None:
+        raise HTTPException(status_code=404, detail="Notification not found")
     now = datetime.now(UTC)
     notification.acknowledged_at = notification.acknowledged_at or now
     notification.read_at = notification.read_at or now

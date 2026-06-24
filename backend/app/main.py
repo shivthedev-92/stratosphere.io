@@ -17,12 +17,21 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.api import auth, chat, goals, me, notifications, support
 from app.config import settings
+from app.rate_limit import RateLimitMiddleware
 
 #====================#
 # App Initialization |
 #====================#
 
-app = FastAPI(title="Productivity App API", version="0.1.0")
+app = FastAPI(
+    title="Productivity App API",
+    version="0.1.0",
+    docs_url="/docs" if settings.API_DOCS_ENABLED else None,
+    redoc_url="/redoc" if settings.API_DOCS_ENABLED else None,
+    openapi_url="/openapi.json" if settings.API_DOCS_ENABLED else None,
+)
+
+app.add_middleware(RateLimitMiddleware)
 
 app.add_middleware(
     CORSMiddleware,

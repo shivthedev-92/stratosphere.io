@@ -12,11 +12,12 @@
 # Version 0.1.0 | 2024-06
 ############################################################################
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, status
 from sqlalchemy.orm import Session
 
 from app.db import get_db
 from app.deps import get_current_user
+from app.models.support import SupportTicket
 from app.models.user import User
 from app.schemas.auth import UserOut, UserUpdate
 
@@ -42,3 +43,16 @@ def update_me(
     db.commit()
     db.refresh(current_user)
     return current_user
+
+
+@router.delete("/me", status_code=status.HTTP_204_NO_CONTENT)
+def delete_me(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> None:
+    # Support tickets use SET NULL so remove them explicitly to erase submitted PII.
+    db.query(SupportTicket).filter(SupportTicket.user_id == current_user.id).delete(
+        synchronize_session=False
+    )
+    db.delete(current_user)
+    db.commit()

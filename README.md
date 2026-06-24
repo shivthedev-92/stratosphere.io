@@ -9,7 +9,7 @@ A habit-building and life-coaching app. See [`system-prompt.txt`](./system-promp
 | Frontend | Next.js 16 (App Router) + TypeScript + Tailwind |
 | Backend | FastAPI + SQLAlchemy 2 + Alembic |
 | Database | PostgreSQL 16 |
-| Auth | JWT + bcrypt (own-rolled) |
+| Auth | JWT + bcrypt; HttpOnly web cookie and mobile bearer token |
 | AI Coach | Ollama (default) · Anthropic API (optional) |
 
 ---
@@ -87,6 +87,14 @@ ANTHROPIC_MODEL=claude-opus-4-7
 ```
 
 Restart the backend. No code changes needed.
+
+---
+
+## AWS recruiter demo
+
+The production demo uses Docker Compose on one EC2 instance with Caddy-managed HTTPS, Next.js,
+FastAPI, and PostgreSQL. Follow [`DEPLOYMENT.md`](./DEPLOYMENT.md). The production configuration
+disables the AI coach until a hosted provider is explicitly configured.
 
 ---
 

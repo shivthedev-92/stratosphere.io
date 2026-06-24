@@ -1,8 +1,9 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Request
 from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError
 from sqlalchemy.orm import Session
 
+from app.config import settings
 from app.db import get_db
 from app.models.support import SupportTicket
 from app.models.user import User
@@ -14,13 +15,15 @@ optional_oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login", auto_error
 
 
 def get_optional_user(
+    request: Request,
     token: str | None = Depends(optional_oauth2_scheme),
     db: Session = Depends(get_db),
 ) -> User | None:
-    if not token:
+    access_token = token or request.cookies.get(settings.ACCESS_COOKIE_NAME)
+    if not access_token:
         return None
     try:
-        user_id = decode_access_token(token)
+        user_id = decode_access_token(access_token)
     except JWTError:
         return None
     return db.query(User).filter(User.id == user_id).first()
@@ -33,7 +36,11 @@ def create_support_ticket(
     db: Session = Depends(get_db),
 ) -> SupportTicket:
     name = ticket_in.name or (current_user.name if current_user else None)
-    email = str(ticket_in.email) if ticket_in.email else (current_user.email if current_user else None)
+    email = (
+        str(ticket_in.email)
+        if ticket_in.email
+        else (current_user.email if current_user else None)
+    )
     ticket = SupportTicket(
         user_id=current_user.id if current_user else None,
         name=name,

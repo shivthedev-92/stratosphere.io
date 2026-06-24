@@ -19,7 +19,6 @@ from jose import jwt
 
 from app.config import settings
 
-
 #==================#
 # Hashing Password |
 #==================#

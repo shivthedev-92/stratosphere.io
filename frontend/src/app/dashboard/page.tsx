@@ -244,9 +244,27 @@ export default function DashboardPage() {
     };
   }, [goals.length, isTimed]);
 
-  function handleLogout() {
+  async function handleLogout() {
+    await api.logout().catch(() => undefined);
     clearToken();
     router.push("/");
+  }
+
+  async function handleDeleteAccount() {
+    const confirmed = window.confirm(
+      "Permanently delete your account, tasks, reflections, chats, and support tickets? This cannot be undone.",
+    );
+    if (!confirmed) return;
+    setSaving(true);
+    try {
+      await api.deleteMe();
+      clearToken();
+      router.push("/");
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Could not delete account");
+    } finally {
+      setSaving(false);
+    }
   }
 
   async function handleMarkAllNotificationsRead() {
@@ -575,6 +593,20 @@ export default function DashboardPage() {
                 <div className="mt-5">
                   <ContactForm defaultName={user.name} defaultEmail={user.email} source="web" />
                 </div>
+              </div>
+              <div className="mt-6 rounded-lg border border-red-900/70 bg-red-950/20 p-4">
+                <h3 className="text-base font-bold text-red-200">Delete account</h3>
+                <p className="mt-1 text-sm text-neutral-400">
+                  Permanently removes your profile, tasks, reflections, chats, notifications, and support tickets.
+                </p>
+                <button
+                  type="button"
+                  onClick={handleDeleteAccount}
+                  disabled={saving}
+                  className="mt-4 rounded-lg border border-red-700 px-4 py-2 text-sm font-semibold text-red-200 hover:bg-red-950/60 disabled:opacity-50"
+                >
+                  Delete my account
+                </button>
               </div>
             </section>
           </div>

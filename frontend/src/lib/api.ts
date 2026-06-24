@@ -1,27 +1,16 @@
 const BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000";
 
-function getToken(): string | null {
-  if (typeof window === "undefined") return null;
-  return localStorage.getItem("token");
-}
-
-export function saveToken(token: string): void {
-  localStorage.setItem("token", token);
-}
-
 export function clearToken(): void {
+  // Remove tokens created by older versions. Current web auth uses an HttpOnly cookie.
   localStorage.removeItem("token");
 }
 
 async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
-  const token = getToken();
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
     ...(init.headers as Record<string, string>),
   };
-  if (token) headers["Authorization"] = `Bearer ${token}`;
-
-  const res = await fetch(`${BASE_URL}${path}`, { ...init, headers });
+  const res = await fetch(`${BASE_URL}${path}`, { ...init, headers, credentials: "include" });
   if (!res.ok) {
     const body = await res.json().catch(() => ({}));
     throw new Error(body?.detail ?? `HTTP ${res.status}`);
@@ -184,10 +173,18 @@ export const api = {
       body: JSON.stringify({ email, password }),
     }),
 
+  logout: () => request<void>("/auth/logout", { method: "POST" }),
+
   requestPasswordReset: (email: string) =>
     request<MessageOut>("/auth/password-reset/request", {
       method: "POST",
       body: JSON.stringify({ email }),
+    }),
+
+  confirmPasswordReset: (token: string, password: string) =>
+    request<MessageOut>("/auth/password-reset/confirm", {
+      method: "POST",
+      body: JSON.stringify({ token, password }),
     }),
 
   me: () => request<UserOut>("/me"),
@@ -197,6 +194,8 @@ export const api = {
       method: "PATCH",
       body: JSON.stringify(data),
     }),
+
+  deleteMe: () => request<void>("/me", { method: "DELETE" }),
 
   notifications: () => request<NotificationOut[]>("/notifications"),
 
