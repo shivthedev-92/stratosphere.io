@@ -75,6 +75,8 @@ def reset_password(db: Session, token: str, password: str) -> bool:
     if expires_at <= datetime.now(timezone.utc):
         return False
     user.hashed_password = hash_password(password)
+    # Invalidate every access token issued before this reset.
+    user.token_version = (user.token_version or 0) + 1
     user.password_reset_token_hash = None
     user.password_reset_expires_at = None
     db.add(user)

@@ -14,6 +14,10 @@
         X-Content-Type-Options "nosniff"
         X-Frame-Options "DENY"
         Referrer-Policy "strict-origin-when-cross-origin"
+        # script-src keeps 'unsafe-inline' because Next.js injects inline
+        # hydration scripts. Tightening it further requires nonce-based CSP
+        # via middleware — worth doing later, not required for the demo.
+        Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'"
         Permissions-Policy "camera=(), microphone=(), geolocation=()"
         -Server
     }

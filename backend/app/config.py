@@ -29,8 +29,10 @@ class Settings(BaseSettings):
     JWT_ALGORITHM: str = "HS256"
     JWT_EXPIRE_MINUTES: int = 60 * 24 * 7
     ACCESS_COOKIE_NAME: str = "stratosphere_access_token"
-    ACCESS_COOKIE_SECURE: bool = False
-    API_DOCS_ENABLED: bool = True
+    # Secure-by-default: a deploy that forgets these env vars fails closed
+    # (cookies stay HTTPS-only, docs stay private). Local dev opts out via .env.
+    ACCESS_COOKIE_SECURE: bool = True
+    API_DOCS_ENABLED: bool = False
 
     AI_PROVIDER: Literal["disabled", "ollama", "anthropic"] = "ollama"
     OLLAMA_HOST: str = "http://localhost:11434"
@@ -47,6 +49,12 @@ class Settings(BaseSettings):
     SMTP_USE_TLS: bool = True
 
     CORS_ORIGINS: str = "http://localhost:3000"
+
+    # Number of proxies that append to X-Forwarded-For in front of this app.
+    # 1 = Caddy only (the single-VM deployment). Raise to 2 behind Azure
+    # Application Gateway or Container Apps ingress, or rate limiting will key
+    # every request on the ingress IP instead of the caller's.
+    TRUSTED_PROXY_HOPS: int = 1
 
     @field_validator("DATABASE_URL", mode="before")
     @classmethod

@@ -12,11 +12,15 @@
 # Version 0.1.0 | 2024-06
 ############################################################################
 
-from fastapi import FastAPI
+from fastapi import Depends, FastAPI, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy import text
+from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.orm import Session
 
 from app.api import auth, chat, goals, me, notifications, support
 from app.config import settings
+from app.db import get_db
 from app.rate_limit import RateLimitMiddleware
 
 #====================#
@@ -58,4 +62,18 @@ app.include_router(support.router)
 
 @app.get("/health")
 def health() -> dict:
+    """Liveness: the process is up. Cheap enough to poll frequently."""
     return {"ok": True}
+
+
+@app.get("/health/ready")
+def readiness(db: Session = Depends(get_db)) -> dict:
+    """Readiness: dependencies are reachable. Point the Azure probe here."""
+    try:
+        db.execute(text("SELECT 1"))
+    except SQLAlchemyError:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Database unavailable",
+        )
+    return {"ok": True, "database": "up"}

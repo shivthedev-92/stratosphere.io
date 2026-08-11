@@ -26,7 +26,12 @@ from app.schemas.auth import (
     SignupIn,
     TokenOut,
 )
-from app.security import create_access_token, hash_password, verify_password
+from app.security import (
+    burn_password_verify,
+    create_access_token,
+    hash_password,
+    verify_password,
+)
 from app.services.password_reset import (
     RESET_REQUEST_MESSAGE,
     create_password_reset_request,
@@ -49,7 +54,7 @@ def signup(data: SignupIn, response: Response, db: Session = Depends(get_db)) ->
     db.add(user)
     db.commit()
     db.refresh(user)
-    token = create_access_token(str(user.id))
+    token = create_access_token(str(user.id), user.token_version)
     set_access_cookie(response, token)
     return TokenOut(access_token=token)
 
@@ -57,9 +62,14 @@ def signup(data: SignupIn, response: Response, db: Session = Depends(get_db)) ->
 @router.post("/login", response_model=TokenOut)
 def login(data: LoginIn, response: Response, db: Session = Depends(get_db)) -> TokenOut:
     user = db.query(User).filter(User.email == data.email).first()
-    if not user or not verify_password(data.password, user.hashed_password):
+    if user is None:
+        # Spend the bcrypt time anyway so a missing account is not detectable
+        # from response latency.
+        burn_password_verify()
         raise HTTPException(status_code=401, detail="Invalid credentials")
-    token = create_access_token(str(user.id))
+    if not verify_password(data.password, user.hashed_password):
+        raise HTTPException(status_code=401, detail="Invalid credentials")
+    token = create_access_token(str(user.id), user.token_version)
     set_access_cookie(response, token)
     return TokenOut(access_token=token)
 

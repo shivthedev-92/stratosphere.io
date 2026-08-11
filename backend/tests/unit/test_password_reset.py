@@ -41,6 +41,7 @@ class FakeUser:
     password_reset_token_hash = None
     password_reset_expires_at = None
     hashed_password = "old-hash"
+    token_version = 0
 
 
 def test_hash_reset_token_is_deterministic_and_not_plaintext():
@@ -91,6 +92,18 @@ def test_reset_password_consumes_valid_token():
     assert db.committed is True
 
 
+def test_reset_password_bumps_token_version_to_revoke_existing_sessions():
+    user = FakeUser()
+    user.token_version = 3
+    token = "valid-reset-token-with-enough-entropy"
+    user.password_reset_token_hash = hash_reset_token(token)
+    user.password_reset_expires_at = datetime.now(timezone.utc) + timedelta(minutes=5)
+    db = FakeSession(user)
+
+    assert reset_password(db, token, "new-secure-password") is True
+    assert user.token_version == 4
+
+
 def test_reset_password_rejects_expired_token():
     user = FakeUser()
     token = "expired-reset-token-with-enough-entropy"
@@ -100,4 +113,5 @@ def test_reset_password_rejects_expired_token():
 
     assert reset_password(db, token, "new-secure-password") is False
     assert user.hashed_password == "old-hash"
+    assert user.token_version == 0
     assert db.committed is False

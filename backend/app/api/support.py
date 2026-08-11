@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, Request
 from fastapi.security import OAuth2PasswordBearer
-from jose import JWTError
+from jwt import PyJWTError
 from sqlalchemy.orm import Session
 
 from app.config import settings
@@ -23,10 +23,14 @@ def get_optional_user(
     if not access_token:
         return None
     try:
-        user_id = decode_access_token(access_token)
-    except JWTError:
+        payload = decode_access_token(access_token)
+        user_id = payload["sub"]
+    except (PyJWTError, KeyError):
         return None
-    return db.query(User).filter(User.id == user_id).first()
+    user = db.query(User).filter(User.id == user_id).first()
+    if user is not None and payload.get("ver", 0) != user.token_version:
+        return None
+    return user
 
 
 @router.post("/tickets", response_model=SupportTicketOut, status_code=201)

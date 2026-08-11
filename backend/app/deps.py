@@ -14,7 +14,7 @@
 
 from fastapi import Depends, HTTPException, Request, status
 from fastapi.security import OAuth2PasswordBearer
-from jose import JWTError
+from jwt import PyJWTError
 from sqlalchemy.orm import Session
 
 from app.config import settings
@@ -43,11 +43,17 @@ def get_current_user(
     if not access_token:
         raise credentials_exception
     try:
-        user_id = decode_access_token(access_token)
-    except JWTError:
+        payload = decode_access_token(access_token)
+        user_id = payload["sub"]
+    except (PyJWTError, KeyError):
         raise credentials_exception
 
     user = db.query(User).filter(User.id == user_id).first()
     if user is None:
+        raise credentials_exception
+
+    # Reject tokens minted before the last password change, so a password reset
+    # actually revokes any session an attacker already holds.
+    if payload.get("ver", 0) != user.token_version:
         raise credentials_exception
     return user

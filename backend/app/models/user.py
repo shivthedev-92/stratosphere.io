@@ -14,7 +14,7 @@
 
 import uuid
 
-from sqlalchemy import Boolean, Column, Date, DateTime, String, func
+from sqlalchemy import Boolean, Column, Date, DateTime, Integer, String, func
 from sqlalchemy.dialects.postgresql import UUID
 
 from app.db import Base
@@ -37,6 +37,9 @@ class User(Base):
     age_group = Column(String, nullable=True)
     career_track = Column(String, nullable=True)
     hashed_password = Column(String, nullable=False)
+    # Bumped whenever the password changes. Access tokens carry the value they
+    # were minted with, so incrementing this invalidates every existing session.
+    token_version = Column(Integer, nullable=False, default=0, server_default="0")
     password_reset_token_hash = Column(String, nullable=True)
     password_reset_expires_at = Column(DateTime(timezone=True), nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
