@@ -27,5 +27,17 @@ pnpm-debug.log*
 # Local tooling
 .codex
 .codex/
-.claude/
+
+# Claude Code: share the skills and commands installed by graphify/openspec,
+# but keep per-machine settings out of the repo.
+.claude/*
+!.claude/skills/
+!.claude/commands/
+!.claude/settings.json
+!.claude/CLAUDE.md
+.claude/settings.local.json
+
+# Graphify build output — regenerate with `graphify update .`
+graphify-out/
+
 ZPROJECT_ASSETS/*
