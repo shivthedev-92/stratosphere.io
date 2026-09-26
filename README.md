@@ -26,7 +26,7 @@ A coach that knows your current tasks and recent reflections. Replies stream in 
 ![AI coach](docs/images/coach-chat.png)
 
 ### Safety first
-Stratosphere is a planning tool, not therapy. If a message or reflection contains self-harm or suicide language, the AI is **never called**: the user gets fixed, human-written guidance and verified Indian crisis lines instead. Reflections are always saved; the resources appear alongside them.
+Stratosphere is a planning tool, not therapy. When the crisis detector flags a chat message, the AI is **never called**: the user gets fixed, human-written guidance and verified Indian crisis lines instead. Flagged reflections are always saved, with the same resources shown alongside them. The detector matches explicit phrases, so it is a safety floor, not a guarantee.
 
 <img src="docs/images/safety-card.png" alt="Crisis resources card" width="520">
 
@@ -150,7 +150,7 @@ cd mobile && npx tsc --noEmit              # mobile type-check
 
 Stratosphere deploys to **Azure**: one Linux VM running Caddy, Next.js, FastAPI and PostgreSQL with Docker Compose. See [docs/deployment/azure.md](docs/deployment/azure.md) for provisioning, networking, TLS, deploys, backups and teardown.
 
-Older AWS, Render and Netlify setups are kept in [`deploy/archive/`](deploy/archive/README.md) for reference only.
+Older AWS, Render and Netlify setups are kept in [`deploy/archive/`](deploy/archive/README.md) for reference only. Note that Netlify stays connected to the repository and keeps building until it is disconnected in the Netlify site settings.
 
 ---
 

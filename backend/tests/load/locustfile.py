@@ -60,10 +60,11 @@ class SteadyStateUser(HttpUser):
     def on_start(self) -> None:
         self.email = unique_email()
         self.goal_ids: list[str] = []
-        # Every virtual user would otherwise share the load generator's single
-        # source address and land in one rate-limit bucket, so the run would
-        # measure the limiter rather than the application. Give each user a
-        # distinct forwarded address to mimic real, separate clients.
+        # A distinct forwarded address per user, to mimic separate clients.
+        # This only works when the test hits the API directly. Through Caddy,
+        # Caddy appends the load generator's own address and the limiter
+        # (correctly) uses that, so every user shares one rate-limit bucket;
+        # raise TRUSTED_PROXY_HOPS on a test stack if you need distinct ones.
         self.client.headers.update({"X-Forwarded-For": synthetic_client_ip()})
         response = self.client.post(
             "/auth/signup",
@@ -86,18 +87,26 @@ class SteadyStateUser(HttpUser):
 
     @task(10)
     def list_goals(self) -> None:
+        if not self.token:  # signup was throttled; this user idles
+            return
         self.client.get("/goals", name="GET /goals")
 
     @task(5)
     def read_profile(self) -> None:
+        if not self.token:  # signup was throttled; this user idles
+            return
         self.client.get("/me", name="GET /me")
 
     @task(4)
     def notification_summary(self) -> None:
+        if not self.token:  # signup was throttled; this user idles
+            return
         self.client.get("/notifications/summary", name="GET /notifications/summary")
 
     @task(3)
     def create_goal(self) -> None:
+        if not self.token:  # signup was throttled; this user idles
+            return
         response = self.client.post(
             "/goals",
             json={
@@ -113,6 +122,8 @@ class SteadyStateUser(HttpUser):
 
     @task(2)
     def reflect_on_goal(self) -> None:
+        if not self.token:  # signup was throttled; this user idles
+            return
         if not self.goal_ids:
             return
         goal_id = self.goal_ids[-1]
@@ -128,6 +139,8 @@ class SteadyStateUser(HttpUser):
 
     @task(1)
     def delete_goal(self) -> None:
+        if not self.token:  # signup was throttled; this user idles
+            return
         if not self.goal_ids:
             return
         goal_id = self.goal_ids.pop()

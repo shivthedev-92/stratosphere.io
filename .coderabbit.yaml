@@ -41,6 +41,11 @@ reviews:
     - "!**/dist/**"
     - "!**/__pycache__/**"
     - "!**/*.svg"
+    # Vendored copies of third-party agent tooling (graphify, OpenSpec).
+    # Fix issues upstream; local edits are overwritten on update.
+    - "!.agents/**"
+    - "!.claude/skills/**"
+    - "!.claude/commands/**"
     - "!**/*.jpg"
     - "!**/*.png"
 
