@@ -138,6 +138,17 @@ export type GoalLogCreate = {
   emotion_label?: EmotionLabel | null;
 };
 
+export type TelegramStatusOut = {
+  available: boolean;
+  linked: boolean;
+  linked_at: string | null;
+};
+
+export type TelegramLinkOut = {
+  url: string;
+  expires_at: string;
+};
+
 export type GoalLogOut = {
   id: string;
   goal_id: string;
@@ -256,6 +267,9 @@ export async function chatStream(
 }
 
 export const api = {
+  telegramStatus: () => request<TelegramStatusOut>("/me/telegram"),
+  telegramLink: () => request<TelegramLinkOut>("/me/telegram/link", { method: "POST" }),
+  telegramUnlink: () => request<void>("/me/telegram", { method: "DELETE" }),
   signup: (email: string, password: string, name: string) =>
     request<TokenOut>("/auth/signup", {
       method: "POST",

@@ -12,6 +12,9 @@
 # Version 0.1.0 | 2024-06
 ############################################################################
 
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
+
 from fastapi import Depends, FastAPI, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import text
@@ -20,14 +23,29 @@ from sqlalchemy.orm import Session
 
 from app.api import auth, chat, goals, me, notifications, support
 from app.config import settings
-from app.db import get_db
+from app.db import SessionLocal, get_db
 from app.rate_limit import RateLimitMiddleware
+from app.services.telegram import TelegramWorkers, telegram_configured
 
 #====================#
 # App Initialization |
 #====================#
 
+@asynccontextmanager
+async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
+    # Telegram reminders run in-process: production is a single uvicorn
+    # worker, and every send is claimed atomically in the database anyway.
+    workers = TelegramWorkers()
+    if telegram_configured() and settings.TELEGRAM_WORKER_ENABLED:
+        workers.start(SessionLocal)
+    try:
+        yield
+    finally:
+        await workers.stop()
+
+
 app = FastAPI(
+    lifespan=lifespan,
     title="Productivity App API",
     version="0.1.0",
     docs_url="/docs" if settings.API_DOCS_ENABLED else None,

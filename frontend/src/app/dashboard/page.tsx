@@ -35,6 +35,7 @@ import { CompletedReflectionsTable } from "@/components/completed-reflections-ta
 import { EmptyGoalsIllustration } from "@/components/illustrations";
 import { MonthPriorityCalendar } from "@/components/month-priority-calendar";
 import { MotivationalBanner } from "@/components/motivational-banner";
+import { TelegramSettings } from "@/components/telegram-settings";
 import { ProgressSystem } from "@/components/progress-system";
 import { ReflectGoalModal } from "@/components/reflect-goal-modal";
 import { TaskDetailModal } from "@/components/task-detail-modal";
@@ -592,6 +593,7 @@ export default function DashboardPage() {
                   <p className="mt-2 break-words text-sm font-semibold text-white">{user.email}</p>
                 </div>
               </div>
+              <TelegramSettings />
               <div className="mt-6 rounded-lg border border-white/10 bg-neutral-950/60 p-4">
                 <h3 className="text-base font-bold">Contact us</h3>
                 <p className="mt-1 text-sm text-neutral-400">

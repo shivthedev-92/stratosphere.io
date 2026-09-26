@@ -103,3 +103,17 @@ az group delete --name stratosphere-demo-rg
 ```
 
 Resource-group deletion is destructive and database data is not recoverable unless it was backed up elsewhere.
+
+## Telegram reminders (optional)
+
+Timed tasks can send a Telegram message when they are due. The bot runs inside the API container (long polling, no extra port or webhook).
+
+1. In Telegram, message [@BotFather](https://t.me/BotFather), send `/newbot`, and follow the prompts.
+2. Put the token and the bot's username (without `@`) in `.env.azure`:
+   ```
+   TELEGRAM_BOT_TOKEN=123456789:AA...
+   TELEGRAM_BOT_USERNAME=YourStratosphereBot
+   ```
+3. Redeploy. Each user then connects from **Settings → Telegram reminders → Connect Telegram** and presses **Start** in the bot.
+
+Reminders arrive within about 30 seconds of the task's time. Messages contain the task title only. Treat the token like a password: anyone with it can send messages as the bot.

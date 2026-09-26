@@ -14,7 +14,7 @@
 
 import uuid
 
-from sqlalchemy import Boolean, Column, Date, DateTime, Integer, String, func
+from sqlalchemy import BigInteger, Boolean, Column, Date, DateTime, Integer, String, func
 from sqlalchemy.dialects.postgresql import UUID
 
 from app.db import Base
@@ -42,4 +42,14 @@ class User(Base):
     token_version = Column(Integer, nullable=False, default=0, server_default="0")
     password_reset_token_hash = Column(String, nullable=True)
     password_reset_expires_at = Column(DateTime(timezone=True), nullable=True)
+    # Telegram reminders. The chat id is set when the user presses Start in
+    # the bot with a valid one-time link token (hashed, short-lived).
+    telegram_chat_id = Column(BigInteger, nullable=True, unique=True)
+    telegram_linked_at = Column(DateTime(timezone=True), nullable=True)
+    telegram_link_token_hash = Column(String, nullable=True)
+    telegram_link_expires_at = Column(DateTime(timezone=True), nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    @property
+    def telegram_linked(self) -> bool:
+        return self.telegram_chat_id is not None

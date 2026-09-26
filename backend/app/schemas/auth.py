@@ -109,3 +109,14 @@ class UserUpdate(BaseModel):
         if not value:
             raise ValueError("Name cannot be blank")
         return value
+
+
+class TelegramStatusOut(BaseModel):
+    available: bool
+    linked: bool
+    linked_at: datetime | None
+
+
+class TelegramLinkOut(BaseModel):
+    url: str
+    expires_at: datetime

@@ -50,6 +50,16 @@ class Settings(BaseSettings):
 
     CORS_ORIGINS: str = "http://localhost:3000"
 
+    # Telegram reminders. Both token and username (without @) come from
+    # @BotFather; leave them unset to disable the feature entirely.
+    TELEGRAM_BOT_TOKEN: str | None = None
+    TELEGRAM_BOT_USERNAME: str | None = None
+    TELEGRAM_API_BASE: str = "https://api.telegram.org"
+    # The reminder sender and bot poller run inside the API process. Turn
+    # off for any extra process that must not also send (e.g. a one-off
+    # script), so reminders are not delivered twice.
+    TELEGRAM_WORKER_ENABLED: bool = True
+
     # Number of proxies that append to X-Forwarded-For in front of this app.
     # 1 = Caddy only (the single-VM deployment). Raise to 2 behind Azure
     # Application Gateway or Container Apps ingress, or rate limiting will key

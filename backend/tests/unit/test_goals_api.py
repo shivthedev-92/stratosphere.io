@@ -14,6 +14,7 @@ class FakeGoal:
         self.is_timed = False
         self.scheduled_for = None
         self.priority = "low"
+        self.completed = False
         self.created_at = datetime.now(timezone.utc)
 
 
@@ -26,6 +27,9 @@ class FakeQuery:
 
     def first(self):
         return self.goal
+
+    def delete(self, **_kwargs):
+        return 0
 
 
 class FakeSession:
@@ -55,6 +59,8 @@ class FakeSession:
 class FakeUser:
     def __init__(self, user_id):
         self.id = user_id
+        self.in_app_notifications_enabled = False
+        self.telegram_chat_id = None
 
 
 def test_update_goal_changes_owned_goal_fields():
