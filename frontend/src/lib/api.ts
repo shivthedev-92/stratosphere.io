@@ -203,6 +203,8 @@ export async function chatStream(
   opts: {
     sessionId?: string | null;
     goalId?: string | null;
+    /** Sent as a fallback; the server prefers the stored session history. */
+    history?: ChatMessage[];
     onToken: (text: string) => void;
     onSafety?: (notice: SafetyNoticeOut) => void;
     onError?: (detail: string) => void;
@@ -218,7 +220,7 @@ export async function chatStream(
       message,
       session_id: opts.sessionId ?? null,
       goal_id: opts.goalId ?? null,
-      history: [],
+      history: (opts.history ?? []).slice(-20),
     }),
   });
   if (!res.ok || !res.body) {

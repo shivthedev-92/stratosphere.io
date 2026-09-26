@@ -20,6 +20,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
+from starlette.concurrency import run_in_threadpool
 
 from app.config import settings
 from app.db import SessionLocal, get_db
@@ -379,7 +380,9 @@ async def chat_stream(
         if crisis:
             yield _sse("safety", build_crisis_notice().model_dump())
             yield _sse("token", {"text": CRISIS_MESSAGE})
-            _persist_turn(session_id, user_id, data.message, CRISIS_MESSAGE)
+            await run_in_threadpool(
+                _persist_turn, session_id, user_id, data.message, CRISIS_MESSAGE
+            )
             yield _sse("done", {"session_id": str(session_id)})
             return
 
@@ -398,7 +401,7 @@ async def chat_stream(
             # a partial reply is not silently lost from the transcript.
             reply = "".join(collected)
             if reply:
-                _persist_turn(session_id, user_id, data.message, reply)
+                await run_in_threadpool(_persist_turn, session_id, user_id, data.message, reply)
 
         yield _sse("done", {"session_id": str(session_id)})
 

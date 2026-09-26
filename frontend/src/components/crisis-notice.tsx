@@ -11,6 +11,12 @@ import type { SafetyNoticeOut } from "@/lib/api";
 /** Copy for the reflection path. Unlike chat, the user did not ask us a
  *  question - they wrote something down and we saved it. The wording says
  *  so plainly rather than responding as if spoken to. */
+/** Used only if the connection drops after the helplines arrived but before
+ *  the server's own message did; the resources must still be shown. */
+export const CRISIS_FALLBACK_MESSAGE =
+  "It sounds like you may be going through something serious. Please talk to " +
+  "someone trained for this conversation. These lines are free and confidential.";
+
 export const REFLECTION_CRISIS_MESSAGE =
   "Your reflection has been saved.\n\n" +
   "What you wrote sounds serious, and I want to be straight with you: Stratosphere " +

@@ -16,7 +16,7 @@
 "use client";
 
 import { useState, useRef, useEffect, FormEvent, useMemo } from "react";
-import { CrisisNotice, CoachDisclaimer } from "@/components/crisis-notice";
+import { CrisisNotice, CoachDisclaimer, CRISIS_FALLBACK_MESSAGE } from "@/components/crisis-notice";
 import { chatStream } from "@/lib/api";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -64,6 +64,9 @@ export default function ChatPage() {
   const [safetyByIndex, setSafetyByIndex] = useState<Record<number, SafetyNoticeOut>>({});
   // Text of the in-flight reply, rendered live before it lands in `history`.
   const [streaming, setStreaming] = useState("");
+  // Server-side chat session. Sent with every message so the coach keeps the
+  // conversation's context; set from the first reply.
+  const [sessionId, setSessionId] = useState<string | null>(null);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [contextLoading, setContextLoading] = useState(true);
@@ -125,9 +128,24 @@ export default function ChatPage() {
     let notice: SafetyNoticeOut | null = null;
     let streamError = "";
 
+    // Adds the assistant turn. A received safety notice is always shown, even
+    // if the connection dropped before its text arrived.
+    const finish = () => {
+      setStreaming("");
+      const received = notice as SafetyNoticeOut | null;
+      const content = accumulated || (received ? CRISIS_FALLBACK_MESSAGE : "");
+      if (!content) return;
+      setHistory([...updatedHistory, { role: "assistant", content }]);
+      if (received) {
+        setSafetyByIndex((prev) => ({ ...prev, [assistantIndex]: received }));
+      }
+    };
+
     try {
       setStreaming("");
-      await chatStream(userMessage, {
+      const returnedSessionId = await chatStream(userMessage, {
+        sessionId,
+        history,
         onToken: (text) => {
           accumulated += text;
           setStreaming(accumulated);
@@ -139,17 +157,11 @@ export default function ChatPage() {
           streamError = detail;
         },
       });
-
-      setStreaming("");
-      if (accumulated) {
-        setHistory([...updatedHistory, { role: "assistant", content: accumulated }]);
-        if (notice) {
-          setSafetyByIndex((prev) => ({ ...prev, [assistantIndex]: notice as SafetyNoticeOut }));
-        }
-      }
+      if (returnedSessionId) setSessionId(returnedSessionId);
+      finish();
       if (streamError) setError(streamError);
     } catch (err: unknown) {
-      setStreaming("");
+      finish();
       if (err instanceof Error && err.message.includes("401")) {
         router.push("/login");
         return;
