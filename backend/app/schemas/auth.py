@@ -17,6 +17,8 @@ from uuid import UUID
 
 from pydantic import BaseModel, EmailStr, Field, field_validator
 
+from app.avatars import AVATAR_IDS
+
 
 class SignupIn(BaseModel):
     email: EmailStr
@@ -91,6 +93,7 @@ class UserOut(BaseModel):
     phone_number: str | None
     date_of_birth: date | None
     in_app_notifications_enabled: bool
+    avatar_id: str | None = None
     created_at: datetime
 
     model_config = {"from_attributes": True}
@@ -108,6 +111,18 @@ class UserUpdate(BaseModel):
         value = value.strip()
         if not value:
             raise ValueError("Name cannot be blank")
+        return value
+
+
+class AvatarUpdate(BaseModel):
+    # Null clears the choice.
+    avatar_id: str | None
+
+    @field_validator("avatar_id", mode="after")
+    @classmethod
+    def known_avatar(cls, value: str | None) -> str | None:
+        if value is not None and value not in AVATAR_IDS:
+            raise ValueError("Unknown avatar")
         return value
 
 

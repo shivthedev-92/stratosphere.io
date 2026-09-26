@@ -1,70 +1,123 @@
 
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+/* Stratosphere design system v1 ("Night & Dawn").
+   Source of truth: design/handoff/tokens/tokens.css. Night is the default;
+   Dawn applies with data-theme="dawn" on <html> (wired up in a later step). */
+
+@theme {
+  --font-sans: var(--font-instrument), system-ui, sans-serif;
+  --font-serif: var(--font-newsreader), Georgia, serif;
+  --font-mono: "JetBrains Mono", "SFMono-Regular", Consolas, monospace;
+
+  /* Brand indigo replaces Tailwind's default indigo scale. */
+  --color-indigo-50: #F1EFFF; --color-indigo-100: #E2DEFF; --color-indigo-200: #C7BFFF;
+  --color-indigo-300: #A79BFF; --color-indigo-400: #8676FF; --color-indigo-500: #6B5CFF;
+  --color-indigo-600: #5B4CF0; --color-indigo-700: #4A3CE0; --color-indigo-800: #3A2DB8;
+  --color-indigo-900: #2B2275; --color-indigo-950: #15123A;
+
+  --radius-chip: 8px; --radius-control: 12px; --radius-card: 20px; --radius-panel: 24px;
+  --ease-calm: cubic-bezier(.2, .7, .2, 1);
 }
 
+/* Semantic colours as utilities (bg-surface, text-fg-muted, border-line, ...).
+   "inline" keeps the var() so they switch with the theme at runtime. */
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: Arial, Helvetica, sans-serif;
-  --font-mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+  --color-canvas: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-solid: var(--surface-solid);
+  --color-raised: var(--raised);
+  --color-field: var(--field);
+  --color-tint: var(--shadow-tint);
+  --color-scrim: var(--scrim);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-fg: var(--text);
+  --color-fg-muted: var(--text-muted);
+  --color-fg-subtle: var(--text-subtle);
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-accent-soft: var(--accent-soft);
+  --color-focus: var(--focus);
+  --color-low: var(--low);
+  --color-low-bg: var(--low-bg);
+  --color-med: var(--med);
+  --color-med-bg: var(--med-bg);
+  --color-high: var(--high);
+  --color-high-bg: var(--high-bg);
+  --color-notdone: var(--notdone);
+  --color-danger: var(--danger);
+  --color-danger-bg: var(--danger-bg);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+:root {
+  color-scheme: dark;
+  --bg: #0B0A14; --surface: rgba(19, 18, 31, .78); --surface-solid: #13121F; --raised: #1C1A2B; --field: rgba(255, 255, 255, .04); --shadow-tint: rgba(0, 0, 0, .28); --scrim: rgba(11, 10, 20, .72);
+  --line: rgba(255, 255, 255, .08); --line-strong: rgba(255, 255, 255, .12);
+  --text: #F3F2F8; --text-muted: #A6A3B8; --text-subtle: #8A879E;
+  --accent: #5B4CF0; --accent-hover: #6B5CFF; --accent-soft: #C7BFFF; --focus: #8676FF;
+  --low: #3CCFB4; --low-bg: rgba(60, 207, 180, .12);
+  --med: #6CC0F5; --med-bg: rgba(108, 192, 245, .12);
+  --high: #F2B24C; --high-bg: rgba(242, 178, 76, .12);
+  --notdone: #8A879E; --danger: #F0707A; --danger-bg: rgba(240, 112, 122, .08);
+  --scene: url("/beautiful-night.png");
+  --scene-overlay: linear-gradient(rgba(11, 10, 20, .55), rgba(11, 10, 20, .88));
+}
+
+[data-theme="dawn"] {
+  color-scheme: light;
+  --bg: #F7F5F1; --surface: #FFFFFF; --surface-solid: #FFFFFF; --raised: #EFECE6; --field: #FBFAF7; --shadow-tint: rgba(43, 34, 117, .14); --scrim: rgba(22, 21, 31, .45);
+  --line: #E6E2DA; --line-strong: #E6E2DA;
+  --text: #16151F; --text-muted: #56536A; --text-subtle: #6E6B7E;
+  --accent: #4A3CE0; --accent-hover: #3A2DB8; --accent-soft: #4A3CE0; --focus: #4A3CE0;
+  --low: #0E7A68; --low-bg: #E3F5F1;
+  --med: #1C6AA3; --med-bg: #E4F0FA;
+  --high: #8A5507; --high-bg: #FBF0DD;
+  --notdone: #6E6B7E; --danger: #C0323F; --danger-bg: #FFF5F5;
+  --scene: url("/beautiful-sunrise.png");
+  --scene-overlay: linear-gradient(rgba(247, 245, 241, .35), rgba(247, 245, 241, .92) 55%);
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
 }
 
+/* Focus ring from the spec: 3px soft ring + accent border colour. */
+:focus-visible {
+  outline: 1px solid var(--focus);
+  box-shadow: 0 0 0 3px rgba(107, 92, 255, .25);
+}
+
+/* Page background: the Night or Dawn scene behind its overlay (spec: the old
+   grid lines and stripes are removed). --scene and --scene-overlay switch
+   with the theme. */
 .signature-bg {
   position: relative;
   isolation: isolate;
-  overflow: hidden;
-  --signature-image: linear-gradient(transparent, transparent);
-  background:
-    linear-gradient(to bottom, rgba(10, 10, 10, 0.36), #0a0a0a 92%),
-    linear-gradient(145deg, rgba(20, 184, 166, 0.12), transparent 28%),
-    linear-gradient(315deg, rgba(245, 158, 11, 0.1), transparent 24%),
-    var(--signature-image),
-    #0a0a0a;
-  background-position: center;
-  background-size: auto, auto, auto, cover, auto;
+  background: var(--bg);
 }
-
+/* The scene sits on a fixed, viewport-sized layer rather than using
+   background-attachment: fixed, which iOS Safari ignores: it would scale the
+   image to the full page height and show a blurry, over-zoomed crop. */
 .signature-bg::before {
   content: "";
-  position: absolute;
-  inset: 0;
-  z-index: -2;
-  background-image:
-    linear-gradient(rgba(255, 255, 255, 0.045) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.045) 1px, transparent 1px);
-  background-size: 56px 56px;
-  mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.95), rgba(0, 0, 0, 0.42) 55%, transparent);
-}
-
-.signature-bg::after {
-  content: "";
-  position: absolute;
+  position: fixed;
   inset: 0;
   z-index: -1;
-  background:
-    repeating-linear-gradient(
-      115deg,
-      transparent 0 46px,
-      rgba(56, 189, 248, 0.055) 47px,
-      transparent 49px 96px
-    ),
-    linear-gradient(to bottom, rgba(10, 10, 10, 0.12), #0a0a0a 88%);
   pointer-events: none;
+  background: var(--scene-overlay), var(--scene) center top / cover no-repeat, var(--bg);
 }
+
+/* Typing indicator: a calm sequential fade (spec: no bounce or overshoot). */
+@keyframes typing-fade {
+  0%, 80%, 100% { opacity: .3; }
+  40% { opacity: 1; }
+}
+.typing-dot { animation: typing-fade 1.2s var(--ease-calm) infinite; }
+@media (prefers-reduced-motion: reduce) {
+  .typing-dot { animation: none; opacity: .6; }
+}
+

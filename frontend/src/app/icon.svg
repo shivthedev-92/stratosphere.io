@@ -1,4 +1,4 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
-  <rect width="64" height="64" rx="14" fill="#2563eb"/>
-  <text x="32" y="43" text-anchor="middle" font-size="38">☁️</text>
+  <rect width="64" height="64" rx="16" fill="#5B4CF0"/>
+  <path transform="translate(8 8) scale(.75)" fill="#FFFFFF" d="M32 5A27 27 0 0 1 55.09 18H8.91A27 27 0 0 1 32 5ZM7.72 20.2H56.28A27 27 0 0 1 58.77 28.5H5.23A27 27 0 0 1 7.72 20.2ZM5.01 31.3H58.99A27 27 0 0 1 57.79 40H6.21A27 27 0 0 1 5.01 31.3ZM7.52 43.4H56.48A27 27 0 0 1 32 59A27 27 0 0 1 7.52 43.4Z"/>
 </svg>

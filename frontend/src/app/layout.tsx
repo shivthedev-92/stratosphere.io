@@ -14,14 +14,30 @@
 
 
 import type { Metadata } from "next";
+import { Instrument_Sans, Newsreader } from "next/font/google";
 import "./globals.css";
+import { THEME_INIT_SCRIPT } from "@/lib/theme-script";
+
+// Design system type: Instrument Sans for UI, Newsreader italic for the daily
+// quote and journal text. Exposed as CSS variables used by globals.css.
+const instrumentSans = Instrument_Sans({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+  variable: "--font-instrument",
+  display: "swap",
+});
+const newsreader = Newsreader({
+  subsets: ["latin"],
+  weight: ["400"],
+  style: ["normal", "italic"],
+  variable: "--font-newsreader",
+  display: "swap",
+});
 
 export const metadata: Metadata = {
   title: "Stratosphere — Your Productivity Coach",
   description: "Build habits, manage your day, and find your rhythm — guilt-free.",
-  icons: {
-    icon: "/icon.svg",
-  },
+  // Icons come from the app/ file conventions: icon.svg, apple-icon.png, favicon.ico.
 };
 
 
@@ -38,7 +54,23 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="h-full antialiased">
+    // suppressHydrationWarning: the theme script sets data-theme before React
+    // hydrates, so the attribute intentionally differs from the server HTML.
+    <html
+      lang="en"
+      className={`${instrumentSans.variable} ${newsreader.variable} h-full antialiased`}
+      suppressHydrationWarning
+    >
+      <head>
+        {/*
+          Sanctioned exception to the no-dangerouslySetInnerHTML rule (recorded in
+          .coderabbit.yaml): THEME_INIT_SCRIPT is a static build-time string with no
+          runtime or user data. It has to be an inline <head> script to set the theme
+          before first paint; next/script's beforeInteractive runs too late.
+        */}
+        {/* nosemgrep: typescript.react.security.audit.react-dangerouslysetinnerhtml.react-dangerouslysetinnerhtml */}
+        <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
+      </head>
       <body className="min-h-full flex flex-col">{children}</body>
     </html>
   );

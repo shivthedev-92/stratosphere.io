@@ -1,3 +1,4 @@
+import { CheckCircle, CircleDashed } from "@phosphor-icons/react";
 import { FormEvent } from "react";
 import type { GoalOut } from "@/lib/api";
 
@@ -27,13 +28,13 @@ export function ReflectGoalModal({
   onSubmit,
 }: ReflectGoalModalProps) {
   return (
-    <div className="fixed inset-0 z-30 flex items-end bg-black/70 p-4 sm:items-center sm:justify-center">
+    <div className="fixed inset-0 z-30 flex items-end bg-scrim p-4 sm:items-center sm:justify-center">
       <form
         onSubmit={onSubmit}
-        className="w-full max-w-lg rounded-lg border border-white/10 bg-neutral-900 p-5 shadow-2xl"
+        className="w-full max-w-lg rounded-card border border-line bg-surface-solid p-5 shadow-2xl"
       >
         <h2 className="text-lg font-semibold">{goal.title}</h2>
-        <p className="mt-1 text-sm text-neutral-500">
+        <p className="mt-1 text-sm text-fg-subtle">
           What went well, what got in the way, and does this still feel meaningful?
         </p>
 
@@ -41,24 +42,30 @@ export function ReflectGoalModal({
           <button
             type="button"
             onClick={() => onCompletedChange(true)}
-            className={`rounded-lg border px-3 py-2 text-sm ${
+            className={`rounded-control border px-3 py-2 text-sm ${
               completed
-                ? "border-emerald-500 bg-emerald-700 text-white"
-                : "border-neutral-700 bg-neutral-800 text-neutral-300"
+                ? "border-low bg-low-bg font-semibold text-low"
+                : "border-line-strong bg-raised text-fg-muted"
             }`}
           >
-            ✅ Done
+            <span className="inline-flex items-center justify-center gap-1.5">
+              <CheckCircle size={18} weight={completed ? "fill" : "regular"} aria-hidden="true" />
+              Done
+            </span>
           </button>
           <button
             type="button"
             onClick={() => onCompletedChange(false)}
-            className={`rounded-lg border px-3 py-2 text-sm ${
+            className={`rounded-control border px-3 py-2 text-sm ${
               !completed
-                ? "border-amber-500 bg-amber-700 text-white"
-                : "border-neutral-700 bg-neutral-800 text-neutral-300"
+                ? "border-notdone bg-raised font-semibold text-fg"
+                : "border-line-strong bg-raised text-fg-muted"
             }`}
           >
-            📝 Not done
+            <span className="inline-flex items-center justify-center gap-1.5">
+              <CircleDashed size={18} aria-hidden="true" />
+              Not done
+            </span>
           </button>
         </div>
 
@@ -68,28 +75,28 @@ export function ReflectGoalModal({
           rows={5}
           required
           maxLength={2000}
-          className="mt-4 w-full resize-none rounded-lg border border-neutral-700 bg-neutral-800 px-3 py-2 text-sm outline-none focus:border-indigo-500"
+          className="mt-4 w-full resize-none rounded-control border border-line-strong bg-field px-3 py-2 text-sm outline-none focus:border-accent"
           placeholder="Write a short reflection..."
         />
 
         <div className="mt-4">
-          <span className="mb-2 block text-sm text-neutral-300">
+          <span className="mb-2 block text-sm text-fg-muted">
             Does this goal still feel meaningful?
           </span>
           <div className="grid grid-cols-3 gap-2">
             {[
-              { label: "✨ Yes", value: true },
-              { label: "🤔 Unsure", value: null },
-              { label: "🌧️ No", value: false },
+              { label: "Yes", value: true },
+              { label: "Unsure", value: null },
+              { label: "No", value: false },
             ].map((item) => (
               <button
                 key={item.label}
                 type="button"
                 onClick={() => onSoulfulChange(item.value)}
-                className={`rounded-lg border px-3 py-2 text-sm ${
+                className={`rounded-control border px-3 py-2 text-sm ${
                   soulful === item.value
-                    ? "border-indigo-500 bg-indigo-600 text-white"
-                    : "border-neutral-700 bg-neutral-800 text-neutral-300"
+                    ? "border-accent bg-accent text-white"
+                    : "border-line-strong bg-raised text-fg-muted"
                 }`}
               >
                 {item.label}
@@ -102,14 +109,14 @@ export function ReflectGoalModal({
           <button
             type="button"
             onClick={onCancel}
-            className="rounded-lg border border-neutral-700 px-4 py-2 text-sm font-semibold"
+            className="rounded-control border border-line-strong px-4 py-2 text-sm font-semibold"
           >
             Cancel
           </button>
           <button
             type="submit"
             disabled={saving || !reflection.trim()}
-            className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold hover:bg-indigo-500 disabled:opacity-50"
+            className="rounded-control bg-accent text-white px-4 py-2 text-sm font-semibold hover:bg-accent-hover disabled:opacity-40 disabled:cursor-not-allowed"
           >
             {saving ? "Saving..." : "Save reflection"}
           </button>

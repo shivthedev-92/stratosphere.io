@@ -94,40 +94,40 @@ export function TelegramSettings() {
   }
 
   return (
-    <div className="mt-6 rounded-lg border border-white/10 bg-neutral-950/60 p-4">
+    <div className="mt-6 rounded-card border border-line bg-surface p-4">
       <h3 className="text-base font-bold">Telegram reminders</h3>
-      <p className="mt-1 text-sm text-neutral-400">
+      <p className="mt-1 text-sm text-fg-muted">
         Get a Telegram message when a timed task is due. Messages show the task title only,
         never your notes or reflections.
       </p>
 
       {loadFailed ? (
         <div className="mt-4 flex flex-wrap items-center gap-3">
-          <p className="text-sm text-red-400">Couldn&apos;t load your Telegram settings.</p>
+          <p className="text-sm text-danger">Couldn&apos;t load your Telegram settings.</p>
           <button
             type="button"
             onClick={loadStatus}
-            className="rounded-lg border border-neutral-700 px-4 py-2 text-sm font-semibold hover:border-neutral-500"
+            className="rounded-control border border-line-strong px-4 py-2 text-sm font-semibold hover:border-fg-subtle"
           >
             Retry
           </button>
         </div>
       ) : status === null ? (
-        <p className="mt-4 text-sm text-neutral-500">Loading…</p>
+        <p className="mt-4 text-sm text-fg-subtle">Loading…</p>
       ) : !status.available ? (
-        <p className="mt-4 text-sm text-neutral-500">
+        <p className="mt-4 text-sm text-fg-subtle">
           Telegram reminders aren&apos;t set up on this server yet.
         </p>
       ) : status.linked ? (
         <div className="mt-4 flex flex-wrap items-center gap-3">
-          <span className="rounded-full border border-emerald-700/60 bg-emerald-950/40 px-3 py-1 text-xs font-semibold text-emerald-300">
+          <span className="rounded-full border border-low/30 bg-low-bg px-3 py-1 text-xs font-semibold text-low">
             Connected
           </span>
           <button
             type="button"
             onClick={disconnect}
             disabled={busy}
-            className="rounded-lg border border-neutral-700 px-4 py-2 text-sm font-semibold hover:border-neutral-500 disabled:opacity-50"
+            className="rounded-control border border-line-strong px-4 py-2 text-sm font-semibold hover:border-fg-subtle disabled:opacity-40 disabled:cursor-not-allowed"
           >
             Disconnect
           </button>
@@ -138,12 +138,12 @@ export function TelegramSettings() {
             href={linkUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-block rounded-lg bg-sky-600 px-4 py-2 text-sm font-semibold text-white hover:bg-sky-500"
+            className="inline-block rounded-control bg-accent px-4 py-2 text-sm font-semibold text-white hover:bg-accent-hover"
           >
             Open Telegram
           </a>
-          <p className="text-sm text-neutral-400">
-            Press <span className="font-semibold text-neutral-200">Start</span> in the chat that
+          <p className="text-sm text-fg-muted">
+            Press <span className="font-semibold text-fg">Start</span> in the chat that
             opens. This page updates on its own once you&apos;re connected. The link works for
             10 minutes.
           </p>
@@ -153,13 +153,13 @@ export function TelegramSettings() {
           type="button"
           onClick={connect}
           disabled={busy}
-          className="mt-4 rounded-lg bg-sky-600 px-4 py-2 text-sm font-semibold text-white hover:bg-sky-500 disabled:opacity-50"
+          className="mt-4 rounded-control bg-accent px-4 py-2 text-sm font-semibold text-white hover:bg-accent-hover disabled:opacity-40 disabled:cursor-not-allowed"
         >
           Connect Telegram
         </button>
       )}
 
-      {error && <p className="mt-3 text-sm text-red-400">{error}</p>}
+      {error && <p className="mt-3 text-sm text-danger">{error}</p>}
     </div>
   );
 }

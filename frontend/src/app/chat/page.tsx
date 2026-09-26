@@ -18,6 +18,8 @@
 import { useState, useRef, useEffect, FormEvent, useMemo } from "react";
 import { CrisisNotice, CoachDisclaimer, CRISIS_FALLBACK_MESSAGE } from "@/components/crisis-notice";
 import { chatStream } from "@/lib/api";
+import { ArrowLeft } from "@phosphor-icons/react";
+import { AsterAvatar, CoachBubble, TypingDots } from "@/components/aster";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { BackgroundShell } from "@/components/background-shell";
@@ -64,6 +66,9 @@ export default function ChatPage() {
   const [safetyByIndex, setSafetyByIndex] = useState<Record<number, SafetyNoticeOut>>({});
   // Text of the in-flight reply, rendered live before it lands in `history`.
   const [streaming, setStreaming] = useState("");
+  // Completed replies for screen readers. Streamed tokens stay out of the
+  // live region so partial text isn't read over and over.
+  const [announcement, setAnnouncement] = useState("");
   // Server-side chat session. Sent with every message so the coach keeps the
   // conversation's context; set from the first reply.
   const [sessionId, setSessionId] = useState<string | null>(null);
@@ -118,6 +123,9 @@ export default function ChatPage() {
     const userMessage = message.trim();
     setInput("");
     setError("");
+    // Empty the live region first so an identical reply is still a change
+    // (and so still announced).
+    setAnnouncement("");
 
     const updatedHistory: ChatMessage[] = [...history, { role: "user", content: userMessage }];
     setHistory(updatedHistory);
@@ -136,6 +144,8 @@ export default function ChatPage() {
       const content = accumulated || (received ? CRISIS_FALLBACK_MESSAGE : "");
       if (!content) return;
       setHistory([...updatedHistory, { role: "assistant", content }]);
+      // Crisis notices announce themselves (role="alert").
+      setAnnouncement(received ? "" : `Aster: ${content}`);
       if (received) {
         setSafetyByIndex((prev) => ({ ...prev, [assistantIndex]: received }));
       }
@@ -178,22 +188,28 @@ export default function ChatPage() {
   }
 
   return (
-    <BackgroundShell className="flex min-h-screen flex-col text-white" showSwitcher>
-      <header className="flex items-center justify-between border-b border-neutral-800 px-6 py-4">
+    <BackgroundShell className="flex min-h-screen flex-col text-fg" showSwitcher>
+      <header className="flex items-center justify-between border-b border-line py-4 pl-6 pr-20">
         <div>
-          <p className="text-xs font-semibold uppercase text-indigo-300">AI life coach</p>
-          <h1 className="text-lg font-semibold">AI Assistant</h1>
+          <div className="flex items-center gap-3">
+            <AsterAvatar size={40} />
+            <div>
+              <p className="text-xs font-semibold uppercase text-accent-soft">AI life coach</p>
+              <h1 className="text-lg font-semibold">Aster</h1>
+            </div>
+          </div>
         </div>
-        <Link href="/dashboard" className="text-sm text-neutral-400 hover:text-white transition-colors">
-          ← Dashboard
+        <Link href="/dashboard" className="inline-flex items-center gap-1.5 text-sm text-fg-muted transition-colors hover:text-fg">
+          <ArrowLeft size={16} aria-hidden="true" />
+          Dashboard
         </Link>
       </header>
 
       <main className="mx-auto grid min-h-0 w-full max-w-6xl flex-1 grid-cols-1 gap-4 px-4 py-5 lg:grid-cols-[minmax(0,1fr)_340px]">
-        <section className="flex min-h-[70vh] flex-col overflow-hidden rounded-2xl border border-neutral-800 bg-black/35">
-          <div className="border-b border-neutral-800 px-5 py-4">
+        <section className="flex min-h-[70vh] flex-col overflow-hidden rounded-card border border-line bg-surface backdrop-blur-[16px]">
+          <div className="border-b border-line px-5 py-4">
             <h2 className="text-base font-semibold">Task-aware chat</h2>
-            <p className="mt-1 text-sm text-neutral-500">
+            <p className="mt-1 text-sm text-fg-subtle">
               The coach can reference your current action items and recent journal entries.
             </p>
           </div>
@@ -202,8 +218,8 @@ export default function ChatPage() {
             {history.length === 0 && (
               <div className="mx-auto mt-4 flex max-w-lg flex-col items-center text-center">
                 <CoachIllustration className="mb-5 h-40 w-full" />
-                <h3 className="text-sm font-semibold text-neutral-200">Start with what is real today</h3>
-                <p className="mt-2 text-sm text-neutral-500">
+                <h3 className="text-sm font-semibold text-fg">Start with what is real today</h3>
+                <p className="mt-2 text-sm text-fg-subtle">
                   Ask about your tasks, your reflections, or what would make the next step easier.
                 </p>
                 <div className="mt-5 flex w-full flex-col gap-2">
@@ -212,7 +228,7 @@ export default function ChatPage() {
                       key={prompt}
                       type="button"
                       onClick={() => sendMessage(prompt)}
-                      className="rounded-xl border border-neutral-800 bg-neutral-950/80 px-4 py-3 text-left text-sm text-neutral-300 transition-colors hover:border-indigo-500 hover:text-white disabled:opacity-40"
+                      className="rounded-xl border border-line bg-surface px-4 py-3 text-left text-sm text-fg-muted transition-colors hover:border-accent hover:text-fg disabled:opacity-40"
                       disabled={loading}
                     >
                       {prompt}
@@ -232,38 +248,36 @@ export default function ChatPage() {
                   </div>
                 );
               }
+              if (msg.role === "assistant") {
+                return <CoachBubble key={i}>{msg.content}</CoachBubble>;
+              }
               return (
-                <div key={i} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
-                  <div
-                    className={`max-w-[85%] whitespace-pre-wrap rounded-2xl px-4 py-3 text-sm leading-relaxed ${
-                      msg.role === "user" ? "bg-indigo-600 text-white" : "bg-neutral-900 text-neutral-100"
-                    }`}
-                  >
+                <div key={i} className="flex justify-end">
+                  <div className="max-w-[85%] whitespace-pre-wrap rounded-[18px_18px_6px_18px] bg-accent px-4 py-3 text-sm leading-relaxed text-white">
                     {msg.content}
                   </div>
                 </div>
               );
             })}
             {streaming && (
-              <div className="flex justify-start">
-                <div className="max-w-[85%] whitespace-pre-wrap rounded-2xl bg-neutral-900 px-4 py-3 text-sm leading-relaxed text-neutral-100">
-                  {streaming}
-                  <span className="ml-0.5 inline-block h-4 w-1.5 translate-y-0.5 animate-pulse bg-neutral-400" />
-                </div>
-              </div>
+              <CoachBubble mood="thinking">
+                {streaming}
+                <span className="ml-0.5 inline-block h-4 w-1.5 translate-y-0.5 animate-pulse bg-fg-muted motion-reduce:animate-none" />
+              </CoachBubble>
             )}
             {loading && !streaming && (
-              <div className="flex justify-start">
-                <div className="rounded-2xl bg-neutral-900 px-4 py-3 text-sm text-neutral-400 animate-pulse">
-                  Thinking…
-                </div>
-              </div>
+              <CoachBubble mood="thinking">
+                <TypingDots />
+              </CoachBubble>
             )}
-            {error && <p className="text-center text-sm text-red-400">{error}</p>}
+            {error && <p className="text-center text-sm text-danger">{error}</p>}
+            <div className="sr-only" aria-live="polite" aria-atomic="true">
+              {announcement}
+            </div>
             <div ref={bottomRef} />
           </div>
 
-          <div className="border-t border-neutral-800 pt-3">
+          <div className="border-t border-line pt-3">
             <CoachDisclaimer />
           </div>
 
@@ -273,12 +287,12 @@ export default function ChatPage() {
               value={input}
               onChange={(e) => setInput(e.target.value)}
               placeholder="Ask about today, blockers, or what to do next..."
-              className="min-w-0 flex-1 rounded-xl border border-neutral-700 bg-neutral-900 px-4 py-3 text-sm text-white focus:border-indigo-500 focus:outline-none"
+              className="min-w-0 flex-1 rounded-xl border border-line-strong bg-surface px-4 py-3 text-sm text-fg focus:border-accent focus:outline-none"
             />
             <button
               type="submit"
               disabled={loading || !input.trim()}
-              className="rounded-xl bg-indigo-600 px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-indigo-500 disabled:opacity-40"
+              className="rounded-xl bg-accent px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-accent-hover disabled:opacity-40"
             >
               Send
             </button>
@@ -286,44 +300,44 @@ export default function ChatPage() {
         </section>
 
         <aside className="flex min-h-0 flex-col gap-4">
-          <section className="rounded-2xl border border-neutral-800 bg-black/35 p-4">
+          <section className="rounded-card border border-line bg-surface backdrop-blur-[16px] p-4">
             <div className="mb-4 flex items-start justify-between gap-3">
               <div>
-                <h2 className="text-sm font-semibold text-white">Task context</h2>
-                <p className="mt-1 text-xs text-neutral-500">Sent privately with each coach request.</p>
+                <h2 className="text-sm font-semibold text-fg">Task context</h2>
+                <p className="mt-1 text-xs text-fg-subtle">Sent privately with each coach request.</p>
               </div>
-              <span className="rounded-full border border-neutral-800 px-2 py-1 text-xs text-neutral-400">
+              <span className="rounded-full border border-line px-2 py-1 text-xs text-fg-muted">
                 {goals.length} tasks
               </span>
             </div>
 
             <div className="max-h-[360px] space-y-3 overflow-y-auto pr-1">
               {contextLoading ? (
-                <p className="text-sm text-neutral-500">Loading task context…</p>
+                <p className="text-sm text-fg-subtle">Loading task context…</p>
               ) : focusGoals.length === 0 ? (
-                <p className="text-sm text-neutral-500">No tasks found yet.</p>
+                <p className="text-sm text-fg-subtle">No tasks found yet.</p>
               ) : (
                 focusGoals.map((goal) => {
                   const latestLog = latestLogsByGoal[goal.id];
                   return (
-                    <div key={goal.id} className="rounded-xl border border-neutral-800 bg-neutral-950/75 p-3">
+                    <div key={goal.id} className="rounded-xl border border-line bg-surface p-3">
                       <div className="flex items-start justify-between gap-3">
-                        <p className="min-w-0 text-sm font-semibold text-neutral-100">
+                        <p className="min-w-0 text-sm font-semibold text-fg">
                           {goal.emoji ? `${goal.emoji} ` : ""}
                           {goal.title}
                         </p>
-                        <span className="shrink-0 rounded-full border border-neutral-700 px-2 py-0.5 text-xs capitalize text-neutral-400">
+                        <span className="shrink-0 rounded-full border border-line-strong px-2 py-0.5 text-xs capitalize text-fg-muted">
                           {goal.priority}
                         </span>
                       </div>
-                      <p className="mt-2 text-xs text-neutral-500">{formatTaskDate(goal.scheduled_for)}</p>
+                      <p className="mt-2 text-xs text-fg-subtle">{formatTaskDate(goal.scheduled_for)}</p>
                       {latestLog ? (
-                        <p className="mt-2 line-clamp-2 text-xs leading-relaxed text-neutral-400">
+                        <p className="mt-2 line-clamp-2 leading-relaxed text-fg-muted font-serif italic text-[13px]">
                           {latestLog.completed ? "Done" : "Open"} · {latestLog.emotion_label ?? "No emotion"} ·{" "}
                           {latestLog.reflection}
                         </p>
                       ) : (
-                        <p className="mt-2 text-xs text-neutral-600">No reflection yet.</p>
+                        <p className="mt-2 text-xs text-fg-subtle">No reflection yet.</p>
                       )}
                     </div>
                   );
@@ -332,18 +346,18 @@ export default function ChatPage() {
             </div>
           </section>
 
-          <section className="rounded-2xl border border-neutral-800 bg-black/35 p-4">
-            <h2 className="text-sm font-semibold text-white">Recent reflections</h2>
+          <section className="rounded-card border border-line bg-surface backdrop-blur-[16px] p-4">
+            <h2 className="text-sm font-semibold text-fg">Recent reflections</h2>
             <div className="mt-4 space-y-3">
               {recentLogs.length === 0 ? (
-                <p className="text-sm text-neutral-500">No journal entries yet.</p>
+                <p className="text-sm text-fg-subtle">No journal entries yet.</p>
               ) : (
                 recentLogs.map((log) => {
                   const goal = goalsById.get(log.goal_id);
                   return (
                     <div key={log.id} className="border-l border-indigo-500/60 pl-3">
-                      <p className="text-xs font-semibold text-neutral-300">{goal?.title ?? "Task removed"}</p>
-                      <p className="mt-1 text-xs text-neutral-500">
+                      <p className="text-xs font-semibold text-fg-muted">{goal?.title ?? "Task removed"}</p>
+                      <p className="mt-1 text-xs text-fg-subtle">
                         {log.completed ? "Completed" : "Not completed"} · {log.emotion_label ?? "No emotion"}
                       </p>
                     </div>

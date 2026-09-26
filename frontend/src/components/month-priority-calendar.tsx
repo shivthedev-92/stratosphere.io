@@ -1,9 +1,9 @@
 import type { GoalOut, Priority } from "@/lib/api";
 
 const priorityStyles: Record<Priority, string> = {
-  low: "bg-emerald-400",
-  medium: "bg-sky-400",
-  high: "bg-amber-400",
+  low: "bg-low",
+  medium: "bg-med",
+  high: "bg-high",
 };
 
 const priorityOrder: Priority[] = ["low", "medium", "high"];
@@ -56,20 +56,20 @@ export function MonthPriorityCalendar({
   ];
 
   return (
-    <div className="mt-6 rounded-lg border border-white/10 bg-neutral-950/45 p-4">
+    <div className="mt-6 rounded-card border border-line bg-surface p-4">
       <div className="flex items-center justify-between gap-3">
-        <h3 className="text-sm font-semibold text-white">{monthLabel}</h3>
-        <div className="flex items-center gap-2 text-[11px] text-neutral-500">
-          <span className="h-2 w-2 rounded-full bg-emerald-400" />
+        <h3 className="text-sm font-semibold text-fg">{monthLabel}</h3>
+        <div className="flex items-center gap-2 text-[11px] text-fg-subtle">
+          <span className="h-2 w-2 rounded-full bg-low" />
           <span>Low</span>
-          <span className="h-2 w-2 rounded-full bg-sky-400" />
+          <span className="h-2 w-2 rounded-full bg-med" />
           <span>Med</span>
-          <span className="h-2 w-2 rounded-full bg-amber-400" />
+          <span className="h-2 w-2 rounded-full bg-high" />
           <span>High</span>
         </div>
       </div>
 
-      <div className="mt-4 grid grid-cols-7 gap-1 text-center text-[11px] text-neutral-500">
+      <div className="mt-4 grid grid-cols-7 gap-1 text-center text-[11px] text-fg-subtle">
         {["S", "M", "T", "W", "T", "F", "S"].map((day, index) => (
           <span key={`${day}-${index}`}>{day}</span>
         ))}
@@ -92,10 +92,10 @@ export function MonthPriorityCalendar({
               onClick={() => onDateSelect?.(getDateKey(date))}
               className={`relative grid aspect-square place-items-center rounded-md border text-xs ${
                 selectedDateKey === getDateKey(date)
-                  ? "border-indigo-400 bg-indigo-600/30 text-white"
+                  ? "border-accent bg-indigo-600/30 text-fg"
                   : isToday
-                  ? "border-indigo-400 text-white"
-                  : "border-white/5 text-neutral-400"
+                  ? "border-accent text-fg"
+                  : "border-line text-fg-muted"
               }`}
             >
               {cell.day}

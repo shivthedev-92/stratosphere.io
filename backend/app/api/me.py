@@ -19,7 +19,13 @@ from app.db import get_db
 from app.deps import get_current_user
 from app.models.support import SupportTicket
 from app.models.user import User
-from app.schemas.auth import TelegramLinkOut, TelegramStatusOut, UserOut, UserUpdate
+from app.schemas.auth import (
+    AvatarUpdate,
+    TelegramLinkOut,
+    TelegramStatusOut,
+    UserOut,
+    UserUpdate,
+)
 from app.services.telegram import create_link, telegram_configured, unlink_user
 
 router = APIRouter(tags=["users"])
@@ -40,6 +46,21 @@ def update_me(
     current_user.phone_number = data.phone_number.strip() if data.phone_number else None
     current_user.date_of_birth = data.date_of_birth
     current_user.in_app_notifications_enabled = data.in_app_notifications_enabled
+    db.add(current_user)
+    db.commit()
+    db.refresh(current_user)
+    return current_user
+
+
+@router.put("/me/avatar", response_model=UserOut)
+def update_avatar(
+    data: AvatarUpdate,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> User:
+    # Separate from PATCH /me, which replaces every profile field: a profile
+    # save from a client that doesn't know about avatars must not clear one.
+    current_user.avatar_id = data.avatar_id
     db.add(current_user)
     db.commit()
     db.refresh(current_user)

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { Sparkle } from "@phosphor-icons/react";
 import { motivationalMessages } from "@/lib/motivational-messages";
 
 const ROTATION_INTERVAL_MS = 12_000;
@@ -30,14 +31,15 @@ export function MotivationalBanner() {
   return (
     <section
       aria-label="Motivation"
-      className="rounded-lg border border-white/10 bg-neutral-900/80 p-5 shadow-lg shadow-black/15 backdrop-blur"
+      className="rounded-card border border-line bg-surface p-5 shadow-lg shadow-tint backdrop-blur"
     >
       <p
-        className={`text-center text-sm italic text-neutral-300 transition-opacity duration-300 motion-reduce:transition-none ${
+        className={`text-center font-serif text-[21px] italic leading-[1.35] text-fg transition-opacity duration-300 motion-reduce:transition-none ${
           isVisible ? "opacity-100" : "opacity-0"
         }`}
       >
-        ✦ &ldquo;{motivationalMessages[messageIndex]}&rdquo;
+        <Sparkle size={18} weight="fill" className="mr-2 inline-block align-[-2px] text-accent-soft" aria-hidden="true" />
+        &ldquo;{motivationalMessages[messageIndex]}&rdquo;
       </p>
     </section>
   );
