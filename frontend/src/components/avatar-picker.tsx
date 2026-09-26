@@ -23,7 +23,7 @@ const AVATAR_GROUPS: { label: string; avatars: Avatar[] }[] = [
     avatars: [
       { id: "sky-ringed-planet", name: "Ringed planet" },
       { id: "sky-crescent", name: "Crescent moon" },
-      { id: "sky-dawn", name: "Dawn" },
+      { id: "sky-dawn", name: "Dawn horizon" },
       { id: "sky-comet", name: "Comet" },
       { id: "sky-binary", name: "Binary stars" },
       { id: "sky-earthrise", name: "Earthrise" },
