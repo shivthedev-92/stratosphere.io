@@ -21,7 +21,7 @@ from sqlalchemy import text
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
-from app.api import auth, chat, goals, me, notifications, support
+from app.api import auth, chat, goals, me, notifications, oauth, support
 from app.config import settings
 from app.db import SessionLocal, get_db
 from app.rate_limit import RateLimitMiddleware
@@ -68,6 +68,7 @@ app.add_middleware(
 #============#
 
 app.include_router(auth.router)
+app.include_router(oauth.router)
 app.include_router(me.router)
 app.include_router(goals.router)
 app.include_router(notifications.router)

@@ -1,5 +1,17 @@
 const BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000";
 
+export type OAuthProvider = "google" | "microsoft";
+
+export type AuthConfigOut = {
+  providers: OAuthProvider[];
+  password_signup: boolean;
+};
+
+/** Full-page navigation target that starts Google / Microsoft sign-in. */
+export function oauthStartUrl(provider: OAuthProvider): string {
+  return `${BASE_URL}/auth/oauth/${provider}/start`;
+}
+
 export function clearToken(): void {
   // Remove tokens created by older versions. Current web auth uses an HttpOnly cookie.
   localStorage.removeItem("token");
@@ -270,6 +282,8 @@ export async function chatStream(
 }
 
 export const api = {
+  authConfig: () => request<AuthConfigOut>("/auth/config"),
+
   telegramStatus: () => request<TelegramStatusOut>("/me/telegram"),
   telegramLink: () => request<TelegramLinkOut>("/me/telegram/link", { method: "POST" }),
   telegramUnlink: () => request<void>("/me/telegram", { method: "DELETE" }),

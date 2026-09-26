@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { BackgroundShell } from "@/components/background-shell";
 import { BrandMark } from "@/components/brand-mark";
+import { OAuthButtons, useAuthConfig } from "@/components/oauth-buttons";
 import { api } from "@/lib/api";
 
 export default function SignupPage() {
@@ -14,6 +15,7 @@ export default function SignupPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const { config, failed } = useAuthConfig();
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -40,55 +42,75 @@ export default function SignupPage() {
           <p className="text-fg-muted text-sm mt-1">Start your journey — guilt-free.</p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-sm text-fg-muted mb-1">What should we call you?</label>
-            <input
-              type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              required
-              placeholder="Your name"
-              className="w-full px-4 py-2 rounded-control bg-field text-fg border border-line-strong focus:outline-none focus:border-accent"
-            />
-          </div>
-          <div>
-            <label className="block text-sm text-fg-muted mb-1">Email</label>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              placeholder="you@example.com"
-              className="w-full px-4 py-2 rounded-control bg-field text-fg border border-line-strong focus:outline-none focus:border-accent"
-            />
-          </div>
-          <div>
-            <label className="block text-sm text-fg-muted mb-1">Password</label>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              minLength={8}
-              placeholder="At least 8 characters"
-              className="w-full px-4 py-2 rounded-control bg-field text-fg border border-line-strong focus:outline-none focus:border-accent"
-            />
-          </div>
+        {config && config.providers.length > 0 ? <OAuthButtons providers={config.providers} /> : null}
+        {config && config.providers.length === 0 && !config.password_signup ? (
+          <p className="text-center text-sm text-fg-muted">Sign-up is closed right now. Please check back soon.</p>
+        ) : null}
+        {failed ? (
+          <p role="alert" className="text-center text-sm text-danger">
+            We couldn&apos;t load the sign-up options. Refresh the page to try again.
+          </p>
+        ) : null}
 
-          {error && <p className="text-danger text-sm">{error}</p>}
+        {/* Password sign-up is off in production: new accounts use Google or Microsoft. */}
+        {config?.password_signup ? (
+          <>
+            <div className="flex items-center gap-3 text-xs text-fg-subtle">
+              <span className="h-px flex-1 bg-line" />
+              or sign up with email
+              <span className="h-px flex-1 bg-line" />
+            </div>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <label className="block text-sm text-fg-muted mb-1">What should we call you?</label>
+              <input
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                required
+                placeholder="Your name"
+                className="w-full px-4 py-2 rounded-control bg-field text-fg border border-line-strong focus:outline-none focus:border-accent"
+              />
+            </div>
+            <div>
+              <label className="block text-sm text-fg-muted mb-1">Email</label>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                placeholder="you@example.com"
+                className="w-full px-4 py-2 rounded-control bg-field text-fg border border-line-strong focus:outline-none focus:border-accent"
+              />
+            </div>
+            <div>
+              <label className="block text-sm text-fg-muted mb-1">Password</label>
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                minLength={8}
+                placeholder="At least 8 characters"
+                className="w-full px-4 py-2 rounded-control bg-field text-fg border border-line-strong focus:outline-none focus:border-accent"
+              />
+            </div>
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full py-3 rounded-control bg-accent hover:bg-accent-hover disabled:opacity-40 disabled:cursor-not-allowed font-semibold text-white transition-colors"
-          >
-            {loading ? "Creating account…" : "Create account"}
-          </button>
-        </form>
+            {error && <p className="text-danger text-sm">{error}</p>}
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full py-3 rounded-control bg-accent hover:bg-accent-hover disabled:opacity-40 disabled:cursor-not-allowed font-semibold text-white transition-colors"
+            >
+              {loading ? "Creating account…" : "Create account"}
+            </button>
+          </form>
+          </>
+        ) : null}
 
         <p className="text-center text-xs leading-5 text-fg-subtle">
-          By creating an account, you acknowledge the{" "}
+          By continuing, you acknowledge the{" "}
           <Link href="/privacy" className="text-accent-soft hover:underline">privacy notice</Link>.
         </p>
 
