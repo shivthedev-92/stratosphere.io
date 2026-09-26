@@ -132,3 +132,20 @@ body {
 :root:not([data-theme="dawn"]) .oauth-google:hover { background: #1F1F21; }
 :root:not([data-theme="dawn"]) .oauth-microsoft { background: #2F2F2F; color: #FFFFFF; border-color: #2F2F2F; }
 :root:not([data-theme="dawn"]) .oauth-microsoft:hover { background: #3B3B3B; }
+
+/* Year heatmap: tasks done per day, in the brand indigo. Night brightens
+   with intensity (lit on dark); Dawn darkens (ink on paper). */
+:root {
+  --heat-0: rgba(255, 255, 255, 0.06);
+  --heat-1: #2B2275;
+  --heat-2: #3A2DB8;
+  --heat-3: #5B4CF0;
+  --heat-4: #A79BFF;
+}
+[data-theme="dawn"] {
+  --heat-0: #EFECE6;
+  --heat-1: #E2DEFF;
+  --heat-2: #A79BFF;
+  --heat-3: #6B5CFF;
+  --heat-4: #3A2DB8;
+}

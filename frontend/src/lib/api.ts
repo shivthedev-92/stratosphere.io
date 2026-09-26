@@ -1,5 +1,12 @@
 const BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000";
 
+export type ProgressDailyOut = {
+  timezone: string;
+  start: string;
+  end: string;
+  days: { date: string; done: number; not_done: number; meaningful: number }[];
+};
+
 export type OAuthProvider = "google" | "microsoft";
 
 export type AuthConfigOut = {
@@ -283,6 +290,9 @@ export async function chatStream(
 
 export const api = {
   authConfig: () => request<AuthConfigOut>("/auth/config"),
+
+  progressDaily: (timeZone: string) =>
+    request<ProgressDailyOut>(`/progress/daily?tz=${encodeURIComponent(timeZone)}&days=371`),
 
   telegramStatus: () => request<TelegramStatusOut>("/me/telegram"),
   telegramLink: () => request<TelegramLinkOut>("/me/telegram/link", { method: "POST" }),
