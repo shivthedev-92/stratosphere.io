@@ -272,6 +272,8 @@ export default function DashboardPage() {
           await api.updateAvatar(target);
           avatarConfirmed.current = target;
         } catch (err: unknown) {
+          // A newer pick arrived while this save was failing: try that one.
+          if (avatarWanted.current !== target) continue;
           // Roll back to what the server last accepted.
           const confirmed = avatarConfirmed.current;
           avatarWanted.current = confirmed;
