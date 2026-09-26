@@ -106,6 +106,16 @@ export AZURE_SSH_PRIVATE_KEY_PATH="/absolute/path/to/id_ed25519"
 
 It creates a private storage account and a `db-backups` container, a lifecycle rule that deletes backups after 30 days (`BACKUP_RETENTION_DAYS`), and a one-year, create-only SAS token issued under a stored access policy. It installs `backup-db.sh` and a cron job on the VM (01:47 IST daily) and runs one backup straight away. The VM can add backups but cannot overwrite, read, list or delete them, so a compromised server cannot wipe or tamper with them. Re-run the script to rotate the token: it replaces the access policy, which revokes the previous token immediately. If a token may have leaked outside that process, also regenerate the storage account key used to sign it (`az storage account keys renew --key key1`). The log is `/opt/stratosphere/backup.log` on the VM.
 
+Rotation is safe to run at any time: the new token is installed and proven with a real backup before older tokens are revoked, and if that test fails the previous config is restored. The token lasts 365 days (`BACKUP_TOKEN_VALID_DAYS`); the script prints the expiry date, and each nightly run logs a warning during the last 30 days.
+
+**Get emailed when backups fail (recommended, free).** Create a check at [healthchecks.io](https://healthchecks.io) with a period of 1 day and a grace time of 2 hours, copy its ping URL, and re-run setup with it:
+
+```bash
+BACKUP_HEALTHCHECK_URL="https://hc-ping.com/your-uuid" ./deploy/azure/setup-backups.sh
+```
+
+Each backup then reports success or failure. You get an email if a backup fails, if none arrives on schedule (for example, the VM is down), or when the token is within 30 days of expiring. The URL is kept on later re-runs unless you pass a new one.
+
 To restore, download a dump with your own Azure login and load it into the database container:
 
 ```bash
