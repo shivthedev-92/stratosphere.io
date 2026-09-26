@@ -21,6 +21,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 
+from app.config import settings
 from app.db import SessionLocal, get_db
 from app.deps import get_current_user
 from app.models.chat import ChatMessageRecord, ChatSession
@@ -36,6 +37,7 @@ from app.schemas.chat import (
     SafetyNoticeOut,
 )
 from app.services.ai_coach import get_coach
+from app.services.coach_budget import enforce_daily_limit, trim_history
 from app.services.safety import (
     CRISIS_MESSAGE,
     build_crisis_notice,
@@ -103,6 +105,12 @@ async def chat(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ) -> ChatOut:
+    # Order matters: crisis gate, then the daily limit, then the session.
+    # A user in crisis is answered whatever their usage, and a rejected
+    # message must not leave an empty chat session behind.
+    crisis = detect_crisis(data.message) is not None
+    if not crisis:
+        enforce_daily_limit(db, current_user.id)
     session = get_or_create_session(data, current_user, db)
     history = _load_history(session.id, current_user, db, data)
 
@@ -110,7 +118,7 @@ async def chat(
     # never called - the user gets fixed human-authored copy instead of a
     # generated one. See app/services/safety.py for why.
     safety: SafetyNoticeOut | None = None
-    if detect_crisis(data.message) is not None:
+    if crisis:
         reply = CRISIS_MESSAGE
         safety = build_crisis_notice()
     else:
@@ -165,7 +173,9 @@ def _load_history(
     history = [
         ChatMessage(role=message.role, content=message.content) for message in saved_messages
     ]
-    return history or data.history[-20:]
+    # Size-capped whichever source it came from; the client-supplied fallback
+    # is otherwise up to 30 x 8,000 characters. See coach_budget.py.
+    return trim_history(history or data.history[-20:], settings.COACH_HISTORY_MAX_CHARS)
 
 
 def get_or_create_session(data: ChatIn, current_user: User, db: Session) -> ChatSession:
@@ -349,6 +359,11 @@ async def chat_stream(
     POST /chat (non-streaming) is kept for the mobile client, which expects a
     single JSON body. Both share the same provider and the same safety gate.
     """
+    # Same order as POST /chat: crisis gate, daily limit, then the session.
+    # The limit raises a normal 429 before any stream starts.
+    crisis = detect_crisis(data.message) is not None
+    if not crisis:
+        enforce_daily_limit(db, current_user.id)
     session = get_or_create_session(data, current_user, db)
     session_id = session.id
     user_id = current_user.id
@@ -356,7 +371,6 @@ async def chat_stream(
     # Everything the generator needs is read here, while the request-scoped
     # session is still open.
     history = _load_history(session_id, current_user, db, data)
-    crisis = detect_crisis(data.message) is not None
     task_context = None if crisis else build_task_context(current_user, db, session.goal_id)
 
     async def event_stream() -> AsyncIterator[str]:

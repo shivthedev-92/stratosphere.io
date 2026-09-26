@@ -40,6 +40,11 @@ class Settings(BaseSettings):
     ANTHROPIC_API_KEY: str | None = None
     ANTHROPIC_MODEL: str = "claude-haiku-4-5"
 
+    # Coach spend controls; see app/services/coach_budget.py. A limit of 0
+    # disables the daily cap (e.g. local development against free Ollama).
+    COACH_DAILY_MESSAGE_LIMIT: int = 50
+    COACH_HISTORY_MAX_CHARS: int = 6000
+
     FRONTEND_URL: str = "http://localhost:3000"
     SMTP_HOST: str | None = None
     SMTP_PORT: int = 587
