@@ -96,6 +96,7 @@ services:
     restart: unless-stopped
     environment:
       SITE_ADDRESS: ${SITE_ADDRESS:?Set SITE_ADDRESS in .env.azure}
+      SITE_REDIRECTS: ${SITE_REDIRECTS:-}
     ports:
       - "80:80"
       - "443:443"

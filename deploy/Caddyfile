@@ -25,6 +25,13 @@
 
 # www.<domain> redirects to the bare domain (one canonical URL for cookies,
 # CORS and links). Caddy gets a certificate for it once its DNS record exists.
-www.{$SITE_ADDRESS} {
+# SITE_REDIRECTS (optional, space-separated) lists older addresses that
+# should redirect too, such as the sslip.io name used before the domain;
+# without it, browsers visiting an old address get a failed TLS handshake.
+www.{$SITE_ADDRESS} {$SITE_REDIRECTS} {
+    # HSTS here too: the main site's policy doesn't cover aliases outside its
+    # domain (like an sslip.io name), so without it a later plain-HTTP visit
+    # to an alias could be intercepted before reaching the redirect.
+    header Strict-Transport-Security "max-age=31536000"
     redir https://{$SITE_ADDRESS}{uri} permanent
 }
