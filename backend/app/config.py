@@ -38,7 +38,7 @@ class Settings(BaseSettings):
     OLLAMA_HOST: str = "http://localhost:11434"
     OLLAMA_MODEL: str = "llama3.1:8b"
     ANTHROPIC_API_KEY: str | None = None
-    ANTHROPIC_MODEL: str = "claude-opus-4-7"
+    ANTHROPIC_MODEL: str = "claude-haiku-4-5"
 
     FRONTEND_URL: str = "http://localhost:3000"
     SMTP_HOST: str | None = None

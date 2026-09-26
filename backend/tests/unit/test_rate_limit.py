@@ -18,6 +18,14 @@ def build_app() -> FastAPI:
     async def login():
         return {"ok": True}
 
+    @app.post("/chat")
+    async def chat():
+        return {"ok": True}
+
+    @app.post("/chat/stream")
+    async def chat_stream():
+        return {"ok": True}
+
     @app.get("/goals")
     async def goals():
         return {"ok": True}
@@ -157,3 +165,23 @@ async def test_tracked_key_count_stays_bounded_under_address_rotation():
             )
 
     assert len(limiter._requests) <= limiter.MAX_TRACKED_KEYS
+
+
+@pytest.mark.asyncio
+async def test_streaming_coach_endpoint_is_rate_limited():
+    async with client_for(build_app()) as client:
+        for _ in range(20):
+            assert (await client.post("/chat/stream")).status_code == 200
+        assert (await client.post("/chat/stream")).status_code == 429
+
+
+@pytest.mark.asyncio
+async def test_coach_endpoints_share_one_budget():
+    """Mixing /chat and /chat/stream must not double the paid-model allowance."""
+    async with client_for(build_app()) as client:
+        for _ in range(10):
+            assert (await client.post("/chat")).status_code == 200
+            assert (await client.post("/chat/stream")).status_code == 200
+        assert (await client.post("/chat")).status_code == 429
+        assert (await client.post("/chat/stream")).status_code == 429
+

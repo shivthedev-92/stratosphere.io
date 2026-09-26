@@ -83,7 +83,7 @@ In `backend/.env`:
 ```
 AI_PROVIDER=anthropic
 ANTHROPIC_API_KEY=sk-ant-...
-ANTHROPIC_MODEL=claude-opus-4-7
+ANTHROPIC_MODEL=claude-haiku-4-5
 ```
 
 Restart the backend. No code changes needed.

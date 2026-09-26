@@ -28,7 +28,12 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         ("POST", "/auth/password-reset/confirm"): (5, 300),
         ("POST", "/support/tickets"): (5, 300),
         ("POST", "/chat"): (20, 60),
+        ("POST", "/chat/stream"): (20, 60),
     }
+
+    # Paths that draw on one shared budget. Both coach endpoints spend the same
+    # paid model, so switching between them must not double the allowance.
+    SHARED_BUCKETS = {"/chat/stream": "/chat"}
 
     # Hard ceiling on tracked keys. Without this, an attacker rotating source
     # addresses grows the map until the process is OOM-killed, which on a 1GB
@@ -70,7 +75,8 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
             return await call_next(request)
 
         limit, window_seconds = rule
-        key = (self._client_ip(request), request.url.path)
+        path = request.url.path
+        key = (self._client_ip(request), self.SHARED_BUCKETS.get(path, path))
         now = monotonic()
 
         with self._lock:

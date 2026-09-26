@@ -169,7 +169,7 @@ export default function ChatPage() {
     <BackgroundShell className="flex min-h-screen flex-col text-white" showSwitcher>
       <header className="flex items-center justify-between border-b border-neutral-800 px-6 py-4">
         <div>
-          <p className="text-xs font-semibold uppercase text-indigo-300">Ollama life coach</p>
+          <p className="text-xs font-semibold uppercase text-indigo-300">AI life coach</p>
           <h1 className="text-lg font-semibold">AI Assistant</h1>
         </div>
         <Link href="/dashboard" className="text-sm text-neutral-400 hover:text-white transition-colors">

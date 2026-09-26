@@ -1480,7 +1480,7 @@ export default function App() {
             >
               <Text style={styles.secondaryButtonText}>Back</Text>
             </Pressable>
-            <Text style={styles.eyebrow}>Ollama Life Coach</Text>
+            <Text style={styles.eyebrow}>AI Life Coach</Text>
             <Text style={styles.title}>AI Assistant</Text>
             <Text style={styles.subtitle}>Task-aware support from your FastAPI backend.</Text>
           </View>
@@ -1595,7 +1595,7 @@ export default function App() {
             <View style={styles.sectionHeader}>
               <View>
                 <Text style={styles.cardTitle}>Context sent</Text>
-                <Text style={styles.mutedText}>FastAPI attaches this task data before calling Ollama.</Text>
+                <Text style={styles.mutedText}>Your task data is attached to each coach request.</Text>
               </View>
               <Text style={styles.goalMeta}>{goals.length} tasks</Text>
             </View>

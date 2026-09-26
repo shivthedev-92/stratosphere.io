@@ -59,7 +59,7 @@ PUBLIC_URL=https://YOUR-PUBLIC-IP-WITH-DASHES.sslip.io
 
 For example, `20.40.60.80` becomes `20-40-60-80.sslip.io`. Caddy will obtain and renew a trusted certificate. For a permanent domain, create an A record pointing to the static IP and put that hostname in both fields instead.
 
-Leave `AI_PROVIDER=disabled` unless an Anthropic key is configured. Password-reset email requires the optional SMTP fields.
+The AI coach uses Claude Haiku 4.5: set `AI_PROVIDER=anthropic` and `ANTHROPIC_API_KEY`, or set `AI_PROVIDER=disabled` to turn the coach off. Password-reset email requires the optional SMTP fields.
 
 ## 4. Deploy the tested working tree
 
