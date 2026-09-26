@@ -199,6 +199,11 @@ class TelegramBlocked(TelegramError):
     """The user blocked the bot or deleted the chat (HTTP 403)."""
 
 
+class TelegramRejected(TelegramError):
+    """A permanent rejection (4xx other than 403/429, e.g. "chat not found").
+    Retrying the same request cannot succeed."""
+
+
 class TelegramClient:
     def __init__(self, http: httpx.AsyncClient, token: str, base: str) -> None:
         self._http = http
@@ -216,7 +221,10 @@ class TelegramClient:
         except ValueError:
             raise TelegramError(f"{method}: HTTP {response.status_code}") from None
         if not data.get("ok"):
-            raise TelegramError(f"{method}: {data.get('description', 'error')}")
+            detail = f"{method}: {data.get('description', 'error')}"
+            if 400 <= response.status_code < 500 and response.status_code != 429:
+                raise TelegramRejected(detail)
+            raise TelegramError(detail)
         return data["result"]
 
     async def send_message(self, chat_id: int, text: str) -> None:
@@ -306,6 +314,9 @@ async def dispatch_once(
         except TelegramBlocked:
             logger.info("telegram: chat blocked the bot; unlinking")
             await asyncio.to_thread(_with_session, session_factory, unlink_chat, reminder.chat_id)
+        except TelegramRejected as exc:
+            # Permanent: keep the claim so it is not resent every tick.
+            logger.warning("telegram: reminder rejected, not retrying: %s", exc)
         except TelegramError as exc:
             logger.warning("telegram: send failed, will retry: %s", exc)
             await asyncio.to_thread(

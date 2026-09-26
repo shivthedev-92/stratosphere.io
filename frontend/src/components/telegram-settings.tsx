@@ -20,6 +20,9 @@ export function TelegramSettings() {
   const [expiresAt, setExpiresAt] = useState<number | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  // Set when the initial status check fails, so the card offers a retry
+  // instead of showing "Loading…" forever.
+  const [loadFailed, setLoadFailed] = useState(false);
   const timer = useRef<number | null>(null);
 
   const stopPolling = () => {
@@ -27,8 +30,16 @@ export function TelegramSettings() {
     timer.current = null;
   };
 
+  const loadStatus = () => {
+    setLoadFailed(false);
+    api
+      .telegramStatus()
+      .then(setStatus)
+      .catch(() => setLoadFailed(true));
+  };
+
   useEffect(() => {
-    api.telegramStatus().then(setStatus).catch(() => setStatus(null));
+    loadStatus();
     return stopPolling;
   }, []);
 
@@ -90,7 +101,18 @@ export function TelegramSettings() {
         never your notes or reflections.
       </p>
 
-      {status === null ? (
+      {loadFailed ? (
+        <div className="mt-4 flex flex-wrap items-center gap-3">
+          <p className="text-sm text-red-400">Couldn&apos;t load your Telegram settings.</p>
+          <button
+            type="button"
+            onClick={loadStatus}
+            className="rounded-lg border border-neutral-700 px-4 py-2 text-sm font-semibold hover:border-neutral-500"
+          >
+            Retry
+          </button>
+        </div>
+      ) : status === null ? (
         <p className="mt-4 text-sm text-neutral-500">Loading…</p>
       ) : !status.available ? (
         <p className="mt-4 text-sm text-neutral-500">

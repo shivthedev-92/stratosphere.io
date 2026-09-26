@@ -16,6 +16,7 @@ from app.services.telegram import (
     TelegramBlocked,
     TelegramClient,
     TelegramError,
+    TelegramRejected,
     crisis_text,
     format_reminder,
     reply_for_text,
@@ -171,6 +172,21 @@ async def test_403_is_blocked():
 
 
 @pytest.mark.asyncio
+async def test_permanent_4xx_is_rejected_not_retryable():
+    resp = {"ok": False, "description": "Bad Request: chat not found"}
+    with pytest.raises(TelegramRejected, match="chat not found"):
+        await _client(lambda r: httpx.Response(400, json=resp)).send_message(1, "hi")
+
+
+@pytest.mark.asyncio
+async def test_rate_limit_is_retryable_not_rejected():
+    resp = {"ok": False, "description": "Too Many Requests: retry after 3"}
+    with pytest.raises(TelegramError) as exc:
+        await _client(lambda r: httpx.Response(429, json=resp)).send_message(1, "hi")
+    assert not isinstance(exc.value, TelegramRejected)
+
+
+@pytest.mark.asyncio
 async def test_not_ok_is_error():
     resp = {"ok": False, "description": "Too Many Requests: retry after 3"}
     with pytest.raises(TelegramError, match="Too Many Requests"):
@@ -191,20 +207,26 @@ class FakeClient:
 
 @pytest.mark.asyncio
 async def test_dispatch_sends_unlinks_blocked_and_releases_failed(monkeypatch):
-    ok, blocked, flaky = (ClaimedReminder(uuid4(), c, f"task {c}") for c in (1, 2, 3))
-    monkeypatch.setattr(tg, "claim_due_reminders", lambda db, now=None: [ok, blocked, flaky])
+    ok, blocked, flaky, rejected = (
+        ClaimedReminder(uuid4(), c, f"task {c}") for c in (1, 2, 3, 4)
+    )
+    monkeypatch.setattr(
+        tg, "claim_due_reminders", lambda db, now=None: [ok, blocked, flaky, rejected]
+    )
     unlinked, released = [], []
     monkeypatch.setattr(tg, "unlink_chat", lambda db, chat_id: unlinked.append(chat_id))
     monkeypatch.setattr(tg, "release_claim", lambda db, nid: released.append(nid))
     monkeypatch.setattr(tg.asyncio, "sleep", _no_sleep)
 
-    client = FakeClient(fail={2: TelegramBlocked("x"), 3: TelegramError("x")})
+    client = FakeClient(
+        fail={2: TelegramBlocked("x"), 3: TelegramError("x"), 4: TelegramRejected("x")}
+    )
     sent = await tg.dispatch_once(client, lambda: _Closable(), NOW)
 
     assert sent == 1
     assert client.sent == [(1, "⏰ Time for: task 1")]
     assert unlinked == [2]
-    assert released == [flaky.notification_id]
+    assert released == [flaky.notification_id]  # rejected (4) keeps its claim
 
 
 @pytest.mark.asyncio
