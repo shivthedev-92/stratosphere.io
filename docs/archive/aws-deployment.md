@@ -1,5 +1,7 @@
 # AWS Recruiter Demo Deployment
 
+> **Archived.** Azure is the supported target; see [docs/deployment/azure.md](../deployment/azure.md). This guide's files now live in `deploy/archive/aws/` - move them back to the repo root before following it.
+
 This guide deploys Stratosphere to one EC2 instance. It is intentionally small and inexpensive,
 not highly available. The instance runs Caddy, Next.js, FastAPI, and PostgreSQL with Docker Compose.
 

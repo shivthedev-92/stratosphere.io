@@ -42,3 +42,6 @@ pnpm-debug.log*
 graphify-out/
 
 ZPROJECT_ASSETS/*
+
+# Personal reference notes (pasted third-party material); kept local only
+docs/notes/

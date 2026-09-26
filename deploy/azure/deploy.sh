@@ -3,7 +3,7 @@ set -euo pipefail
 
 readonly SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 readonly PROJECT_ROOT="$(cd -- "$SCRIPT_DIR/../.." && pwd)"
-readonly ENV_FILE="$PROJECT_ROOT/.env.azure"
+readonly ENV_FILE="$SCRIPT_DIR/.env.azure"
 readonly VM_HOST="${AZURE_VM_HOST:?Set AZURE_VM_HOST to the VM public IP or hostname}"
 readonly ADMIN_USER="${AZURE_ADMIN_USER:-azureuser}"
 readonly SSH_PRIVATE_KEY_PATH="${AZURE_SSH_PRIVATE_KEY_PATH:?Set AZURE_SSH_PRIVATE_KEY_PATH to your private key file}"
@@ -21,7 +21,7 @@ if [[ ! -f "$SSH_PRIVATE_KEY_PATH" ]]; then
 fi
 
 if [[ ! -f "$ENV_FILE" ]]; then
-  echo "Missing $ENV_FILE. Copy .env.azure.example and fill in real values." >&2
+  echo "Missing $ENV_FILE. Copy deploy/azure/.env.azure.example to deploy/azure/.env.azure and fill in real values." >&2
   exit 1
 fi
 
@@ -101,19 +101,19 @@ cd "$release_dir"
 COMPOSE_PARALLEL_LIMIT=1 docker compose \
   --project-name stratosphere \
   --env-file .env.azure \
-  --file docker-compose.azure.yml \
+  --file deploy/azure/docker-compose.azure.yml \
   build
 docker compose \
   --project-name stratosphere \
   --env-file .env.azure \
-  --file docker-compose.azure.yml \
+  --file deploy/azure/docker-compose.azure.yml \
   up -d --no-build --remove-orphans
 
 ln -sfn "$release_dir" /opt/stratosphere/current
 docker compose \
   --project-name stratosphere \
   --env-file .env.azure \
-  --file docker-compose.azure.yml \
+  --file deploy/azure/docker-compose.azure.yml \
   ps
 REMOTE_SCRIPT
 

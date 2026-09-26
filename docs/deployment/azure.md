@@ -45,7 +45,7 @@ Reconnect after it completes so the Docker group membership takes effect.
 Create the ignored environment file locally:
 
 ```bash
-cp .env.azure.example .env.azure
+cp deploy/azure/.env.azure.example deploy/azure/.env.azure
 openssl rand -base64 36
 openssl rand -hex 32
 ```
@@ -63,7 +63,7 @@ The AI coach uses Claude Haiku 4.5: set `AI_PROVIDER=anthropic` and `ANTHROPIC_A
 
 ## 4. Deploy the tested working tree
 
-The deploy script packages the current working tree, excluding Git metadata, build output, local environments, and secret files. It uploads `.env.azure` separately with mode `0600`, builds sequentially on the VM, runs migrations through the API container entrypoint, starts the stack, and waits for the public readiness endpoint.
+The deploy script packages the current working tree, excluding Git metadata, build output, local environments, and secret files. It uploads `deploy/azure/.env.azure` separately with mode `0600`, builds sequentially on the VM, runs migrations through the API container entrypoint, starts the stack, and waits for the public readiness endpoint.
 
 ```bash
 export AZURE_VM_HOST="VM_PUBLIC_IP"
@@ -81,14 +81,14 @@ Run Compose commands from the active release:
 ```bash
 ssh -i /absolute/path/to/id_ed25519 azureuser@VM_PUBLIC_IP
 cd /opt/stratosphere/current
-docker compose --project-name stratosphere --env-file .env.azure --file docker-compose.azure.yml ps
-docker compose --project-name stratosphere --env-file .env.azure --file docker-compose.azure.yml logs --tail=200
+docker compose --project-name stratosphere --env-file .env.azure --file deploy/azure/docker-compose.azure.yml ps
+docker compose --project-name stratosphere --env-file .env.azure --file deploy/azure/docker-compose.azure.yml logs --tail=200
 ```
 
 Create an encrypted off-VM database backup before each deployment. At minimum, make a dump and copy it to protected storage:
 
 ```bash
-docker compose --project-name stratosphere --env-file .env.azure --file docker-compose.azure.yml exec -T db \
+docker compose --project-name stratosphere --env-file .env.azure --file deploy/azure/docker-compose.azure.yml exec -T db \
   pg_dump -U stratosphere -d stratosphere -Fc > stratosphere.dump
 ```
 
@@ -109,7 +109,7 @@ Resource-group deletion is destructive and database data is not recoverable unle
 Timed tasks can send a Telegram message when they are due. The bot runs inside the API container (long polling, no extra port or webhook).
 
 1. In Telegram, message [@BotFather](https://t.me/BotFather), send `/newbot`, and follow the prompts.
-2. Put the token and the bot's username (without `@`) in `.env.azure`:
+2. Put the token and the bot's username (without `@`) in `deploy/azure/.env.azure`:
    ```
    TELEGRAM_BOT_TOKEN=123456789:AA...
    TELEGRAM_BOT_USERNAME=YourStratosphereBot
