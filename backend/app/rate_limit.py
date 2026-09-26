@@ -31,6 +31,7 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         ("POST", "/auth/password-reset/request"): (5, 300),
         ("POST", "/auth/password-reset/confirm"): (5, 300),
         ("POST", "/support/tickets"): (5, 300),
+        ("POST", "/me/telegram/test"): (3, 60),
         ("POST", "/chat"): (20, 60),
         ("POST", "/chat/stream"): (20, 60),
     }

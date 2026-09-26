@@ -1,13 +1,13 @@
 ############################################################################
-#    _____ __             __                   __                     _     
-#   / ___// /__________ _/ /_____  _________  / /_  ___  ________    (_)___ 
+#    _____ __             __                   __                     _
+#   / ___// /__________ _/ /_____  _________  / /_  ___  ________    (_)___
 #   \__ \/ __/ ___/ __ `/ __/ __ \/ ___/ __ \/ __ \/ _ \/ ___/ _ \  / / __ \
 #  ___/ / /_/ /  / /_/ / /_/ /_/ (__  ) /_/ / / / /  __/ /  /  __/ / / /_/ /
-# /____/\__/_/   \__,_/\__/\____/____/ .___/_/ /_/\___/_/   \___(_)_/\____/ 
-#                                   /_/                                     
+# /____/\__/_/   \__,_/\__/\____/____/ .___/_/ /_/\___/_/   \___(_)_/\____/
+#                                   /_/
 ############################################################################
 # Copyright (c) 2024. Sivarajan kakamaniyan. All rights reserved.
-# Statosphere is a product of Sivarajan Kakamaniyan. 
+# Statosphere is a product of Sivarajan Kakamaniyan.
 # Unauthorized copying of this file, via any medium is strictly prohibited.
 # Version 0.1.0 | 2024-06
 ############################################################################
@@ -78,9 +78,10 @@ def _hash(token: str) -> str:
     return hashlib.sha256(token.encode()).hexdigest()
 
 
-#==================#
+# ==================#
 # Account linking  |
-#==================#
+# ==================#
+
 
 def create_link(db: Session, user: User, now: datetime | None = None) -> tuple[str, datetime]:
     """Issue a one-time deep link. Only the hash is stored."""
@@ -136,9 +137,9 @@ def unlink_user(db: Session, user: User) -> None:
     db.commit()
 
 
-#===============#
+# ===============#
 # Bot messages  |
-#===============#
+# ===============#
 
 LINKED_TEXT = (
     "Connected. You'll get your Stratosphere task reminders here.\n\n"
@@ -150,6 +151,9 @@ LINK_INVALID_TEXT = (
 )
 START_WITHOUT_TOKEN_TEXT = (
     "To receive reminders, open Stratosphere, go to Settings and choose Connect Telegram."
+)
+TEST_MESSAGE_TEXT = (
+    "Test from Stratosphere: this is where your task reminders will arrive. Nothing else to do."
 )
 STOPPED_TEXT = "Disconnected. You won't get reminders here any more."
 NOT_LINKED_TEXT = "This chat isn't connected to a Stratosphere account."
@@ -187,9 +191,10 @@ def reply_for_text(db: Session, chat_id: int, text: str, now: datetime | None = 
     return REMINDERS_ONLY_TEXT
 
 
-#===========#
+# ===========#
 # API client |
-#===========#
+# ===========#
+
 
 class TelegramError(Exception):
     """A failed call. The message never contains the request URL (token)."""
@@ -240,9 +245,21 @@ class TelegramClient:
         return await self._call("getUpdates", payload, timeout=timeout + 10)
 
 
-#==================#
+async def send_test_message(chat_id: int) -> None:
+    """One-off message for the "Send test message" button in Settings.
+
+    Raises the same TelegramError subclasses as reminder delivery, so the
+    caller can tell a blocked bot from a temporary failure.
+    """
+    async with httpx.AsyncClient() as http:
+        client = TelegramClient(http, settings.TELEGRAM_BOT_TOKEN or "", settings.TELEGRAM_API_BASE)
+        await client.send_message(chat_id, TEST_MESSAGE_TEXT)
+
+
+# ==================#
 # Reminder sender  |
-#==================#
+# ==================#
+
 
 @dataclass(frozen=True)
 class ClaimedReminder:
@@ -287,9 +304,7 @@ def claim_due_reminders(db: Session, now: datetime | None = None) -> list[Claime
 def release_claim(db: Session, notification_id: UUID) -> None:
     """Undo a claim after a retryable failure so the next tick tries again."""
     db.execute(
-        update(Notification)
-        .where(Notification.id == notification_id)
-        .values(telegram_sent_at=None)
+        update(Notification).where(Notification.id == notification_id).values(telegram_sent_at=None)
     )
     db.commit()
 
@@ -370,9 +385,10 @@ async def poll_forever(client: TelegramClient, session_factory) -> None:
             await asyncio.sleep(ERROR_BACKOFF_SECONDS)
 
 
-#==========#
+# ==========#
 # Lifespan |
-#==========#
+# ==========#
+
 
 class TelegramWorkers:
     """Started from the FastAPI lifespan; stopped on shutdown."""
