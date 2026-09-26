@@ -47,20 +47,27 @@ export function ActivityHeatmap({ refreshKey = 0 }: { refreshKey?: number }) {
   const [failed, setFailed] = useState(false);
   const [selectedKey, setSelectedKey] = useState<string | null>(null);
   const scroller = useRef<HTMLDivElement>(null);
+  // Loads can overlap (the page loads while a reflection is being saved);
+  // only the newest request may update the grid, whatever order they land.
+  const latestRequest = useRef(0);
 
   const load = useCallback(() => {
     const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
+    const request = ++latestRequest.current;
     setFailed(false);
     api
       .progressDaily(timeZone)
       .then((data) => {
+        if (request !== latestRequest.current) return;
         setCounts(
           new Map(
             data.days.map((d) => [d.date, { done: d.done, notDone: d.not_done, meaningful: d.meaningful }]),
           ),
         );
       })
-      .catch(() => setFailed(true));
+      .catch(() => {
+        if (request === latestRequest.current) setFailed(true);
+      });
   }, []);
 
   useEffect(() => {
