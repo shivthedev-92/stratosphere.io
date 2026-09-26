@@ -150,7 +150,7 @@ cd mobile && npx tsc --noEmit              # mobile type-check
 
 Stratosphere deploys to **Azure**: one Linux VM running Caddy, Next.js, FastAPI and PostgreSQL with Docker Compose. See [docs/deployment/azure.md](docs/deployment/azure.md) for provisioning, networking, TLS, deploys, backups and teardown.
 
-Older AWS, Render and Netlify setups are kept in [`deploy/archive/`](deploy/archive/README.md) for reference only. Note that Netlify stays connected to the repository and keeps building until it is disconnected in the Netlify site settings.
+Older AWS, Render and Netlify setups are kept in [`deploy/archive/`](deploy/archive/README.md) for reference only. Netlify's GitHub access to this repository was removed on 2026-09-26, so it no longer builds.
 
 ---
 
