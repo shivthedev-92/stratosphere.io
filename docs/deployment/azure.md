@@ -104,7 +104,7 @@ export AZURE_SSH_PRIVATE_KEY_PATH="/absolute/path/to/id_ed25519"
 ./deploy/azure/setup-backups.sh
 ```
 
-It creates a private storage account and a `db-backups` container, a lifecycle rule that deletes backups after 30 days (`BACKUP_RETENTION_DAYS`), and a one-year SAS token that can only create and write blobs. It installs `backup-db.sh` and a cron job on the VM (01:47 IST daily) and runs one backup straight away. The VM cannot read, list or delete backups, so a compromised server cannot wipe them. Re-run the script to rotate the token before it expires. The log is `/opt/stratosphere/backup.log` on the VM.
+It creates a private storage account and a `db-backups` container, a lifecycle rule that deletes backups after 30 days (`BACKUP_RETENTION_DAYS`), and a one-year, create-only SAS token issued under a stored access policy. It installs `backup-db.sh` and a cron job on the VM (01:47 IST daily) and runs one backup straight away. The VM can add backups but cannot overwrite, read, list or delete them, so a compromised server cannot wipe or tamper with them. Re-run the script to rotate the token: it replaces the access policy, which revokes the previous token immediately. If a token may have leaked outside that process, also regenerate the storage account key used to sign it (`az storage account keys renew --key key1`). The log is `/opt/stratosphere/backup.log` on the VM.
 
 To restore, download a dump with your own Azure login and load it into the database container:
 
