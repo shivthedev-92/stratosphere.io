@@ -125,5 +125,5 @@ PUBLIC_IP="$(az network public-ip show \
 
 echo "Azure VM is ready:"
 echo "  Public IP: $PUBLIC_IP"
-echo "  SSH: ssh -i $SSH_PUBLIC_KEY_PATH $ADMIN_USER@$PUBLIC_IP"
+echo "  SSH: ssh -i ${SSH_PUBLIC_KEY_PATH%.pub} $ADMIN_USER@$PUBLIC_IP"
 echo "  Temporary HTTPS hostname: ${PUBLIC_IP//./-}.sslip.io"

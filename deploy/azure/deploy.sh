@@ -85,6 +85,10 @@ ssh "${SSH_OPTIONS[@]}" "$SSH_TARGET" "docker compose version >/dev/null"
 scp "${SCP_OPTIONS[@]}" "$ARCHIVE" "$SSH_TARGET:$REMOTE_ARCHIVE"
 scp "${SCP_OPTIONS[@]}" "$ENV_FILE" "$SSH_TARGET:$REMOTE_ENV"
 
+# The release that is live right now, so a failed deploy can be rolled back.
+PREVIOUS_RELEASE="$(ssh "${SSH_OPTIONS[@]}" "$SSH_TARGET" \
+  "readlink -f $REMOTE_ROOT/current 2>/dev/null || true")"
+
 ssh "${SSH_OPTIONS[@]}" "$SSH_TARGET" bash -s -- \
   "$REMOTE_RELEASE" "$REMOTE_ARCHIVE" "$REMOTE_ENV" <<'REMOTE_SCRIPT'
 set -euo pipefail
@@ -109,7 +113,6 @@ docker compose \
   --file deploy/azure/docker-compose.azure.yml \
   up -d --no-build --remove-orphans
 
-ln -sfn "$release_dir" /opt/stratosphere/current
 docker compose \
   --project-name stratosphere \
   --env-file .env.azure \
@@ -117,8 +120,20 @@ docker compose \
   ps
 REMOTE_SCRIPT
 
-curl --fail --silent --show-error --location \
+# Point "current" at the new release only once it is healthy.
+if curl --fail --silent --show-error --location \
   --retry 30 --retry-delay 5 --retry-all-errors \
-  "https://$SITE_ADDRESS/api/health/ready"
-echo
-echo "Deployment healthy at https://$SITE_ADDRESS"
+  "https://$SITE_ADDRESS/api/health/ready"; then
+  ssh "${SSH_OPTIONS[@]}" "$SSH_TARGET" "ln -sfn '$REMOTE_RELEASE' '$REMOTE_ROOT/current'"
+  echo
+  echo "Deployment healthy at https://$SITE_ADDRESS"
+else
+  echo >&2
+  echo "Health check failed for $REMOTE_RELEASE; 'current' was not changed." >&2
+  if [[ -n "$PREVIOUS_RELEASE" ]]; then
+    echo "To roll back to the previous release, run on the VM:" >&2
+    echo "  cd $PREVIOUS_RELEASE && docker compose --project-name stratosphere --env-file .env.azure \\" >&2
+    echo "    --file deploy/azure/docker-compose.azure.yml up -d --build --remove-orphans" >&2
+  fi
+  exit 1
+fi

@@ -46,11 +46,11 @@ Create the ignored environment file locally:
 
 ```bash
 cp deploy/azure/.env.azure.example deploy/azure/.env.azure
-openssl rand -base64 36
-openssl rand -hex 32
+openssl rand -hex 32   # POSTGRES_PASSWORD
+openssl rand -hex 32   # JWT_SECRET (run again for a different value)
 ```
 
-Use the generated values for `POSTGRES_PASSWORD` and `JWT_SECRET`. For the first deployment, set both URL fields using the static VM public IP:
+Use one value for `POSTGRES_PASSWORD` and the other for `JWT_SECRET`. Keep the database password to letters and digits (hex is ideal): it sits inside the database URL, where characters such as `/`, `@` or `+` from base64 break the connection. For the first deployment, set both URL fields using the static VM public IP:
 
 ```dotenv
 SITE_ADDRESS=YOUR-PUBLIC-IP-WITH-DASHES.sslip.io
@@ -99,7 +99,8 @@ Do not rely on the VM disk as the only backup. Periodically test restoration, ap
 After exporting any required data, deleting the resource group removes the VM and associated resources created by the provisioning script:
 
 ```bash
-az group delete --name stratosphere-demo-rg
+# Use the same resource group you provisioned into (the default is stratosphere-demo-rg).
+az group delete --name "${AZURE_RESOURCE_GROUP:-stratosphere-demo-rg}"
 ```
 
 Resource-group deletion is destructive and database data is not recoverable unless it was backed up elsewhere.
