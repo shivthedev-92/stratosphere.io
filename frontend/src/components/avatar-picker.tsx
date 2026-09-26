@@ -83,7 +83,8 @@ export function AvatarPicker({
   onChange,
 }: {
   value: string | null;
-  onChange: (avatarId: string) => void;
+  /** Called with an avatar id, or null to go back to the initials tile. */
+  onChange: (avatarId: string | null) => void;
 }) {
   const buttons = useRef<Record<string, HTMLButtonElement | null>>({});
   // Roving tabindex: the selected avatar (or the first) is the one tab stop.
@@ -99,52 +100,63 @@ export function AvatarPicker({
   }
 
   return (
-    <div role="radiogroup" aria-label="Profile avatar" className="@container grid gap-5">
-      {AVATAR_GROUPS.map((group) => (
-        <div key={group.label}>
-          <p className="text-xs font-bold uppercase tracking-wide text-fg-subtle">{group.label}</p>
-          {/* Six per group: 3 columns, or one row of 6 when there is room, so no avatar sits alone. */}
-          <div className="mt-3 grid grid-cols-3 gap-5 @lg:grid-cols-6">
-            {group.avatars.map((avatar) => {
-              const index = ALL_AVATARS.findIndex((item) => item.id === avatar.id);
-              const selected = value === avatar.id;
-              return (
-                <button
-                  key={avatar.id}
-                  ref={(node) => {
-                    buttons.current[avatar.id] = node;
-                  }}
-                  type="button"
-                  role="radio"
-                  aria-checked={selected}
-                  aria-label={avatar.name}
-                  title={avatar.name}
-                  tabIndex={avatar.id === tabStop ? 0 : -1}
-                  onClick={() => onChange(avatar.id)}
-                  onKeyDown={(event) => handleKeyDown(event, index)}
-                  className="group relative mx-auto h-[76px] w-[76px] rounded-full transition-transform duration-200 ease-calm hover:scale-105 motion-reduce:transition-none motion-reduce:hover:scale-100"
-                >
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={`/avatars/${avatar.id}.svg`}
-                    alt=""
-                    width={76}
-                    height={76}
-                    className={`h-full w-full rounded-full ${
-                      selected ? "outline outline-2 outline-offset-[3px] outline-focus" : ""
-                    }`}
-                  />
-                  {selected ? (
-                    <span className="absolute -right-1 -top-1 grid h-[22px] w-[22px] place-items-center rounded-full bg-accent text-white">
-                      <Check size={13} weight="bold" aria-hidden />
-                    </span>
-                  ) : null}
-                </button>
-              );
-            })}
+    <div className="grid gap-4">
+      <div role="radiogroup" aria-label="Profile avatar" className="@container grid gap-5">
+        {AVATAR_GROUPS.map((group) => (
+          <div key={group.label}>
+            <p className="text-xs font-bold uppercase tracking-wide text-fg-subtle">{group.label}</p>
+            {/* Six per group: 3 columns, or one row of 6 when there is room, so no avatar sits alone. */}
+            <div className="mt-3 grid grid-cols-3 gap-5 @lg:grid-cols-6">
+              {group.avatars.map((avatar) => {
+                const index = ALL_AVATARS.findIndex((item) => item.id === avatar.id);
+                const selected = value === avatar.id;
+                return (
+                  <button
+                    key={avatar.id}
+                    ref={(node) => {
+                      buttons.current[avatar.id] = node;
+                    }}
+                    type="button"
+                    role="radio"
+                    aria-checked={selected}
+                    aria-label={avatar.name}
+                    title={avatar.name}
+                    tabIndex={avatar.id === tabStop ? 0 : -1}
+                    onClick={() => onChange(avatar.id)}
+                    onKeyDown={(event) => handleKeyDown(event, index)}
+                    className="group relative mx-auto h-[76px] w-[76px] rounded-full transition-transform duration-200 ease-calm hover:scale-105 motion-reduce:transition-none motion-reduce:hover:scale-100"
+                  >
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={`/avatars/${avatar.id}.svg`}
+                      alt=""
+                      width={76}
+                      height={76}
+                      className={`h-full w-full rounded-full ${
+                        selected ? "outline outline-2 outline-offset-[3px] outline-focus" : ""
+                      }`}
+                    />
+                    {selected ? (
+                      <span className="absolute -right-1 -top-1 grid h-[22px] w-[22px] place-items-center rounded-full bg-accent text-white">
+                        <Check size={13} weight="bold" aria-hidden />
+                      </span>
+                    ) : null}
+                  </button>
+                );
+              })}
+            </div>
           </div>
-        </div>
-      ))}
+        ))}
+      </div>
+      {value ? (
+        <button
+          type="button"
+          onClick={() => onChange(null)}
+          className="justify-self-start rounded-control border border-line px-3 py-2 text-sm font-semibold text-fg-muted transition-colors hover:border-accent hover:text-fg"
+        >
+          Use my initials instead
+        </button>
+      ) : null}
     </div>
   );
 }

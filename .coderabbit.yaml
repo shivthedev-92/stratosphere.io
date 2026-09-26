@@ -90,8 +90,12 @@ reviews:
     - path: "frontend/src/**/*.tsx"
       instructions: >
         Flag any dangerouslySetInnerHTML, direct innerHTML assignment, or
-        rendering of unsanitised user content. This project has none today
-        and should stay that way.
+        rendering of unsanitised user content. The single sanctioned
+        exception is the theme script in frontend/src/app/layout.tsx, which
+        inlines THEME_INIT_SCRIPT from frontend/src/lib/theme-script.ts; it
+        must stay a static string with no runtime or user data. Treat any
+        other occurrence, or any change that puts dynamic data into that
+        script, as a violation.
 
     - path: "**/Dockerfile"
       instructions: >

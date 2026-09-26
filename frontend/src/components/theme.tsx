@@ -25,30 +25,16 @@ function readChoice(): ThemeChoice {
 export function useTheme(): [ThemeChoice, (choice: ThemeChoice) => void] {
   const [choice, setChoice] = useState<ThemeChoice>("system");
 
+  // Keep the switcher's selection in sync. Applying the theme itself (device
+  // changes, other tabs) is done by THEME_INIT_SCRIPT on every page.
   useEffect(() => {
     setChoice(readChoice());
-    // Other tabs changing the theme.
     const onStorage = (event: StorageEvent) => {
-      if (event.key === THEME_STORAGE_KEY) {
-        const next = readChoice();
-        setChoice(next);
-        document.documentElement.dataset.theme = resolve(next);
-      }
+      if (event.key === THEME_STORAGE_KEY || event.key === null) setChoice(readChoice());
     };
     window.addEventListener("storage", onStorage);
     return () => window.removeEventListener("storage", onStorage);
   }, []);
-
-  // While following the system, react to the device switching light/dark.
-  useEffect(() => {
-    if (choice !== "system") return;
-    const media = window.matchMedia("(prefers-color-scheme: light)");
-    const onChange = () => {
-      document.documentElement.dataset.theme = resolve("system");
-    };
-    media.addEventListener("change", onChange);
-    return () => media.removeEventListener("change", onChange);
-  }, [choice]);
 
   const update = useCallback((next: ThemeChoice) => {
     setChoice(next);

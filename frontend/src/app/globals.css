@@ -97,7 +97,18 @@ body {
 .signature-bg {
   position: relative;
   isolation: isolate;
-  background: var(--scene-overlay), var(--scene) center top / cover fixed, var(--bg);
+  background: var(--bg);
+}
+/* The scene sits on a fixed, viewport-sized layer rather than using
+   background-attachment: fixed, which iOS Safari ignores: it would scale the
+   image to the full page height and show a blurry, over-zoomed crop. */
+.signature-bg::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background: var(--scene-overlay), var(--scene) center top / cover no-repeat, var(--bg);
 }
 
 /* Typing indicator: a calm sequential fade (spec: no bounce or overshoot). */

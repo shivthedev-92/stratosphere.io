@@ -66,6 +66,9 @@ export default function ChatPage() {
   const [safetyByIndex, setSafetyByIndex] = useState<Record<number, SafetyNoticeOut>>({});
   // Text of the in-flight reply, rendered live before it lands in `history`.
   const [streaming, setStreaming] = useState("");
+  // Completed replies for screen readers. Streamed tokens stay out of the
+  // live region so partial text isn't read over and over.
+  const [announcement, setAnnouncement] = useState("");
   // Server-side chat session. Sent with every message so the coach keeps the
   // conversation's context; set from the first reply.
   const [sessionId, setSessionId] = useState<string | null>(null);
@@ -138,6 +141,8 @@ export default function ChatPage() {
       const content = accumulated || (received ? CRISIS_FALLBACK_MESSAGE : "");
       if (!content) return;
       setHistory([...updatedHistory, { role: "assistant", content }]);
+      // Crisis notices announce themselves (role="alert").
+      setAnnouncement(received ? "" : `Aster: ${content}`);
       if (received) {
         setSafetyByIndex((prev) => ({ ...prev, [assistantIndex]: received }));
       }
@@ -263,6 +268,9 @@ export default function ChatPage() {
               </CoachBubble>
             )}
             {error && <p className="text-center text-sm text-danger">{error}</p>}
+            <div className="sr-only" aria-live="polite" aria-atomic="true">
+              {announcement}
+            </div>
             <div ref={bottomRef} />
           </div>
 

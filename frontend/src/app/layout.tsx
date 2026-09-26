@@ -62,6 +62,13 @@ export default function RootLayout({
       suppressHydrationWarning
     >
       <head>
+        {/*
+          Sanctioned exception to the no-dangerouslySetInnerHTML rule (recorded in
+          .coderabbit.yaml): THEME_INIT_SCRIPT is a static build-time string with no
+          runtime or user data. It has to be an inline <head> script to set the theme
+          before first paint; next/script's beforeInteractive runs too late.
+        */}
+        {/* nosemgrep: typescript.react.security.audit.react-dangerouslysetinnerhtml.react-dangerouslysetinnerhtml */}
         <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
       </head>
       <body className="min-h-full flex flex-col">{children}</body>

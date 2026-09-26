@@ -160,7 +160,12 @@ export default function DashboardPage() {
   const [showNotifications, setShowNotifications] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [avatarError, setAvatarError] = useState("");
-  const avatarRequest = useRef(0);
+  // Avatar saves run one at a time: "wanted" is the latest pick, "confirmed"
+  // the last value the server accepted. The loop in handleAvatarChange keeps
+  // saving until they match, so the final server write is the final pick.
+  const avatarWanted = useRef<string | null>(null);
+  const avatarConfirmed = useRef<string | null>(null);
+  const avatarSaving = useRef(false);
   const [title, setTitle] = useState("");
   const [notes, setNotes] = useState("");
   const [isTimed, setIsTimed] = useState(false);
@@ -191,6 +196,8 @@ export default function DashboardPage() {
     ])
       .then(([userData, goalData, logData, notificationData, notificationSummary, dueNotificationData]) => {
         setUser(userData);
+        avatarWanted.current = userData.avatar_id;
+        avatarConfirmed.current = userData.avatar_id;
         setGoals(goalData);
         setGoalLogs(logData);
         setNotifications([
@@ -251,20 +258,30 @@ export default function DashboardPage() {
     router.push("/");
   }
 
-  async function handleAvatarChange(avatarId: string) {
-    if (!user || avatarId === user.avatar_id) return;
-    const previous = user.avatar_id;
-    // Show the pick at once; only the latest request may write back.
-    const request = ++avatarRequest.current;
+  async function handleAvatarChange(avatarId: string | null) {
+    if (!user || avatarId === avatarWanted.current) return;
+    avatarWanted.current = avatarId;
     setAvatarError("");
-    setUser({ ...user, avatar_id: avatarId });
+    setUser((current) => (current ? { ...current, avatar_id: avatarId } : current));
+    if (avatarSaving.current) return; // the running loop below picks up this pick
+    avatarSaving.current = true;
     try {
-      const updated = await api.updateAvatar(avatarId);
-      if (request === avatarRequest.current) setUser(updated);
-    } catch (err: unknown) {
-      if (request !== avatarRequest.current) return;
-      setUser((current) => (current ? { ...current, avatar_id: previous } : current));
-      setAvatarError(err instanceof Error ? err.message : "Could not save your avatar");
+      while (avatarWanted.current !== avatarConfirmed.current) {
+        const target = avatarWanted.current;
+        try {
+          await api.updateAvatar(target);
+          avatarConfirmed.current = target;
+        } catch (err: unknown) {
+          // Roll back to what the server last accepted.
+          const confirmed = avatarConfirmed.current;
+          avatarWanted.current = confirmed;
+          setUser((current) => (current ? { ...current, avatar_id: confirmed } : current));
+          setAvatarError(err instanceof Error ? err.message : "Could not save your avatar");
+          break;
+        }
+      }
+    } finally {
+      avatarSaving.current = false;
     }
   }
 
