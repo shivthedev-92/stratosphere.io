@@ -249,7 +249,14 @@ export default function DashboardPage() {
   }, [goals.length, isTimed]);
 
   async function handleLogout() {
-    await api.logout().catch(() => undefined);
+    // The session cookie is HttpOnly and only the server can clear it, so a
+    // failed logout must not look like a successful one.
+    try {
+      await api.logout();
+    } catch {
+      setError("Couldn't sign you out. Check your connection and try again.");
+      return;
+    }
     clearToken();
     router.push("/");
   }

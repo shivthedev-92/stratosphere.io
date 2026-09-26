@@ -25,3 +25,8 @@ def test_profile_rejects_blank_name():
 def test_password_reset_requires_a_strong_password():
     with pytest.raises(ValidationError):
         PasswordResetConfirmIn(token="x" * 32, password="short")
+
+
+def test_overlong_password_fails_login_cleanly():
+    from app.security import hash_password, verify_password
+    assert verify_password("x" * 100, hash_password("x" * 10)) is False

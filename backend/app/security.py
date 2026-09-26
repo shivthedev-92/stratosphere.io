@@ -31,6 +31,9 @@ def hash_password(password: str) -> str:
 #==================#
 
 def verify_password(plain: str, hashed: str) -> bool:
+    # bcrypt 5 raises on inputs over 72 bytes; such a password can never match.
+    if len(plain.encode()) > 72:
+        return False
     return bcrypt.checkpw(plain.encode(), hashed.encode())
 
 #=========================#

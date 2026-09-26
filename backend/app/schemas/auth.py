@@ -46,7 +46,7 @@ class SignupIn(BaseModel):
 
 class LoginIn(BaseModel):
     email: EmailStr
-    password: str
+    password: str = Field(min_length=1, max_length=256)
 
     @field_validator("email", mode="after")
     @classmethod
