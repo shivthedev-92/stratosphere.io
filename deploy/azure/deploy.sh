@@ -62,21 +62,27 @@ cleanup() {
 }
 trap cleanup EXIT
 
-tar \
-  --exclude='.git' \
-  --exclude='.agents' \
-  --exclude='.codex' \
-  --exclude='graphify-out' \
-  --exclude='node_modules' \
-  --exclude='.next' \
-  --exclude='__pycache__' \
-  --exclude='.venv' \
-  --exclude='.env' \
-  --exclude='.env.*' \
-  --exclude='*/.env' \
-  --exclude='*/.env.*' \
-  -czf "$ARCHIVE" \
-  -C "$PROJECT_ROOT" .
+# Package only files tracked by git, and only what the stack builds from:
+# the backend and frontend build contexts plus deploy/ (compose file,
+# Caddyfile). Untracked and git-ignored files (personal notes, local .env
+# files, design zips, scratch output) never leave this machine. Uncommitted
+# edits to tracked files are included, so a tested working tree can ship.
+readonly DEPLOY_PATHS=(backend frontend deploy)
+if [[ -n "$(git -C "$PROJECT_ROOT" status --porcelain -- "${DEPLOY_PATHS[@]}")" ]]; then
+  echo "Note: deploying uncommitted changes:" >&2
+  git -C "$PROJECT_ROOT" status --short -- "${DEPLOY_PATHS[@]}" >&2
+fi
+git -C "$PROJECT_ROOT" ls-files -z -- "${DEPLOY_PATHS[@]}" \
+  | tar \
+    --null \
+    --ignore-failed-read \
+    --exclude='.env' \
+    --exclude='.env.*' \
+    --exclude='*/.env' \
+    --exclude='*/.env.*' \
+    -czf "$ARCHIVE" \
+    -C "$PROJECT_ROOT" \
+    --files-from=-
 
 readonly SSH_OPTIONS=(-i "$SSH_PRIVATE_KEY_PATH" -p "$SSH_PORT" -o IdentitiesOnly=yes)
 readonly SCP_OPTIONS=(-i "$SSH_PRIVATE_KEY_PATH" -P "$SSH_PORT" -o IdentitiesOnly=yes)

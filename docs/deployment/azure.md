@@ -9,6 +9,15 @@ This is the recommended production path for the current Stratosphere architectur
 - Install Azure CLI, run `az login`, and select the intended subscription with `az account set --subscription ...`.
 - Have an SSH key pair ready. The provisioning script accepts only public-key authentication.
 
+`Standard_B2ats_v2` is not offered to every subscription in every region. On a new free-trial subscription (checked 2026-09-26) it was unavailable in Central India but available in **South India**, which is now the default. Check a region with:
+
+```bash
+az vm list-skus --location southindia --size Standard_B2ats_v2 --resource-type virtualMachines \
+  --query "[].{name:name, restrictions:restrictions[].reasonCode}" -o table
+```
+
+An empty restrictions column means it is available. The VM uses Trusted Launch (Secure Boot and vTPM), Azure's default; the older "Standard" security type now needs a subscription feature flag.
+
 `Standard_B2ats_v2` has 2 vCPUs and 1 GiB RAM. The bootstrap script adds 4 GiB of swap and deployments build images sequentially. If builds or runtime traffic outgrow it, set `AZURE_VM_SIZE=Standard_B2als_v2` (or another appropriately priced size) before provisioning.
 
 ## 1. Provision the VM
@@ -18,7 +27,7 @@ From the repository root, discover your public IP and export the required settin
 ```bash
 export AZURE_SSH_SOURCE_CIDR="YOUR_PUBLIC_IP/32"
 export AZURE_SSH_PUBLIC_KEY_PATH="/absolute/path/to/id_ed25519.pub"
-export AZURE_LOCATION="centralindia"
+export AZURE_LOCATION="southindia"
 ```
 
 Optionally override `AZURE_RESOURCE_GROUP`, `AZURE_VM_NAME`, `AZURE_ADMIN_USER`, or `AZURE_VM_SIZE`. Then run:
@@ -63,7 +72,7 @@ The AI coach uses Claude Haiku 4.5: set `AI_PROVIDER=anthropic` and `ANTHROPIC_A
 
 ## 4. Deploy the tested working tree
 
-The deploy script packages the current working tree, excluding Git metadata, build output, local environments, and secret files. It uploads `deploy/azure/.env.azure` separately with mode `0600`, builds sequentially on the VM, runs migrations through the API container entrypoint, starts the stack, and waits for the public readiness endpoint.
+The deploy script packages only the git-tracked files under `backend/`, `frontend/` and `deploy/`, including uncommitted edits to them (it lists those first). Untracked and git-ignored files, such as personal notes, local `.env` files and design archives, never leave your machine. It uploads `deploy/azure/.env.azure` separately with mode `0600`, builds sequentially on the VM, runs migrations through the API container entrypoint, starts the stack, and waits for the public readiness endpoint.
 
 ```bash
 export AZURE_VM_HOST="VM_PUBLIC_IP"
@@ -85,7 +94,33 @@ docker compose --project-name stratosphere --env-file .env.azure --file deploy/a
 docker compose --project-name stratosphere --env-file .env.azure --file deploy/azure/docker-compose.azure.yml logs --tail=200
 ```
 
-Create an encrypted off-VM database backup before each deployment. At minimum, make a dump and copy it to protected storage:
+### Nightly backups
+
+After the first successful deploy, set up automatic backups once:
+
+```bash
+export AZURE_VM_HOST="VM_PUBLIC_IP"
+export AZURE_SSH_PRIVATE_KEY_PATH="/absolute/path/to/id_ed25519"
+./deploy/azure/setup-backups.sh
+```
+
+It creates a private storage account and a `db-backups` container, a lifecycle rule that deletes backups after 30 days (`BACKUP_RETENTION_DAYS`), and a one-year SAS token that can only create and write blobs. It installs `backup-db.sh` and a cron job on the VM (01:47 IST daily) and runs one backup straight away. The VM cannot read, list or delete backups, so a compromised server cannot wipe them. Re-run the script to rotate the token before it expires. The log is `/opt/stratosphere/backup.log` on the VM.
+
+To restore, download a dump with your own Azure login and load it into the database container:
+
+```bash
+az storage blob list --account-name ACCOUNT --container-name db-backups --auth-mode login -o table
+az storage blob download --account-name ACCOUNT --container-name db-backups --auth-mode login \
+  --name stratosphere-YYYYMMDDTHHMMSSZ.dump --file restore.dump
+scp -i KEY restore.dump azureuser@VM_PUBLIC_IP:/tmp/
+# on the VM, from /opt/stratosphere/current:
+docker compose --project-name stratosphere --env-file .env.azure --file deploy/azure/docker-compose.azure.yml exec -T db \
+  sh -c 'pg_restore -U "$POSTGRES_USER" -d "$POSTGRES_DB" --clean --if-exists' < /tmp/restore.dump
+```
+
+`--auth-mode login` needs the "Storage Blob Data Reader" role on the account for your user; alternatively pass `--account-key`. Test a restore occasionally.
+
+For a one-off backup before a risky change, make a dump by hand:
 
 ```bash
 docker compose --project-name stratosphere --env-file .env.azure --file deploy/azure/docker-compose.azure.yml exec -T db \
@@ -116,5 +151,7 @@ Timed tasks can send a Telegram message when they are due. The bot runs inside t
    TELEGRAM_BOT_USERNAME=YourStratosphereBot
    ```
 3. Redeploy. Each user then connects from **Settings → Telegram reminders → Connect Telegram** and presses **Start** in the bot.
+
+Only one server can poll a bot at a time: while production uses the bot, run local development with `TELEGRAM_BOT_TOKEN` empty (or a separate test bot), otherwise the two fight over updates and Telegram returns "Conflict" errors.
 
 Reminders arrive within about 30 seconds of the task's time. Messages contain the task title only. Treat the token like a password: anyone with it can send messages as the bot.
