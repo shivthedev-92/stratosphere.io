@@ -16,10 +16,14 @@
 "use client";
 
 import { useState, useRef, useEffect, FormEvent, useMemo } from "react";
+import { CrisisNotice, CoachDisclaimer } from "@/components/crisis-notice";
+import { chatStream } from "@/lib/api";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { BackgroundShell } from "@/components/background-shell";
-import { api, type ChatMessage, type GoalLogOut, type GoalOut } from "@/lib/api";
+import { api, type ChatMessage, type GoalLogOut, type GoalOut,
+  type SafetyNoticeOut,
+} from "@/lib/api";
 import { CoachIllustration } from "@/components/illustrations";
 
 const starterPrompts = [
@@ -55,6 +59,11 @@ function getLatestLogsByGoal(logs: GoalLogOut[]) {
 export default function ChatPage() {
   const router = useRouter();
   const [history, setHistory] = useState<ChatMessage[]>([]);
+  // Safety notices keyed by their index in `history`, so the card renders
+  // in place of the assistant bubble at that position.
+  const [safetyByIndex, setSafetyByIndex] = useState<Record<number, SafetyNoticeOut>>({});
+  // Text of the in-flight reply, rendered live before it lands in `history`.
+  const [streaming, setStreaming] = useState("");
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [contextLoading, setContextLoading] = useState(true);
@@ -77,8 +86,9 @@ export default function ChatPage() {
   const goalsById = useMemo(() => new Map(goals.map((goal) => [goal.id, goal])), [goals]);
 
   useEffect(() => {
+    // `streaming` is a dep so the view follows tokens as they arrive.
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [history]);
+  }, [history, streaming]);
 
   useEffect(() => {
     async function loadContext() {
@@ -110,10 +120,36 @@ export default function ChatPage() {
     setHistory(updatedHistory);
     setLoading(true);
 
+    const assistantIndex = updatedHistory.length;
+    let accumulated = "";
+    let notice: SafetyNoticeOut | null = null;
+    let streamError = "";
+
     try {
-      const { reply } = await api.chat(userMessage, history);
-      setHistory([...updatedHistory, { role: "assistant", content: reply }]);
+      setStreaming("");
+      await chatStream(userMessage, {
+        onToken: (text) => {
+          accumulated += text;
+          setStreaming(accumulated);
+        },
+        onSafety: (received) => {
+          notice = received;
+        },
+        onError: (detail) => {
+          streamError = detail;
+        },
+      });
+
+      setStreaming("");
+      if (accumulated) {
+        setHistory([...updatedHistory, { role: "assistant", content: accumulated }]);
+        if (notice) {
+          setSafetyByIndex((prev) => ({ ...prev, [assistantIndex]: notice as SafetyNoticeOut }));
+        }
+      }
+      if (streamError) setError(streamError);
     } catch (err: unknown) {
+      setStreaming("");
       if (err instanceof Error && err.message.includes("401")) {
         router.push("/login");
         return;
@@ -173,18 +209,38 @@ export default function ChatPage() {
                 </div>
               </div>
             )}
-            {history.map((msg, i) => (
-              <div key={i} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
-                <div
-                  className={`max-w-[85%] whitespace-pre-wrap rounded-2xl px-4 py-3 text-sm leading-relaxed ${
-                    msg.role === "user" ? "bg-indigo-600 text-white" : "bg-neutral-900 text-neutral-100"
-                  }`}
-                >
-                  {msg.content}
+            {history.map((msg, i) => {
+              const notice = safetyByIndex[i];
+              if (notice) {
+                return (
+                  <div key={i} className="flex justify-start">
+                    <div className="max-w-[95%]">
+                      <CrisisNotice notice={notice} message={msg.content} />
+                    </div>
+                  </div>
+                );
+              }
+              return (
+                <div key={i} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
+                  <div
+                    className={`max-w-[85%] whitespace-pre-wrap rounded-2xl px-4 py-3 text-sm leading-relaxed ${
+                      msg.role === "user" ? "bg-indigo-600 text-white" : "bg-neutral-900 text-neutral-100"
+                    }`}
+                  >
+                    {msg.content}
+                  </div>
+                </div>
+              );
+            })}
+            {streaming && (
+              <div className="flex justify-start">
+                <div className="max-w-[85%] whitespace-pre-wrap rounded-2xl bg-neutral-900 px-4 py-3 text-sm leading-relaxed text-neutral-100">
+                  {streaming}
+                  <span className="ml-0.5 inline-block h-4 w-1.5 translate-y-0.5 animate-pulse bg-neutral-400" />
                 </div>
               </div>
-            ))}
-            {loading && (
+            )}
+            {loading && !streaming && (
               <div className="flex justify-start">
                 <div className="rounded-2xl bg-neutral-900 px-4 py-3 text-sm text-neutral-400 animate-pulse">
                   Thinking…
@@ -195,7 +251,11 @@ export default function ChatPage() {
             <div ref={bottomRef} />
           </div>
 
-          <form onSubmit={handleSend} className="flex gap-3 border-t border-neutral-800 px-4 py-4">
+          <div className="border-t border-neutral-800 pt-3">
+            <CoachDisclaimer />
+          </div>
+
+          <form onSubmit={handleSend} className="flex gap-3 px-4 pb-4">
             <input
               type="text"
               value={input}

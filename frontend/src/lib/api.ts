@@ -53,9 +53,26 @@ export type ChatMessage = {
   content: string;
 };
 
+export type CrisisResourceOut = {
+  name: string;
+  numbers: string[];
+  hours: string;
+  note: string;
+};
+
+/** Present only when the message tripped crisis detection on the server.
+ *  When set, `reply` is fixed human-authored copy and the AI coach was
+ *  never called. Render it distinctly - never as a normal chat bubble. */
+export type SafetyNoticeOut = {
+  kind: "crisis";
+  emergency_number: string;
+  resources: CrisisResourceOut[];
+};
+
 export type ChatOut = {
   reply: string;
   session_id: string;
+  safety?: SafetyNoticeOut | null;
 };
 
 export type ChatSessionOut = {
@@ -129,6 +146,8 @@ export type GoalLogOut = {
   soulful: boolean | null;
   emotion_label: EmotionLabel | null;
   created_at: string;
+  /** Additive only - the reflection is always saved regardless. */
+  safety?: SafetyNoticeOut | null;
 };
 
 export type NotificationOut = {
@@ -159,6 +178,82 @@ export type SupportTicketOut = SupportTicketCreate & {
   status: string;
   created_at: string;
 };
+
+
+/**
+ * Streams a coach reply over Server-Sent Events.
+ *
+ * Falls back to nothing clever: the caller gets `onToken` for each chunk,
+ * `onSafety` if the crisis gate fired (in which case no model ran), and
+ * `onError` for a server-sent error frame. Resolves with the session id.
+ */
+export async function chatStream(
+  message: string,
+  opts: {
+    sessionId?: string | null;
+    goalId?: string | null;
+    onToken: (text: string) => void;
+    onSafety?: (notice: SafetyNoticeOut) => void;
+    onError?: (detail: string) => void;
+    signal?: AbortSignal;
+  },
+): Promise<string | null> {
+  const res = await fetch(`${BASE_URL}/chat/stream`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    signal: opts.signal,
+    body: JSON.stringify({
+      message,
+      session_id: opts.sessionId ?? null,
+      goal_id: opts.goalId ?? null,
+      history: [],
+    }),
+  });
+  if (!res.ok || !res.body) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body?.detail ?? `HTTP ${res.status}`);
+  }
+
+  const reader = res.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = "";
+  let sessionId: string | null = null;
+
+  const handleFrame = (frame: string) => {
+    let event = "message";
+    const dataLines: string[] = [];
+    for (const line of frame.split("\n")) {
+      if (line.startsWith("event: ")) event = line.slice(7).trim();
+      else if (line.startsWith("data: ")) dataLines.push(line.slice(6));
+    }
+    if (!dataLines.length) return;
+    let payload: Record<string, unknown>;
+    try {
+      payload = JSON.parse(dataLines.join("\n"));
+    } catch {
+      return;
+    }
+    if (event === "token") opts.onToken(String(payload.text ?? ""));
+    else if (event === "safety") opts.onSafety?.(payload as unknown as SafetyNoticeOut);
+    else if (event === "error") opts.onError?.(String(payload.detail ?? "Something went wrong"));
+    else if (event === "done") sessionId = (payload.session_id as string) ?? null;
+  };
+
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    buffer += decoder.decode(value, { stream: true });
+    // SSE frames are separated by a blank line.
+    let split: number;
+    while ((split = buffer.indexOf("\n\n")) !== -1) {
+      handleFrame(buffer.slice(0, split));
+      buffer = buffer.slice(split + 2);
+    }
+  }
+  if (buffer.trim()) handleFrame(buffer);
+  return sessionId;
+}
 
 export const api = {
   signup: (email: string, password: string, name: string) =>

@@ -12,6 +12,8 @@
 # Version 0.1.0 | 2024-06
 ############################################################################
 
+import json
+from collections.abc import AsyncIterator
 from typing import Protocol, runtime_checkable
 
 import httpx
@@ -54,6 +56,20 @@ Never lecture. Keep responses focused and actionable."""
 
 @runtime_checkable
 class CoachProvider(Protocol):
+    """Streaming is the primitive; `reply` is derived from it.
+
+    Implementing only `stream_reply` keeps the blocking path (used by the
+    mobile client via POST /chat) and the streaming path (web, via
+    POST /chat/stream) from drifting apart.
+    """
+
+    def stream_reply(
+        self,
+        history: list[ChatMessage],
+        user_message: str,
+        task_context: str | None = None,
+    ) -> AsyncIterator[str]: ...
+
     async def reply(
         self,
         history: list[ChatMessage],
@@ -61,53 +77,85 @@ class CoachProvider(Protocol):
         task_context: str | None = None,
     ) -> str: ...
 
+
+async def _collect(chunks: AsyncIterator[str]) -> str:
+    """Drain a stream into the single string the blocking endpoint returns."""
+    return "".join([chunk async for chunk in chunks])
+
 #==============#
 # Ollama Coach |
 #==============#
 
 class OllamaCoach:
-    async def reply(
+    def _messages(
         self,
         history: list[ChatMessage],
         user_message: str,
-        task_context: str | None = None,
-    ) -> str:
+        task_context: str | None,
+    ) -> list[dict[str, str]]:
         messages = [{"role": "system", "content": SYSTEM_PROMPT}]
         if task_context:
             messages.append({"role": "system", "content": task_context})
         for msg in history:
             messages.append({"role": msg.role, "content": msg.content})
         messages.append({"role": "user", "content": user_message})
+        return messages
 
-        async with httpx.AsyncClient(timeout=120.0) as client:
-            try:
-                response = await client.post(
-                    f"{settings.OLLAMA_HOST}/api/chat",
-                    json={
-                        "model": settings.OLLAMA_MODEL,
-                        "messages": messages,
-                        "stream": False,
-                        "options": {
-                            "temperature": 0.4,
-                            "num_predict": 350,
-                        },
-                    },
-                )
-                response.raise_for_status()
-            except httpx.TimeoutException as exc:
-                raise HTTPException(
-                    status_code=504,
-                    detail=(
-                        "The local AI model took too long to respond. "
-                        "Try a shorter message or use a smaller Ollama model."
-                    ),
-                ) from exc
-            except httpx.HTTPError as exc:
-                raise HTTPException(
-                    status_code=502,
-                    detail="The local AI model is not responding correctly.",
-                ) from exc
-            return response.json()["message"]["content"]
+    async def stream_reply(
+        self,
+        history: list[ChatMessage],
+        user_message: str,
+        task_context: str | None = None,
+    ) -> AsyncIterator[str]:
+        payload = {
+            "model": settings.OLLAMA_MODEL,
+            "messages": self._messages(history, user_message, task_context),
+            "stream": True,
+            "options": {"temperature": 0.4, "num_predict": 350},
+        }
+        # Read timeout is per-chunk, not per-request. On CPU inference the
+        # gap before the first token (prompt evaluation) is the long one;
+        # once tokens flow the gaps are small.
+        timeout = httpx.Timeout(connect=10.0, read=180.0, write=10.0, pool=10.0)
+        try:
+            async with httpx.AsyncClient(timeout=timeout) as client:
+                async with client.stream(
+                    "POST", f"{settings.OLLAMA_HOST}/api/chat", json=payload
+                ) as response:
+                    response.raise_for_status()
+                    async for line in response.aiter_lines():
+                        if not line.strip():
+                            continue
+                        try:
+                            data = json.loads(line)
+                        except json.JSONDecodeError:
+                            continue
+                        chunk = data.get("message", {}).get("content", "")
+                        if chunk:
+                            yield chunk
+                        if data.get("done"):
+                            return
+        except httpx.TimeoutException as exc:
+            raise HTTPException(
+                status_code=504,
+                detail=(
+                    "The local AI model took too long to respond. "
+                    "Try a shorter message or use a smaller Ollama model."
+                ),
+            ) from exc
+        except httpx.HTTPError as exc:
+            raise HTTPException(
+                status_code=502,
+                detail="The local AI model is not responding correctly.",
+            ) from exc
+
+    async def reply(
+        self,
+        history: list[ChatMessage],
+        user_message: str,
+        task_context: str | None = None,
+    ) -> str:
+        return await _collect(self.stream_reply(history, user_message, task_context))
 
 
 #=================#
@@ -125,29 +173,51 @@ class AnthropicCoach:
 
         self._client = AsyncAnthropic(api_key=settings.ANTHROPIC_API_KEY)
 
-    async def reply(
+    def _request_kwargs(
         self,
         history: list[ChatMessage],
         user_message: str,
-        task_context: str | None = None,
-    ) -> str:
+        task_context: str | None,
+    ) -> dict:
         messages = [{"role": msg.role, "content": msg.content} for msg in history]
         messages.append({"role": "user", "content": user_message})
         system_prompt = SYSTEM_PROMPT if not task_context else f"{SYSTEM_PROMPT}\n\n{task_context}"
-
-        response = await self._client.messages.create(
-            model=settings.ANTHROPIC_MODEL,
-            max_tokens=1024,
-            system=[
+        return {
+            "model": settings.ANTHROPIC_MODEL,
+            "max_tokens": 1024,
+            # NOTE: this cache_control is inert on Haiku 4.5, whose minimum
+            # cacheable prefix is 4096 tokens - SYSTEM_PROMPT is ~380. It is
+            # kept because it does apply on larger models (Opus 5 caches from
+            # 512 tokens). Do not pad the prompt to reach the minimum.
+            "system": [
                 {
                     "type": "text",
                     "text": system_prompt,
                     "cache_control": {"type": "ephemeral"},
                 }
             ],
-            messages=messages,
-        )
-        return response.content[0].text
+            "messages": messages,
+        }
+
+    async def stream_reply(
+        self,
+        history: list[ChatMessage],
+        user_message: str,
+        task_context: str | None = None,
+    ) -> AsyncIterator[str]:
+        async with self._client.messages.stream(
+            **self._request_kwargs(history, user_message, task_context)
+        ) as stream:
+            async for text in stream.text_stream:
+                yield text
+
+    async def reply(
+        self,
+        history: list[ChatMessage],
+        user_message: str,
+        task_context: str | None = None,
+    ) -> str:
+        return await _collect(self.stream_reply(history, user_message, task_context))
 
 
 def get_coach() -> CoachProvider:

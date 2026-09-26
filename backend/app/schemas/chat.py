@@ -18,6 +18,10 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
+from app.schemas.safety import CrisisResourceOut, SafetyNoticeOut
+
+__all__ = ["CrisisResourceOut", "SafetyNoticeOut"]
+
 
 class ChatMessage(BaseModel):
     role: Literal["user", "assistant"]
@@ -34,6 +38,7 @@ class ChatIn(BaseModel):
 class ChatOut(BaseModel):
     reply: str
     session_id: UUID
+    safety: SafetyNoticeOut | None = None
 
 
 class ChatSessionCreate(BaseModel):

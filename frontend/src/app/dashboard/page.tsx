@@ -15,6 +15,7 @@
 
 "use client";
 
+import { CrisisOverlay } from "@/components/crisis-notice";
 import { FormEvent, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -26,6 +27,7 @@ import {
   type NotificationOut,
   type Priority,
   type UserOut,
+  type SafetyNoticeOut,
 } from "@/lib/api";
 import { BackgroundShell } from "@/components/background-shell";
 import { ContactForm } from "@/components/contact-form";
@@ -337,6 +339,8 @@ export default function DashboardPage() {
     }
   }
 
+  const [safetyNotice, setSafetyNotice] = useState<SafetyNoticeOut | null>(null);
+
   async function handleLogGoal(e: FormEvent) {
     e.preventDefault();
     if (!activeGoal || !reflection.trim()) return;
@@ -349,6 +353,8 @@ export default function DashboardPage() {
         soulful,
       });
       setGoalLogs((current) => [...current, log]);
+      // The reflection is already saved; this only surfaces resources.
+      if (log.safety) setSafetyNotice(log.safety);
       setActiveGoal(null);
       setReflection("");
       setSoulful(null);
@@ -924,6 +930,10 @@ export default function DashboardPage() {
         <ProgressSystem goals={goals} logs={goalLogs} />
         <CompletedReflectionsTable goals={goals} logs={goalLogs} onReuseGoal={handleReuseGoal} />
       </div>
+
+      {safetyNotice && (
+        <CrisisOverlay notice={safetyNotice} onClose={() => setSafetyNotice(null)} />
+      )}
 
       {activeGoal && (
         <ReflectGoalModal

@@ -24,6 +24,7 @@ from app.models.goal import Goal, GoalLog
 from app.models.notification import Notification
 from app.models.user import User
 from app.schemas.goal import GoalCreate, GoalLogCreate, GoalLogOut, GoalOut, GoalUpdate
+from app.services.safety import build_crisis_notice, detect_crisis
 
 router = APIRouter(prefix="/goals", tags=["goals"])
 
@@ -149,7 +150,7 @@ def create_goal_log(
     data: GoalLogCreate,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
-) -> GoalLog:
+) -> GoalLogOut:
     goal = get_owned_goal(goal_id, current_user, db)
     log = GoalLog(
         user_id=current_user.id,
@@ -171,7 +172,13 @@ def create_goal_log(
         )
     db.commit()
     db.refresh(log)
-    return log
+
+    # Additive safety notice. The reflection is already committed above -
+    # detection never blocks or discards what the user wrote.
+    out = GoalLogOut.model_validate(log)
+    if detect_crisis(data.reflection) is not None:
+        out.safety = build_crisis_notice()
+    return out
 
 
 def get_owned_goal(goal_id: UUID, current_user: User, db: Session) -> Goal:

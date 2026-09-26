@@ -18,6 +18,8 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
+from app.schemas.safety import SafetyNoticeOut
+
 Priority = Literal["low", "medium", "high"]
 EmotionLabel = Literal[
     "happy",
@@ -82,5 +84,8 @@ class GoalLogOut(BaseModel):
     soulful: bool | None
     emotion_label: EmotionLabel | None
     created_at: datetime
+    # Additive only. The reflection is always saved; this simply surfaces
+    # crisis resources alongside it when the text trips detection.
+    safety: SafetyNoticeOut | None = None
 
     model_config = {"from_attributes": True}
