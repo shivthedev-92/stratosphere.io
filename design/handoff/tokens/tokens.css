@@ -1,0 +1,44 @@
+/* Stratosphere design tokens — Tailwind v4. Paste into frontend/src/app/globals.css, replacing the :root/@theme blocks. */
+@import url("https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=Newsreader:ital,opsz,wght@0,6..72,400;1,6..72,400&display=swap");
+
+@theme {
+  --font-sans: "Instrument Sans", system-ui, sans-serif;
+  --font-serif: "Newsreader", Georgia, serif;
+  --font-mono: "JetBrains Mono", "SFMono-Regular", monospace;
+
+  --color-indigo-50:#F1EFFF; --color-indigo-100:#E2DEFF; --color-indigo-200:#C7BFFF; --color-indigo-300:#A79BFF;
+  --color-indigo-400:#8676FF; --color-indigo-500:#6B5CFF; --color-indigo-600:#5B4CF0; --color-indigo-700:#4A3CE0;
+  --color-indigo-800:#3A2DB8; --color-indigo-900:#2B2275; --color-indigo-950:#15123A;
+
+  --radius-chip:8px; --radius-control:12px; --radius-card:20px; --radius-panel:24px;
+  --text-display:3.5rem; --text-title-1:2rem; --text-title-2:1.25rem; --text-body:1rem; --text-label:0.875rem; --text-caption:0.75rem;
+  --ease-calm: cubic-bezier(.2,.7,.2,1);
+}
+
+/* Semantic tokens. Night is default; Dawn applies with [data-theme="dawn"] or prefers-color-scheme: light. */
+:root {
+  --bg:#0B0A14; --surface:rgba(19,18,31,.78); --surface-solid:#13121F; --raised:#1C1A2B;
+  --line:rgba(255,255,255,.08); --line-strong:rgba(255,255,255,.12);
+  --text:#F3F2F8; --text-muted:#A6A3B8; --text-subtle:#8A879E;
+  --accent:#5B4CF0; --accent-hover:#6B5CFF; --accent-soft:#C7BFFF; --focus:#8676FF;
+  --low:#3CCFB4; --low-bg:rgba(60,207,180,.12);
+  --med:#6CC0F5; --med-bg:rgba(108,192,245,.12);
+  --high:#F2B24C; --high-bg:rgba(242,178,76,.12);
+  --notdone:#8A879E; --danger:#F0707A; --danger-bg:rgba(240,112,122,.08);
+  --scene:url("/beautiful-night.png");
+  --scene-overlay:linear-gradient(rgba(11,10,20,.55),rgba(11,10,20,.88));
+}
+[data-theme="dawn"] {
+  --bg:#F7F5F1; --surface:#FFFFFF; --surface-solid:#FFFFFF; --raised:#EFECE6;
+  --line:#E6E2DA; --line-strong:#E6E2DA;
+  --text:#16151F; --text-muted:#56536A; --text-subtle:#6E6B7E;
+  --accent:#4A3CE0; --accent-hover:#3A2DB8; --accent-soft:#4A3CE0; --focus:#4A3CE0;
+  --low:#0E7A68; --low-bg:#E3F5F1;
+  --med:#1C6AA3; --med-bg:#E4F0FA;
+  --high:#8A5507; --high-bg:#FBF0DD;
+  --notdone:#6E6B7E; --danger:#C0323F; --danger-bg:#FFF5F5;
+  --scene:url("/beautiful-sunrise.png");
+  --scene-overlay:linear-gradient(rgba(247,245,241,.35),rgba(247,245,241,.92) 55%);
+}
+
+body { background: var(--scene-overlay), var(--scene) center top / cover fixed, var(--bg); color: var(--text); font-family: var(--font-sans); -webkit-font-smoothing: antialiased; }

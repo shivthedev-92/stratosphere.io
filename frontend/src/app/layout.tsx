@@ -14,7 +14,24 @@
 
 
 import type { Metadata } from "next";
+import { Instrument_Sans, Newsreader } from "next/font/google";
 import "./globals.css";
+
+// Design system type: Instrument Sans for UI, Newsreader italic for the daily
+// quote and journal text. Exposed as CSS variables used by globals.css.
+const instrumentSans = Instrument_Sans({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+  variable: "--font-instrument",
+  display: "swap",
+});
+const newsreader = Newsreader({
+  subsets: ["latin"],
+  weight: ["400"],
+  style: ["normal", "italic"],
+  variable: "--font-newsreader",
+  display: "swap",
+});
 
 export const metadata: Metadata = {
   title: "Stratosphere — Your Productivity Coach",
@@ -38,7 +55,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="h-full antialiased">
+    <html lang="en" className={`${instrumentSans.variable} ${newsreader.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col">{children}</body>
     </html>
   );
