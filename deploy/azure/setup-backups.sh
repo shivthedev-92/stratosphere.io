@@ -61,7 +61,25 @@ az storage container create \
   --output none
 
 POLICY_FILE="$(mktemp)"
-trap 'rm -f -- "$POLICY_FILE"' EXIT
+# Set once the new access policy exists; cleared once its token has passed
+# the test backup. Any failure in between deletes it again, so failed
+# rotations cannot pile up (a container allows only 5 stored policies).
+NEW_POLICY=""
+on_exit() {
+  local status=$?
+  rm -f -- "$POLICY_FILE"
+  if [[ -n "$NEW_POLICY" && -n "${ACCOUNT_KEY:-}" ]]; then
+    az storage container policy delete \
+      --container-name "$CONTAINER" \
+      --name "$NEW_POLICY" \
+      --account-name "$STORAGE_ACCOUNT" \
+      --account-key "$ACCOUNT_KEY" \
+      --output none || echo "Could not remove unused policy $NEW_POLICY; delete it by hand." >&2
+    echo "Rotation failed: removed the unused policy $NEW_POLICY. The previous token is still in place." >&2
+  fi
+  return "$status"
+}
+trap on_exit EXIT
 cat >"$POLICY_FILE" <<EOF
 {
   "rules": [
@@ -106,6 +124,7 @@ az storage container policy create \
   --account-name "$STORAGE_ACCOUNT" \
   --account-key "$ACCOUNT_KEY" \
   --output none
+NEW_POLICY="$POLICY_NAME"
 SAS="$(az storage container generate-sas \
   --name "$CONTAINER" \
   --policy-name "$POLICY_NAME" \
@@ -165,6 +184,8 @@ line="$1 $dir/bin/backup-db.sh >> $dir/backup.log 2>&1"
 echo "Cron: $line"
 REMOTE
 unset SAS
+# The new token passed its test backup: keep its policy.
+NEW_POLICY=""
 
 # The new token works: revoke every older one.
 for old_policy in $(az storage container policy list \
