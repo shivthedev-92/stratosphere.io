@@ -29,38 +29,38 @@ export function CrisisNotice({ notice, message }: { notice: SafetyNoticeOut; mes
   return (
     <div
       role="alert"
-      className="rounded-2xl border border-amber-500/40 bg-amber-500/5 px-5 py-4 text-sm leading-relaxed"
+      className="rounded-2xl border border-high/40 bg-high-bg px-5 py-4 text-sm leading-relaxed"
     >
-      <p className="whitespace-pre-wrap text-neutral-100">{message}</p>
+      <p className="whitespace-pre-wrap text-fg">{message}</p>
 
       <ul className="mt-4 space-y-3">
         {notice.resources.map((resource) => (
-          <li key={resource.name} className="rounded-lg bg-neutral-900/60 px-4 py-3">
+          <li key={resource.name} className="rounded-control bg-surface px-4 py-3">
             <div className="flex flex-wrap items-baseline justify-between gap-2">
-              <span className="font-semibold text-white">{resource.name}</span>
-              <span className="text-xs text-neutral-400">{resource.hours}</span>
+              <span className="font-semibold text-fg">{resource.name}</span>
+              <span className="text-xs text-fg-muted">{resource.hours}</span>
             </div>
             <div className="mt-1 flex flex-wrap gap-x-4 gap-y-1">
               {resource.numbers.map((number) => (
                 <a
                   key={number}
                   href={`tel:${number.replace(/[^\d+]/g, "")}`}
-                  className="text-base font-semibold text-amber-300 hover:text-amber-200"
+                  className="text-base font-semibold text-high hover:underline"
                 >
                   {number}
                 </a>
               ))}
             </div>
-            {resource.note && <p className="mt-1 text-xs text-neutral-400">{resource.note}</p>}
+            {resource.note && <p className="mt-1 text-xs text-fg-muted">{resource.note}</p>}
           </li>
         ))}
       </ul>
 
-      <p className="mt-4 text-xs text-neutral-400">
+      <p className="mt-4 text-xs text-fg-muted">
         In an emergency, call{" "}
         <a
           href={`tel:${notice.emergency_number}`}
-          className="font-semibold text-amber-300 hover:text-amber-200"
+          className="font-semibold text-high hover:underline"
         >
           {notice.emergency_number}
         </a>
@@ -77,7 +77,7 @@ export function CrisisNotice({ notice, message }: { notice: SafetyNoticeOut; mes
  */
 export function CoachDisclaimer() {
   return (
-    <p className="px-4 pb-3 text-center text-xs leading-relaxed text-neutral-500">
+    <p className="px-4 pb-3 text-center text-xs leading-relaxed text-fg-subtle">
       Stratosphere helps you plan and reflect on your own goals. It is not therapy,
       counselling, or medical advice, and it is not a crisis service. If you are
       struggling with your mental health, please talk to a qualified professional.
@@ -158,13 +158,13 @@ export function CrisisOverlay({
         className="max-h-full w-full max-w-lg overflow-y-auto outline-none"
         onClick={(event) => event.stopPropagation()}
       >
-        <div className="rounded-2xl bg-neutral-950 shadow-2xl">
+        <div className="rounded-2xl bg-surface-solid shadow-2xl">
           <CrisisNotice notice={notice} message={REFLECTION_CRISIS_MESSAGE} />
         </div>
         <button
           type="button"
           onClick={onClose}
-          className="mt-3 w-full rounded-lg border border-neutral-700 bg-neutral-950 py-2 text-sm text-neutral-300 hover:bg-neutral-800"
+          className="mt-3 w-full rounded-control border border-line-strong bg-surface-solid py-2 text-sm text-fg-muted hover:bg-raised"
         >
           Close
         </button>

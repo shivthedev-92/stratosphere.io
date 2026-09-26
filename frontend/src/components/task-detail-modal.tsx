@@ -66,17 +66,17 @@ export function TaskDetailModal({
     <div className="fixed inset-0 z-30 flex items-end bg-black/70 p-4 sm:items-center sm:justify-center">
       <form
         onSubmit={handleSubmit}
-        className="w-full max-w-lg rounded-lg border border-white/10 bg-neutral-900 p-5 shadow-2xl"
+        className="w-full max-w-lg rounded-card border border-line bg-surface p-5 shadow-2xl"
       >
         <div className="flex items-start justify-between gap-4">
           <div>
-            <h2 className="text-lg font-semibold text-white">Task details</h2>
-            <p className="mt-1 text-sm text-neutral-500">View, edit, or remove this action item.</p>
+            <h2 className="text-lg font-semibold text-fg">Task details</h2>
+            <p className="mt-1 text-sm text-fg-subtle">View, edit, or remove this action item.</p>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="rounded-lg border border-neutral-700 px-3 py-1.5 text-sm font-semibold text-neutral-300"
+            className="rounded-control border border-line-strong px-3 py-1.5 text-sm font-semibold text-fg-muted"
           >
             Close
           </button>
@@ -84,39 +84,39 @@ export function TaskDetailModal({
 
         <div className="mt-5 space-y-4">
           <label className="block">
-            <span className="mb-1 block text-sm text-neutral-300">Title</span>
+            <span className="mb-1 block text-sm text-fg-muted">Title</span>
             <input
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               required
               maxLength={200}
-              className="w-full rounded-lg border border-neutral-700 bg-neutral-800 px-3 py-2 text-sm text-white outline-none focus:border-indigo-500"
+              className="w-full rounded-control border border-line-strong bg-field px-3 py-2 text-sm text-fg outline-none focus:border-accent"
             />
           </label>
 
           <label className="block">
-            <span className="mb-1 block text-sm text-neutral-300">Specific notes</span>
+            <span className="mb-1 block text-sm text-fg-muted">Specific notes</span>
             <textarea
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               rows={4}
               maxLength={2000}
-              className="w-full resize-none rounded-lg border border-neutral-700 bg-neutral-800 px-3 py-2 text-sm text-white outline-none focus:border-indigo-500"
+              className="w-full resize-none rounded-control border border-line-strong bg-field px-3 py-2 text-sm text-fg outline-none focus:border-accent"
             />
           </label>
 
           <div>
-            <span className="mb-2 block text-sm text-neutral-300">Priority</span>
+            <span className="mb-2 block text-sm text-fg-muted">Priority</span>
             <div className="grid grid-cols-3 gap-2">
               {priorities.map((item) => (
                 <button
                   key={item.value}
                   type="button"
                   onClick={() => setPriority(item.value)}
-                  className={`rounded-lg border px-3 py-2 text-sm ${
+                  className={`rounded-control border px-3 py-2 text-sm ${
                     priority === item.value
-                      ? "border-indigo-500 bg-indigo-600 text-white"
-                      : "border-neutral-700 bg-neutral-800 text-neutral-300"
+                      ? "border-accent bg-accent text-white"
+                      : "border-line-strong bg-raised text-fg-muted"
                   }`}
                 >
                   <span className="inline-flex items-center gap-1.5">
@@ -128,7 +128,7 @@ export function TaskDetailModal({
             </div>
           </div>
 
-          <label className="flex items-center gap-3 text-sm text-neutral-300">
+          <label className="flex items-center gap-3 text-sm text-fg-muted">
             <input
               type="checkbox"
               checked={isTimed}
@@ -143,7 +143,7 @@ export function TaskDetailModal({
               type="datetime-local"
               value={scheduledFor}
               onChange={(e) => setScheduledFor(e.target.value)}
-              className="w-full rounded-lg border border-neutral-700 bg-neutral-800 px-3 py-2 text-sm text-white outline-none focus:border-indigo-500"
+              className="w-full rounded-control border border-line-strong bg-field px-3 py-2 text-sm text-fg outline-none focus:border-accent"
             />
           )}
         </div>
@@ -153,14 +153,14 @@ export function TaskDetailModal({
             type="button"
             onClick={onDelete}
             disabled={saving}
-            className="rounded-lg border border-red-900/70 px-4 py-2 text-sm font-semibold text-red-300 transition-colors hover:border-red-600 hover:text-red-200 disabled:opacity-50"
+            className="rounded-control border border-danger/30 px-4 py-2 text-sm font-semibold text-danger transition-colors hover:border-danger hover:text-danger disabled:opacity-40 disabled:cursor-not-allowed"
           >
             Delete task
           </button>
           <button
             type="submit"
             disabled={saving || !title.trim()}
-            className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-500 disabled:opacity-50"
+            className="rounded-control bg-accent px-4 py-2 text-sm font-semibold text-white hover:bg-accent-hover disabled:opacity-40 disabled:cursor-not-allowed"
           >
             {saving ? "Saving..." : "Save changes"}
           </button>

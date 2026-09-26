@@ -47,40 +47,40 @@ export function ContactForm({ defaultName = "", defaultEmail = "", source = "web
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="grid gap-4 sm:grid-cols-2">
         <label className="block">
-          <span className="mb-1 block text-sm text-neutral-300">Name</span>
+          <span className="mb-1 block text-sm text-fg-muted">Name</span>
           <input
             value={name}
             onChange={(event) => setName(event.target.value)}
             maxLength={160}
-            className="w-full rounded-lg border border-neutral-700 bg-neutral-900 px-3 py-2 text-sm text-white outline-none focus:border-sky-500"
+            className="w-full rounded-control border border-line-strong bg-surface px-3 py-2 text-sm text-fg outline-none focus:border-accent"
             placeholder="Your name"
           />
         </label>
         <label className="block">
-          <span className="mb-1 block text-sm text-neutral-300">Email</span>
+          <span className="mb-1 block text-sm text-fg-muted">Email</span>
           <input
             value={email}
             onChange={(event) => setEmail(event.target.value)}
             type="email"
-            className="w-full rounded-lg border border-neutral-700 bg-neutral-900 px-3 py-2 text-sm text-white outline-none focus:border-sky-500"
+            className="w-full rounded-control border border-line-strong bg-surface px-3 py-2 text-sm text-fg outline-none focus:border-accent"
             placeholder="you@example.com"
           />
         </label>
       </div>
       <label className="block">
-        <span className="mb-1 block text-sm text-neutral-300">Subject</span>
+        <span className="mb-1 block text-sm text-fg-muted">Subject</span>
         <input
           value={subject}
           onChange={(event) => setSubject(event.target.value)}
           required
           minLength={3}
           maxLength={180}
-          className="w-full rounded-lg border border-neutral-700 bg-neutral-900 px-3 py-2 text-sm text-white outline-none focus:border-sky-500"
+          className="w-full rounded-control border border-line-strong bg-surface px-3 py-2 text-sm text-fg outline-none focus:border-accent"
           placeholder="What do you need help with?"
         />
       </label>
       <label className="block">
-        <span className="mb-1 block text-sm text-neutral-300">Message</span>
+        <span className="mb-1 block text-sm text-fg-muted">Message</span>
         <textarea
           value={message}
           onChange={(event) => setMessage(event.target.value)}
@@ -88,16 +88,16 @@ export function ContactForm({ defaultName = "", defaultEmail = "", source = "web
           minLength={10}
           maxLength={4000}
           rows={5}
-          className="w-full resize-none rounded-lg border border-neutral-700 bg-neutral-900 px-3 py-2 text-sm text-white outline-none focus:border-sky-500"
+          className="w-full resize-none rounded-control border border-line-strong bg-surface px-3 py-2 text-sm text-fg outline-none focus:border-accent"
           placeholder="Share the issue, device, and what you expected to happen."
         />
       </label>
-      {error ? <p className="text-sm text-red-300">{error}</p> : null}
-      {status ? <p className="text-sm text-emerald-300">{status}</p> : null}
+      {error ? <p className="text-sm text-danger">{error}</p> : null}
+      {status ? <p className="text-sm text-low">{status}</p> : null}
       <button
         type="submit"
         disabled={saving || !subject.trim() || message.trim().length < 10}
-        className="rounded-lg bg-sky-600 px-5 py-3 text-sm font-bold text-white transition-colors hover:bg-sky-500 disabled:opacity-50"
+        className="rounded-control bg-accent px-5 py-3 text-sm font-bold text-white transition-colors hover:bg-accent-hover disabled:opacity-40 disabled:cursor-not-allowed"
       >
         {saving ? "Sending..." : "Raise ticket"}
       </button>

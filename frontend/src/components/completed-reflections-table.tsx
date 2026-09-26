@@ -42,27 +42,27 @@ export function CompletedReflectionsTable({
     .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 
   return (
-    <section className="rounded-lg border border-white/10 bg-neutral-900/85 p-5 shadow-lg shadow-black/15 backdrop-blur">
+    <section className="rounded-card border border-line bg-surface p-5 shadow-lg shadow-black/15 backdrop-blur">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <h2 className="text-base font-semibold text-white">Completed Reflections</h2>
-          <p className="mt-1 text-sm text-neutral-500">
+          <h2 className="text-base font-semibold text-fg">Completed Reflections</h2>
+          <p className="mt-1 text-sm text-fg-subtle">
             Review completed tasks, reflection notes, status, and time taken.
           </p>
         </div>
-        <div className="rounded-lg border border-white/10 bg-neutral-950/60 px-3 py-2 text-sm text-neutral-300">
+        <div className="rounded-control border border-line bg-surface px-3 py-2 text-sm text-fg-muted">
           {completedLogs.length} completed
         </div>
       </div>
 
       <div className="mt-5 overflow-x-auto">
         {completedLogs.length === 0 ? (
-          <div className="rounded-lg border border-white/10 bg-neutral-950/45 p-6 text-center text-sm text-neutral-500">
+          <div className="rounded-card border border-line bg-surface p-6 text-center text-sm text-fg-subtle">
             Completed reflections will appear here after you save them.
           </div>
         ) : (
           <table className="min-w-full text-left text-sm">
-            <thead className="border-b border-neutral-800 text-xs uppercase tracking-wide text-neutral-500">
+            <thead className="border-b border-line text-xs uppercase tracking-wide text-fg-subtle">
               <tr>
                 <th className="py-3 pr-4 font-semibold">Completed</th>
                 <th className="py-3 pr-4 font-semibold">Reflection</th>
@@ -72,24 +72,24 @@ export function CompletedReflectionsTable({
                 <th className="py-3 font-semibold">Action</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-neutral-800">
+            <tbody className="divide-y divide-line">
               {completedLogs.map((log) => {
                 const goal = goalsById.get(log.goal_id);
                 return (
-                  <tr key={log.id} className="align-top text-neutral-300">
-                    <td className="max-w-56 py-4 pr-4 font-semibold text-white">
+                  <tr key={log.id} className="align-top text-fg-muted">
+                    <td className="max-w-56 py-4 pr-4 font-semibold text-fg">
                       {goal?.title ?? "Deleted goal"}
                     </td>
-                    <td className="max-w-md py-4 pr-4 text-neutral-400">
+                    <td className="max-w-md py-4 pr-4 text-fg-muted font-serif italic text-[15px]">
                       {log.reflection}
                     </td>
                     <td className="py-4 pr-4">
-                      <span className="rounded border border-white/10 bg-neutral-950/60 px-2 py-1 text-xs text-neutral-300">
+                      <span className="rounded border border-line bg-surface px-2 py-1 text-xs text-fg-muted">
                         {getStatus(log)}
                       </span>
                     </td>
-                    <td className="py-4 pr-4 text-neutral-400">{formatDateTime(log.created_at)}</td>
-                    <td className="py-4 text-neutral-400">
+                    <td className="py-4 pr-4 text-fg-muted">{formatDateTime(log.created_at)}</td>
+                    <td className="py-4 text-fg-muted">
                       {goal ? formatDuration(goal.created_at, log.created_at) : "N/A"}
                     </td>
                     <td className="py-4">
@@ -97,12 +97,12 @@ export function CompletedReflectionsTable({
                         <button
                           type="button"
                           onClick={() => onReuseGoal(goal)}
-                          className="rounded-lg border border-neutral-700 px-3 py-1.5 text-xs font-semibold text-neutral-300 transition-colors hover:border-neutral-500 hover:text-white"
+                          className="rounded-control border border-line-strong px-3 py-1.5 text-xs font-semibold text-fg-muted transition-colors hover:border-fg-subtle hover:text-fg"
                         >
                           Reuse
                         </button>
                       ) : (
-                        <span className="text-xs text-neutral-600">Unavailable</span>
+                        <span className="text-xs text-fg-subtle">Unavailable</span>
                       )}
                     </td>
                   </tr>

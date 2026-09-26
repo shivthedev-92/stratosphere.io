@@ -47,16 +47,16 @@ export function BackgroundShell({
             onClick={() => setMenuOpen((current) => !current)}
             aria-expanded={menuOpen}
             aria-label="Open appearance menu"
-            className="grid h-10 w-10 place-items-center rounded-lg border border-white/10 bg-neutral-950/65 text-lg font-semibold text-white shadow-lg shadow-black/20 backdrop-blur transition hover:border-white/30"
+            className="grid h-10 w-10 place-items-center rounded-control border border-line bg-surface text-lg font-semibold text-fg shadow-lg shadow-black/20 backdrop-blur transition hover:border-fg-subtle"
           >
             <List size={20} aria-hidden="true" />
           </button>
 
           {menuOpen && (
-            <div className="absolute right-0 mt-2 w-64 rounded-lg border border-white/10 bg-neutral-950/85 p-3 shadow-2xl shadow-black/35 backdrop-blur">
+            <div className="absolute right-0 mt-2 w-64 rounded-control border border-line bg-surface p-3 shadow-2xl shadow-black/35 backdrop-blur">
               <div className="mb-3">
-                <p className="text-sm font-semibold text-white">Appearance</p>
-                <p className="mt-1 text-xs text-neutral-400">Choose a calm background.</p>
+                <p className="text-sm font-semibold text-fg">Appearance</p>
+                <p className="mt-1 text-xs text-fg-muted">Choose a calm background.</p>
               </div>
 
               <div className="grid gap-2">
@@ -65,15 +65,15 @@ export function BackgroundShell({
                     key={option.id}
                     type="button"
                     onClick={() => selectBackground(option.id)}
-                    className={`flex items-center gap-3 rounded-lg border p-2 text-left transition ${
+                    className={`flex items-center gap-3 rounded-control border p-2 text-left transition ${
                       selectedId === option.id
-                        ? "border-white/50 bg-white/10 text-white"
-                        : "border-white/10 bg-neutral-900/70 text-neutral-300 hover:border-white/25"
+                        ? "border-accent bg-raised text-fg"
+                        : "border-line bg-surface text-fg-muted hover:border-fg-subtle"
                     }`}
                   >
                     <span
                       aria-hidden="true"
-                      className="grid h-10 w-14 shrink-0 place-items-center overflow-hidden rounded-md bg-neutral-900 text-xs font-semibold"
+                      className="grid h-10 w-14 shrink-0 place-items-center overflow-hidden rounded-md bg-surface text-xs font-semibold"
                     >
                       {option.image ? (
                         <span
@@ -86,7 +86,7 @@ export function BackgroundShell({
                     </span>
                     <span>
                       <span className="block text-sm font-semibold">{option.label}</span>
-                      <span className="block text-xs text-neutral-500">
+                      <span className="block text-xs text-fg-subtle">
                         {option.image ? "Image background" : "Default texture"}
                       </span>
                     </span>

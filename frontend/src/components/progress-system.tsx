@@ -71,24 +71,24 @@ export function ProgressSystem({ goals, logs }: { goals: GoalOut[]; logs: GoalLo
   const notDoneLogs = logs.filter((log) => !log.completed).length;
 
   return (
-    <section className="rounded-lg border border-white/10 bg-neutral-900/85 p-5 shadow-lg shadow-black/15 backdrop-blur">
+    <section className="rounded-card border border-line bg-surface p-5 shadow-lg shadow-black/15 backdrop-blur">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <h2 className="text-base font-semibold text-white">Progress Path</h2>
-          <p className="mt-1 text-sm text-neutral-500">
+          <h2 className="text-base font-semibold text-fg">Progress Path</h2>
+          <p className="mt-1 text-sm text-fg-subtle">
             Current month momentum from daily reflection outcomes.
           </p>
         </div>
-        <div className="rounded-lg border border-white/10 bg-neutral-950/60 px-3 py-2 text-sm text-neutral-300">
+        <div className="rounded-control border border-line bg-surface px-3 py-2 text-sm text-fg-muted">
           {logs.length} reflections
         </div>
       </div>
 
       <div className="mt-5 grid gap-5 lg:grid-cols-[1.2fr_0.8fr]">
-        <div className="relative min-h-64 overflow-hidden rounded-lg border border-white/10 bg-neutral-950/70 p-4">
+        <div className="relative min-h-64 overflow-hidden rounded-card border border-line bg-surface p-4">
           <div className="relative z-10 max-w-xs">
-            <p className="text-sm font-semibold text-white">Reflection Trend</p>
-            <p className="mt-1 text-sm text-neutral-400">
+            <p className="text-sm font-semibold text-fg">Reflection Trend</p>
+            <p className="mt-1 text-sm text-fg-muted">
               Each day aggregates reflections: done lifts, unsure holds, and not done moves down.
             </p>
           </div>
@@ -142,7 +142,7 @@ export function ProgressSystem({ goals, logs }: { goals: GoalOut[]; logs: GoalLo
               ))}
           </svg>
 
-          <div className="absolute bottom-4 left-4 right-4 flex items-center justify-between text-xs text-neutral-500">
+          <div className="absolute bottom-4 left-4 right-4 flex items-center justify-between text-xs text-fg-subtle">
             <span>{trendPoints[0]?.date ?? "Start"}</span>
             <span>{latestTrend ? `${latestTrend.label} · ${latestTrend.date}` : "No reflections yet"}</span>
           </div>
@@ -155,18 +155,18 @@ export function ProgressSystem({ goals, logs }: { goals: GoalOut[]; logs: GoalLo
             <Stat label="Not Done" value={notDoneLogs} />
           </div>
 
-          <div className="rounded-lg border border-white/10 bg-neutral-950/50 p-4">
-            <h3 className="text-sm font-semibold text-white">Priority Mix</h3>
+          <div className="rounded-card border border-line bg-surface p-4">
+            <h3 className="text-sm font-semibold text-fg">Priority Mix</h3>
             <div className="mt-4 space-y-3">
               {(Object.keys(priorityCounts) as Priority[]).map((priority) => (
                 <div key={priority}>
-                  <div className="mb-1 flex items-center justify-between text-xs text-neutral-400">
+                  <div className="mb-1 flex items-center justify-between text-xs text-fg-muted">
                     <span>{priorityLabels[priority]}</span>
                     <span>{priorityCounts[priority]}</span>
                   </div>
-                  <div className="h-2 overflow-hidden rounded-full bg-neutral-800">
+                  <div className="h-2 overflow-hidden rounded-full bg-raised">
                     <div
-                      className="h-full rounded-full bg-sky-400"
+                      className="h-full rounded-full bg-accent"
                       style={{ width: `${(priorityCounts[priority] / maxPriorityCount) * 100}%` }}
                     />
                   </div>
@@ -182,9 +182,9 @@ export function ProgressSystem({ goals, logs }: { goals: GoalOut[]; logs: GoalLo
 
 function Stat({ label, value }: { label: string; value: number }) {
   return (
-    <div className="rounded-lg border border-white/10 bg-neutral-950/50 p-3">
-      <p className="text-xs text-neutral-500">{label}</p>
-      <p className="mt-1 text-xl font-bold text-white">{value}</p>
+    <div className="rounded-control border border-line bg-surface p-3">
+      <p className="text-xs text-fg-subtle">{label}</p>
+      <p className="mt-1 text-xl font-bold text-fg">{value}</p>
     </div>
   );
 }
