@@ -2,6 +2,7 @@
 
 import type { CSSProperties, ReactNode } from "react";
 import { useEffect, useState } from "react";
+import { List } from "@phosphor-icons/react";
 import { BACKGROUND_OPTIONS } from "@/components/background-options";
 
 const STORAGE_KEY = "stratosphere-background";
@@ -48,7 +49,7 @@ export function BackgroundShell({
             aria-label="Open appearance menu"
             className="grid h-10 w-10 place-items-center rounded-lg border border-white/10 bg-neutral-950/65 text-lg font-semibold text-white shadow-lg shadow-black/20 backdrop-blur transition hover:border-white/30"
           >
-            ☰
+            <List size={20} aria-hidden="true" />
           </button>
 
           {menuOpen && (

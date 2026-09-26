@@ -1,3 +1,4 @@
+import { CheckCircle, CircleDashed } from "@phosphor-icons/react";
 import { FormEvent } from "react";
 import type { GoalOut } from "@/lib/api";
 
@@ -47,7 +48,10 @@ export function ReflectGoalModal({
                 : "border-neutral-700 bg-neutral-800 text-neutral-300"
             }`}
           >
-            ✅ Done
+            <span className="inline-flex items-center justify-center gap-1.5">
+              <CheckCircle size={18} weight={completed ? "fill" : "regular"} aria-hidden="true" />
+              Done
+            </span>
           </button>
           <button
             type="button"
@@ -58,7 +62,10 @@ export function ReflectGoalModal({
                 : "border-neutral-700 bg-neutral-800 text-neutral-300"
             }`}
           >
-            📝 Not done
+            <span className="inline-flex items-center justify-center gap-1.5">
+              <CircleDashed size={18} aria-hidden="true" />
+              Not done
+            </span>
           </button>
         </div>
 
@@ -78,9 +85,9 @@ export function ReflectGoalModal({
           </span>
           <div className="grid grid-cols-3 gap-2">
             {[
-              { label: "✨ Yes", value: true },
-              { label: "🤔 Unsure", value: null },
-              { label: "🌧️ No", value: false },
+              { label: "Yes", value: true },
+              { label: "Unsure", value: null },
+              { label: "No", value: false },
             ].map((item) => (
               <button
                 key={item.label}

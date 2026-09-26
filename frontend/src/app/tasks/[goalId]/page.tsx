@@ -5,23 +5,22 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { FormEvent, useEffect, useState } from "react";
 import { BackgroundShell } from "@/components/background-shell";
+import { Alarm, Compass } from "@phosphor-icons/react";
+import { PriorityIcon } from "@/components/icons";
 import { api, type GoalLogOut, type GoalOut, type Priority,
   type SafetyNoticeOut,
 } from "@/lib/api";
 
-const priorityMeta: Record<Priority, { emoji: string; label: string; classes: string }> = {
+const priorityMeta: Record<Priority, { label: string; classes: string }> = {
   low: {
-    emoji: "🌱",
     label: "Low",
     classes: "border-emerald-700/70 bg-emerald-950/60 text-emerald-200",
   },
   medium: {
-    emoji: "⚡",
     label: "Medium",
     classes: "border-sky-700/70 bg-sky-950/60 text-sky-200",
   },
   high: {
-    emoji: "🔥",
     label: "High",
     classes: "border-amber-700/70 bg-amber-950/60 text-amber-200",
   },
@@ -138,14 +137,22 @@ export default function TaskJournalPage() {
             </Link>
             <h1 className="mt-3 break-words text-3xl font-bold">{goal.title}</h1>
             <div className="mt-3 flex flex-wrap gap-2">
-              <span className={`rounded border px-2 py-0.5 text-xs ${priorityMeta[goal.priority].classes}`}>
-                <span aria-hidden="true">{priorityMeta[goal.priority].emoji}</span>{" "}
+              <span className={`inline-flex items-center gap-1 rounded border px-2 py-0.5 text-xs ${priorityMeta[goal.priority].classes}`}>
+                <PriorityIcon priority={goal.priority} size={14} />
                 {priorityMeta[goal.priority].label}
               </span>
-              <span className="rounded border border-white/10 bg-neutral-950/50 px-2 py-0.5 text-xs text-neutral-300">
-                {goal.is_timed && goal.scheduled_for
-                  ? `⏰ ${formatDateTime(goal.scheduled_for)}`
-                  : "🧭 Moment-based goal"}
+              <span className="inline-flex items-center gap-1 rounded border border-white/10 bg-neutral-950/50 px-2 py-0.5 text-xs text-neutral-300">
+                {goal.is_timed && goal.scheduled_for ? (
+                  <>
+                    <Alarm size={14} aria-hidden="true" />
+                    {formatDateTime(goal.scheduled_for)}
+                  </>
+                ) : (
+                  <>
+                    <Compass size={14} aria-hidden="true" />
+                    Moment-based goal
+                  </>
+                )}
               </span>
               <span className="rounded border border-white/10 bg-neutral-950/50 px-2 py-0.5 text-xs text-neutral-300">
                 {sortedLogs.length} {sortedLogs.length === 1 ? "entry" : "entries"}
@@ -278,9 +285,10 @@ export default function TaskJournalPage() {
               <ol className="relative mt-6 space-y-5 border-l border-sky-800/70 pl-6">
                 {sortedLogs.map((log) => (
                   <li key={log.id} className="relative">
-                    <span className="absolute -left-[34px] top-1 grid h-5 w-5 place-items-center rounded-full bg-sky-500 text-[10px] shadow-lg shadow-sky-950/60">
-                      🔵
-                    </span>
+                    <span
+                      aria-hidden="true"
+                      className="absolute -left-[31px] top-1.5 h-3.5 w-3.5 rounded-full border-2 border-sky-300 bg-sky-500 shadow-lg shadow-sky-950/60"
+                    />
                     <article className="rounded-lg border border-white/10 bg-neutral-950/45 p-4">
                       <div className="flex flex-wrap items-center justify-between gap-2">
                         <div className="flex flex-wrap gap-2">

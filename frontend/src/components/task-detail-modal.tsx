@@ -1,10 +1,11 @@
 import { FormEvent, useEffect, useState } from "react";
 import type { GoalOut, Priority } from "@/lib/api";
+import { PriorityIcon } from "@/components/icons";
 
-const priorities: Array<{ value: Priority; label: string; emoji: string }> = [
-  { value: "low", label: "Low", emoji: "🌱" },
-  { value: "medium", label: "Medium", emoji: "⚡" },
-  { value: "high", label: "High", emoji: "🔥" },
+const priorities: Array<{ value: Priority; label: string }> = [
+  { value: "low", label: "Low" },
+  { value: "medium", label: "Medium" },
+  { value: "high", label: "High" },
 ];
 
 function toDatetimeLocal(value: string | null) {
@@ -118,7 +119,10 @@ export function TaskDetailModal({
                       : "border-neutral-700 bg-neutral-800 text-neutral-300"
                   }`}
                 >
-                  <span aria-hidden="true">{item.emoji}</span> {item.label}
+                  <span className="inline-flex items-center gap-1.5">
+                    <PriorityIcon priority={item.value} selected={priority === item.value} />
+                    {item.label}
+                  </span>
                 </button>
               ))}
             </div>

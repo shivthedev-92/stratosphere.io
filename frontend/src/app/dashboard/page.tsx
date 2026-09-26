@@ -34,6 +34,8 @@ import { ContactForm } from "@/components/contact-form";
 import { CompletedReflectionsTable } from "@/components/completed-reflections-table";
 import { EmptyGoalsIllustration } from "@/components/illustrations";
 import { MonthPriorityCalendar } from "@/components/month-priority-calendar";
+import { Alarm, Bell, Compass, PencilSimple, Trash } from "@phosphor-icons/react";
+import { DayIcon, PriorityIcon } from "@/components/icons";
 import { MotivationalBanner } from "@/components/motivational-banner";
 import { TelegramSettings } from "@/components/telegram-settings";
 import { ProgressSystem } from "@/components/progress-system";
@@ -45,19 +47,16 @@ type ActionItemView = "list" | "cards";
 type ActionFilter = "today" | "upcoming" | "all";
 const ACTION_VIEW_KEY = "stratosphere-action-item-view";
 
-const priorityMeta: Record<Priority, { emoji: string; label: string; classes: string }> = {
+const priorityMeta: Record<Priority, { label: string; classes: string }> = {
   low: {
-    emoji: "🌱",
     label: "Low",
     classes: "border-emerald-700/70 bg-emerald-950/60 text-emerald-200",
   },
   medium: {
-    emoji: "⚡",
     label: "Medium",
     classes: "border-sky-700/70 bg-sky-950/60 text-sky-200",
   },
   high: {
-    emoji: "🔥",
     label: "High",
     classes: "border-amber-700/70 bg-amber-950/60 text-amber-200",
   },
@@ -70,13 +69,6 @@ function getInitials(name: string) {
     .slice(0, 2)
     .map((part) => part[0]?.toUpperCase())
     .join("");
-}
-
-function getDayEmoji() {
-  const hour = new Date().getHours();
-  if (hour < 12) return "🌤️";
-  if (hour < 17) return "☀️";
-  return "🌙";
 }
 
 function getSubmitLabel(isSaving: boolean, isTimed: boolean, scheduledFor: string) {
@@ -462,7 +454,9 @@ export default function DashboardPage() {
               {getInitials(user.name) || "U"}
             </button>
             <div>
-              <p className="text-sm text-neutral-400">{getDayEmoji()} Today</p>
+              <p className="inline-flex items-center gap-1.5 text-sm text-neutral-400">
+                <DayIcon /> Today
+              </p>
               <h1 className="text-2xl font-bold">Hello, {user.name}</h1>
             </div>
           </div>
@@ -472,7 +466,7 @@ export default function DashboardPage() {
               className="relative rounded-lg border border-neutral-700 px-3 py-2 text-sm font-semibold transition-colors hover:border-neutral-500"
               aria-label="Notifications"
             >
-              🔔
+              <Bell size={18} aria-hidden="true" />
               {unreadNotifications > 0 ? (
                 <span className="absolute -right-2 -top-2 grid h-5 min-w-5 place-items-center rounded-full bg-red-500 px-1 text-[10px] font-black text-white">
                   {Math.min(unreadNotifications, 9)}
@@ -685,8 +679,10 @@ export default function DashboardPage() {
                           : "border-neutral-700 bg-neutral-800 text-neutral-300"
                       }`}
                     >
-                      <span aria-hidden="true">{priorityMeta[item].emoji}</span>{" "}
-                      {priorityMeta[item].label}
+                      <span className="inline-flex items-center gap-1.5">
+                        <PriorityIcon priority={item} selected={priority === item} />
+                        {priorityMeta[item].label}
+                      </span>
                     </button>
                   ))}
                 </div>
@@ -852,8 +848,8 @@ export default function DashboardPage() {
                                       Addressed
                                     </span>
                                   )}
-                                  <span className={`rounded border px-2 py-0.5 text-xs ${priorityMeta[goal.priority].classes}`}>
-                                    <span aria-hidden="true">{priorityMeta[goal.priority].emoji}</span>{" "}
+                                  <span className={`inline-flex items-center gap-1 rounded border px-2 py-0.5 text-xs ${priorityMeta[goal.priority].classes}`}>
+                                    <PriorityIcon priority={goal.priority} size={14} />
                                     {priorityMeta[goal.priority].label}
                                   </span>
                                 </div>
@@ -862,10 +858,18 @@ export default function DashboardPage() {
                                     {goal.notes}
                                   </p>
                                 )}
-                                <p className="mt-3 text-xs text-neutral-500">
-                                  {goal.is_timed && goal.scheduled_for
-                                    ? `⏰ Timed for ${new Date(goal.scheduled_for).toLocaleString()}`
-                                    : "🧭 Moment-based goal"}
+                                <p className="mt-3 inline-flex items-center gap-1.5 text-xs text-neutral-500">
+                                  {goal.is_timed && goal.scheduled_for ? (
+                                    <>
+                                      <Alarm size={14} aria-hidden="true" />
+                                      Timed for {new Date(goal.scheduled_for).toLocaleString()}
+                                    </>
+                                  ) : (
+                                    <>
+                                      <Compass size={14} aria-hidden="true" />
+                                      Moment-based goal
+                                    </>
+                                  )}
                                 </p>
                                 {latestLog && (
                                   <div className="mt-3 rounded-lg border border-white/10 bg-neutral-950/45 px-3 py-2">
@@ -909,7 +913,7 @@ export default function DashboardPage() {
                                   title="Edit task"
                                   className="grid h-10 w-10 place-items-center rounded-lg border border-neutral-700 text-sm transition-colors hover:border-neutral-500 hover:bg-neutral-800"
                                 >
-                                  <span aria-hidden="true">✏️</span>
+                                  <PencilSimple size={18} aria-hidden="true" />
                                 </button>
                                 <button
                                   type="button"
@@ -919,7 +923,7 @@ export default function DashboardPage() {
                                   title="Delete task"
                                   className="grid h-10 w-10 place-items-center rounded-lg border border-red-900/70 text-sm transition-colors hover:border-red-600 hover:bg-red-950/30 disabled:opacity-50"
                                 >
-                                  <span aria-hidden="true">🗑️</span>
+                                  <Trash size={18} aria-hidden="true" />
                                 </button>
                               </div>
                               </div>
