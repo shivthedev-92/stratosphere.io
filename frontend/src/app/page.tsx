@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { BackgroundShell } from "@/components/background-shell";
+import { BrandMark } from "@/components/brand-mark";
 import { ContactForm } from "@/components/contact-form";
 import { RhythmIllustration } from "@/components/illustrations";
 
@@ -48,7 +49,7 @@ export default function Home() {
           <RhythmIllustration className="pointer-events-none absolute left-1/2 top-1/2 h-[560px] w-[980px] -translate-x-1/2 -translate-y-1/2 opacity-35" />
           <div className="relative mx-auto grid w-full max-w-6xl gap-10 lg:grid-cols-[minmax(0,1fr)_360px] lg:items-end">
             <div className="max-w-3xl">
-              <p className="text-sm font-bold uppercase text-accent-soft">Stratosphere</p>
+              <BrandMark size="md" />
               <h1 className="mt-5 text-5xl font-black leading-tight sm:text-7xl">
                 A calmer way to choose, reflect, and finish your day.
               </h1>

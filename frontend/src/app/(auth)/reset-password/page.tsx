@@ -4,6 +4,7 @@ import { FormEvent, Suspense, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { BackgroundShell } from "@/components/background-shell";
+import { BrandMark } from "@/components/brand-mark";
 import { api } from "@/lib/api";
 
 function ResetPasswordForm() {
@@ -31,6 +32,9 @@ function ResetPasswordForm() {
   return (
     <div className="relative z-10 w-full max-w-md space-y-6 rounded-card border border-line bg-surface p-6 shadow-2xl shadow-tint backdrop-blur">
       <div className="text-center">
+        <Link href="/" className="mb-5 inline-flex rounded-chip" aria-label="Stratosphere home">
+          <BrandMark compact size="md" />
+        </Link>
         <h1 className="text-2xl font-bold text-fg">Choose a new password</h1>
         <p className="mt-1 text-sm text-fg-muted">Use at least eight characters.</p>
       </div>

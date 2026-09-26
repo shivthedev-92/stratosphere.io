@@ -4,6 +4,7 @@ import { useState, FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { BackgroundShell } from "@/components/background-shell";
+import { BrandMark } from "@/components/brand-mark";
 import { api } from "@/lib/api";
 
 export default function SignupPage() {
@@ -32,6 +33,9 @@ export default function SignupPage() {
     <BackgroundShell className="flex min-h-screen items-center justify-center px-4 text-fg" showSwitcher>
       <div className="relative z-10 w-full max-w-md space-y-6 rounded-card border border-line bg-surface p-6 shadow-2xl shadow-tint backdrop-blur">
         <div className="text-center">
+          <Link href="/" className="mb-5 inline-flex rounded-chip" aria-label="Stratosphere home">
+            <BrandMark compact size="md" />
+          </Link>
           <h1 className="text-2xl font-bold text-fg">Create your account</h1>
           <p className="text-fg-muted text-sm mt-1">Start your journey — guilt-free.</p>
         </div>

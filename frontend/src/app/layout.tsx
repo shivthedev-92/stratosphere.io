@@ -37,9 +37,7 @@ const newsreader = Newsreader({
 export const metadata: Metadata = {
   title: "Stratosphere — Your Productivity Coach",
   description: "Build habits, manage your day, and find your rhythm — guilt-free.",
-  icons: {
-    icon: "/icon.svg",
-  },
+  // Icons come from the app/ file conventions: icon.svg, apple-icon.png, favicon.ico.
 };
 
 
