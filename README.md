@@ -90,6 +90,10 @@ Restart the backend. No code changes needed.
 
 ---
 
+## Production deployment
+
+The recommended Azure path runs the existing Caddy, Next.js, FastAPI, and PostgreSQL stack on one Linux VM. See [AZURE_DEPLOYMENT.md](AZURE_DEPLOYMENT.md) for provisioning, secure networking, TLS, deployment, health checks, backups, and teardown.
+
 ## AWS recruiter demo
 
 The production demo uses Docker Compose on one EC2 instance with Caddy-managed HTTPS, Next.js,
