@@ -1,5 +1,7 @@
 "use client";
 
+import { useEffect, useRef } from "react";
+
 import type { SafetyNoticeOut } from "@/lib/api";
 
 /**
@@ -96,13 +98,64 @@ export function CrisisOverlay({
   notice: SafetyNoticeOut;
   onClose: () => void;
 }) {
+  const dialogRef = useRef<HTMLDivElement>(null);
+  // Callers pass an inline function; keep the latest in a ref so the effect
+  // below runs once per opening and a parent re-render can't reset focus.
+  const onCloseRef = useRef(onClose);
+  useEffect(() => {
+    onCloseRef.current = onClose;
+  }, [onClose]);
+
+  // A modal dialog for keyboard and screen-reader users: focus moves into it
+  // on open, Tab stays inside, Escape closes it, and focus returns to where it
+  // was. Someone who needs these numbers should not have to hunt for them.
+  useEffect(() => {
+    const previous = document.activeElement as HTMLElement | null;
+    const dialog = dialogRef.current;
+    dialog?.focus();
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        onCloseRef.current();
+        return;
+      }
+      if (event.key !== "Tab" || !dialog) return;
+      const focusable = Array.from(
+        dialog.querySelectorAll<HTMLElement>("a[href], button:not([disabled])"),
+      );
+      if (focusable.length === 0) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      const active = document.activeElement;
+      if (event.shiftKey && (active === first || active === dialog)) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && active === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.removeEventListener("keydown", onKeyDown);
+      previous?.focus?.();
+    };
+  }, []);
+
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4 py-8"
       onClick={onClose}
     >
       <div
-        className="max-h-full w-full max-w-lg overflow-y-auto"
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Support resources"
+        tabIndex={-1}
+        className="max-h-full w-full max-w-lg overflow-y-auto outline-none"
         onClick={(event) => event.stopPropagation()}
       >
         <div className="rounded-2xl bg-neutral-950 shadow-2xl">
