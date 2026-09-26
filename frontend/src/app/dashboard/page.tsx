@@ -38,6 +38,7 @@ import { Alarm, Bell, Compass, PencilSimple, Trash } from "@phosphor-icons/react
 import { DayIcon, PriorityIcon } from "@/components/icons";
 import { MotivationalBanner } from "@/components/motivational-banner";
 import { TelegramSettings } from "@/components/telegram-settings";
+import { ThemeSwitcher } from "@/components/theme";
 import { ProgressSystem } from "@/components/progress-system";
 import { ReflectGoalModal } from "@/components/reflect-goal-modal";
 import { TaskDetailModal } from "@/components/task-detail-modal";
@@ -450,7 +451,7 @@ export default function DashboardPage() {
             <button
               type="button"
               onClick={() => setShowSettings(true)}
-              className="grid h-14 w-14 shrink-0 place-items-center rounded-control border border-line-strong bg-surface text-base font-bold shadow-lg shadow-black/20 transition-colors hover:border-accent"
+              className="grid h-14 w-14 shrink-0 place-items-center rounded-control border border-line-strong bg-surface text-base font-bold shadow-lg shadow-tint transition-colors hover:border-accent"
               aria-label="Open profile settings"
               title="Profile settings"
             >
@@ -478,7 +479,7 @@ export default function DashboardPage() {
             </button>
             <Link
               href="/chat"
-              className="rounded-control bg-accent px-4 py-2 text-sm font-semibold transition-colors hover:bg-accent-hover"
+              className="rounded-control bg-accent text-white px-4 py-2 text-sm font-semibold transition-colors hover:bg-accent-hover"
             >
               Life Coach
             </Link>
@@ -498,13 +499,13 @@ export default function DashboardPage() {
         </header>
 
         {showNotifications ? (
-          <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/70 p-4 sm:items-center">
+          <div className="fixed inset-0 z-50 flex items-end justify-center bg-scrim p-4 sm:items-center">
             <button
               className="absolute inset-0 cursor-default"
               aria-label="Close notifications"
               onClick={() => setShowNotifications(false)}
             />
-            <section className="relative z-10 max-h-[82vh] w-full max-w-xl rounded-panel border border-line bg-surface p-5 shadow-2xl shadow-black/50">
+            <section className="relative z-10 max-h-[82vh] w-full max-w-xl rounded-panel border border-line bg-surface p-5 shadow-2xl shadow-tint">
               <div className="flex items-start justify-between gap-4">
                 <div>
                   <h2 className="text-lg font-bold">Notifications</h2>
@@ -568,13 +569,13 @@ export default function DashboardPage() {
         ) : null}
 
         {showSettings ? (
-          <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/70 p-4 sm:items-center">
+          <div className="fixed inset-0 z-50 flex items-end justify-center bg-scrim p-4 sm:items-center">
             <button
               className="absolute inset-0 cursor-default"
               aria-label="Close settings"
               onClick={() => setShowSettings(false)}
             />
-            <section className="relative z-10 max-h-[82vh] w-full max-w-2xl overflow-y-auto rounded-panel border border-line bg-surface p-5 shadow-2xl shadow-black/50">
+            <section className="relative z-10 max-h-[82vh] w-full max-w-2xl overflow-y-auto rounded-panel border border-line bg-surface p-5 shadow-2xl shadow-tint">
               <div className="mb-5 flex items-start justify-between gap-4">
                 <div>
                   <h2 className="text-lg font-bold">Profile settings</h2>
@@ -596,6 +597,13 @@ export default function DashboardPage() {
                   <p className="text-xs font-bold uppercase text-fg-subtle">Email</p>
                   <p className="mt-2 break-words text-sm font-semibold text-fg">{user.email}</p>
                 </div>
+              </div>
+              <div className="mt-6 rounded-card border border-line bg-field p-4">
+                <h3 className="text-base font-bold">Appearance</h3>
+                <p className="mt-1 text-sm text-fg-muted">
+                  Night sky or dawn. System follows your device&apos;s light or dark setting.
+                </p>
+                <ThemeSwitcher className="mt-4 max-w-md" />
               </div>
               <TelegramSettings />
               <div className="mt-6 rounded-card border border-line bg-surface p-4">
@@ -636,7 +644,7 @@ export default function DashboardPage() {
         <div className="grid items-start gap-8 lg:grid-cols-[360px_minmax(0,1fr)]">
           <section
             ref={addCardRef}
-            className="rounded-card border border-line bg-surface p-5 shadow-lg shadow-black/15 backdrop-blur"
+            className="rounded-card border border-line bg-surface p-5 shadow-lg shadow-tint backdrop-blur"
           >
             <h2 className="text-base font-semibold">Add Action Item</h2>
             <p className="mt-1 text-sm text-fg-subtle">
@@ -730,7 +738,7 @@ export default function DashboardPage() {
           </section>
 
           <section
-            className="flex min-h-0 flex-col overflow-hidden rounded-control border border-line bg-surface shadow-lg shadow-black/15 backdrop-blur"
+            className="flex min-h-0 flex-col overflow-hidden rounded-control border border-line bg-surface shadow-lg shadow-tint backdrop-blur"
             style={actionListHeight ? { height: actionListHeight } : undefined}
           >
             <div className="shrink-0 border-b border-line px-5 py-4">

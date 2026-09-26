@@ -71,7 +71,7 @@ export function ProgressSystem({ goals, logs }: { goals: GoalOut[]; logs: GoalLo
   const notDoneLogs = logs.filter((log) => !log.completed).length;
 
   return (
-    <section className="rounded-card border border-line bg-surface p-5 shadow-lg shadow-black/15 backdrop-blur">
+    <section className="rounded-card border border-line bg-surface p-5 shadow-lg shadow-tint backdrop-blur">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h2 className="text-base font-semibold text-fg">Progress Path</h2>
@@ -101,8 +101,8 @@ export function ProgressSystem({ goals, logs }: { goals: GoalOut[]; logs: GoalLo
           >
             <defs>
               <linearGradient id="trendFill" x1="0" x2="0" y1="0" y2="1">
-                <stop offset="0%" stopColor="#34d399" stopOpacity="0.24" />
-                <stop offset="100%" stopColor="#34d399" stopOpacity="0" />
+                <stop offset="0%" stopColor="var(--low)" stopOpacity="0.24" />
+                <stop offset="100%" stopColor="var(--low)" stopOpacity="0" />
               </linearGradient>
             </defs>
             {[25, 50, 75].map((line) => (
@@ -112,7 +112,7 @@ export function ProgressSystem({ goals, logs }: { goals: GoalOut[]; logs: GoalLo
                 x2="100"
                 y1={line}
                 y2={line}
-                stroke="rgba(255,255,255,0.09)"
+                stroke="var(--line)"
                 strokeWidth="0.5"
               />
             ))}
@@ -120,7 +120,7 @@ export function ProgressSystem({ goals, logs }: { goals: GoalOut[]; logs: GoalLo
             <polyline
               points={trendLine}
               fill="none"
-              stroke="#34d399"
+              stroke="var(--low)"
               strokeLinecap="round"
               strokeLinejoin="round"
               strokeWidth="2"
@@ -134,8 +134,8 @@ export function ProgressSystem({ goals, logs }: { goals: GoalOut[]; logs: GoalLo
                   cx={point.x}
                   cy={point.y}
                   r="2.6"
-                  fill="#0a0a0a"
-                  stroke={point.label === "Down" ? "#f59e0b" : point.label === "Plateau" ? "#38bdf8" : "#a7f3d0"}
+                  fill="var(--surface-solid)"
+                  stroke={point.label === "Down" ? "var(--notdone)" : point.label === "Plateau" ? "var(--med)" : "var(--low)"}
                   strokeWidth="1.8"
                   vectorEffect="non-scaling-stroke"
                 />

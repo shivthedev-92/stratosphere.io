@@ -9,7 +9,7 @@ export default function ContactPage() {
         <Link href="/" className="mb-8 text-sm font-semibold text-accent-soft hover:text-fg">
           Back to Stratosphere
         </Link>
-        <section className="rounded-card border border-line bg-surface p-6 shadow-xl shadow-black/20 backdrop-blur">
+        <section className="rounded-card border border-line bg-surface p-6 shadow-xl shadow-tint backdrop-blur">
           <p className="text-sm font-bold uppercase text-accent-soft">Contact us</p>
           <h1 className="mt-3 text-3xl font-black">Raise a support ticket</h1>
           <p className="mt-3 text-fg-muted">

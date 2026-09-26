@@ -31,7 +31,7 @@ export function MotivationalBanner() {
   return (
     <section
       aria-label="Motivation"
-      className="rounded-card border border-line bg-surface p-5 shadow-lg shadow-black/15 backdrop-blur"
+      className="rounded-card border border-line bg-surface p-5 shadow-lg shadow-tint backdrop-blur"
     >
       <p
         className={`text-center font-serif text-[21px] italic leading-[1.35] text-fg transition-opacity duration-300 motion-reduce:transition-none ${

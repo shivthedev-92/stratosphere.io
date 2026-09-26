@@ -16,6 +16,7 @@
 import type { Metadata } from "next";
 import { Instrument_Sans, Newsreader } from "next/font/google";
 import "./globals.css";
+import { THEME_INIT_SCRIPT } from "@/lib/theme-script";
 
 // Design system type: Instrument Sans for UI, Newsreader italic for the daily
 // quote and journal text. Exposed as CSS variables used by globals.css.
@@ -55,7 +56,16 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${instrumentSans.variable} ${newsreader.variable} h-full antialiased`}>
+    // suppressHydrationWarning: the theme script sets data-theme before React
+    // hydrates, so the attribute intentionally differs from the server HTML.
+    <html
+      lang="en"
+      className={`${instrumentSans.variable} ${newsreader.variable} h-full antialiased`}
+      suppressHydrationWarning
+    >
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
+      </head>
       <body className="min-h-full flex flex-col">{children}</body>
     </html>
   );

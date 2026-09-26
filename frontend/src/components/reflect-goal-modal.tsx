@@ -28,7 +28,7 @@ export function ReflectGoalModal({
   onSubmit,
 }: ReflectGoalModalProps) {
   return (
-    <div className="fixed inset-0 z-30 flex items-end bg-black/70 p-4 sm:items-center sm:justify-center">
+    <div className="fixed inset-0 z-30 flex items-end bg-scrim p-4 sm:items-center sm:justify-center">
       <form
         onSubmit={onSubmit}
         className="w-full max-w-lg rounded-card border border-line bg-surface p-5 shadow-2xl"
@@ -116,7 +116,7 @@ export function ReflectGoalModal({
           <button
             type="submit"
             disabled={saving || !reflection.trim()}
-            className="rounded-control bg-accent px-4 py-2 text-sm font-semibold hover:bg-accent-hover disabled:opacity-40 disabled:cursor-not-allowed"
+            className="rounded-control bg-accent text-white px-4 py-2 text-sm font-semibold hover:bg-accent-hover disabled:opacity-40 disabled:cursor-not-allowed"
           >
             {saving ? "Saving..." : "Save reflection"}
           </button>

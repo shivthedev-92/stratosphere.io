@@ -42,7 +42,7 @@ export function CompletedReflectionsTable({
     .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 
   return (
-    <section className="rounded-card border border-line bg-surface p-5 shadow-lg shadow-black/15 backdrop-blur">
+    <section className="rounded-card border border-line bg-surface p-5 shadow-lg shadow-tint backdrop-blur">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h2 className="text-base font-semibold text-fg">Completed Reflections</h2>

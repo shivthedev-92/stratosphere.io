@@ -29,7 +29,7 @@ export default function LoginPage() {
 
   return (
     <BackgroundShell className="flex min-h-screen items-center justify-center px-4 text-fg" showSwitcher>
-      <div className="relative z-10 w-full max-w-md space-y-6 rounded-card border border-line bg-surface p-6 shadow-2xl shadow-black/30 backdrop-blur">
+      <div className="relative z-10 w-full max-w-md space-y-6 rounded-card border border-line bg-surface p-6 shadow-2xl shadow-tint backdrop-blur">
         <div className="text-center">
           <h1 className="text-2xl font-bold text-fg">Welcome back</h1>
           <p className="text-fg-muted text-sm mt-1">Pick up right where you left off.</p>

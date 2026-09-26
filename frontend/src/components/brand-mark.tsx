@@ -16,7 +16,7 @@ export function BrandMark({ compact = false, className = "", size = "sm" }: Bran
       <img
         src="/stratosphere-io-logo.png"
         alt="Stratosphere.io"
-        className={`${sizeClasses[size]} rounded-control border border-line object-cover shadow-lg shadow-black/20`}
+        className={`${sizeClasses[size]} rounded-control border border-line object-cover shadow-lg shadow-tint`}
       />
       {!compact && (
         <div className="leading-tight">

@@ -46,7 +46,6 @@ export default function Home() {
       <main className="relative z-10">
         <section className="relative flex min-h-[92vh] items-center px-6 py-20">
           <RhythmIllustration className="pointer-events-none absolute left-1/2 top-1/2 h-[560px] w-[980px] -translate-x-1/2 -translate-y-1/2 opacity-35" />
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_0%,rgba(10,10,10,0.48)_44%,#0a0a0a_84%)]" />
           <div className="relative mx-auto grid w-full max-w-6xl gap-10 lg:grid-cols-[minmax(0,1fr)_360px] lg:items-end">
             <div className="max-w-3xl">
               <p className="text-sm font-bold uppercase text-accent-soft">Stratosphere</p>
@@ -60,7 +59,7 @@ export default function Home() {
               <div className="mt-8 flex flex-wrap gap-4">
                 <Link
                   href="/signup"
-                  className="rounded-control bg-accent px-6 py-3 font-bold transition-colors hover:bg-accent-hover"
+                  className="rounded-control bg-accent text-white px-6 py-3 font-bold transition-colors hover:bg-accent-hover"
                 >
                   Get started
                 </Link>
@@ -77,7 +76,7 @@ export default function Home() {
                   Contact us
                 </Link>
               </div>
-              <div className="mt-6 inline-flex items-center gap-3 rounded-control border border-line bg-surface px-4 py-3 shadow-lg shadow-black/20">
+              <div className="mt-6 inline-flex items-center gap-3 rounded-control border border-line bg-surface px-4 py-3 shadow-lg shadow-tint">
                 <img
                   src="/appstore.png"
                   alt=""
@@ -90,12 +89,12 @@ export default function Home() {
               </div>
             </div>
 
-            <div className="rounded-card border border-line bg-surface p-5 shadow-xl shadow-black/20 backdrop-blur">
+            <div className="rounded-card border border-line bg-surface p-5 shadow-xl shadow-tint backdrop-blur">
               <p className="text-sm font-bold text-fg-muted">Today</p>
               <div className="mt-5 space-y-3">
                 {["Review action items", "Add reflection", "Ask coach for next step"].map((item, index) => (
                   <div key={item} className="flex items-center gap-3 rounded-control bg-surface p-3">
-                    <span className="grid h-8 w-8 place-items-center rounded-md bg-accent text-sm font-black">
+                    <span className="grid h-8 w-8 place-items-center rounded-md bg-accent text-white text-sm font-black">
                       {index + 1}
                     </span>
                     <span className="text-sm font-semibold text-fg">{item}</span>
@@ -138,7 +137,7 @@ export default function Home() {
                   index === 1 ? "md:-translate-y-6" : ""
                 }`}
               >
-                <div className="aspect-[9/19] overflow-hidden rounded-[2rem] border border-line bg-surface-solid shadow-2xl shadow-black/50">
+                <div className="aspect-[9/19] overflow-hidden rounded-[2rem] border border-line bg-surface-solid shadow-2xl shadow-tint">
                   <img
                     src={screenshot.src}
                     alt={screenshot.alt}

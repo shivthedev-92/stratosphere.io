@@ -28,6 +28,8 @@
   --color-surface-solid: var(--surface-solid);
   --color-raised: var(--raised);
   --color-field: var(--field);
+  --color-tint: var(--shadow-tint);
+  --color-scrim: var(--scrim);
   --color-line: var(--line);
   --color-line-strong: var(--line-strong);
   --color-fg: var(--text);
@@ -50,7 +52,7 @@
 
 :root {
   color-scheme: dark;
-  --bg: #0B0A14; --surface: rgba(19, 18, 31, .78); --surface-solid: #13121F; --raised: #1C1A2B; --field: rgba(255, 255, 255, .04);
+  --bg: #0B0A14; --surface: rgba(19, 18, 31, .78); --surface-solid: #13121F; --raised: #1C1A2B; --field: rgba(255, 255, 255, .04); --shadow-tint: rgba(0, 0, 0, .28); --scrim: rgba(11, 10, 20, .72);
   --line: rgba(255, 255, 255, .08); --line-strong: rgba(255, 255, 255, .12);
   --text: #F3F2F8; --text-muted: #A6A3B8; --text-subtle: #8A879E;
   --accent: #5B4CF0; --accent-hover: #6B5CFF; --accent-soft: #C7BFFF; --focus: #8676FF;
@@ -64,7 +66,7 @@
 
 [data-theme="dawn"] {
   color-scheme: light;
-  --bg: #F7F5F1; --surface: #FFFFFF; --surface-solid: #FFFFFF; --raised: #EFECE6; --field: #FBFAF7;
+  --bg: #F7F5F1; --surface: #FFFFFF; --surface-solid: #FFFFFF; --raised: #EFECE6; --field: #FBFAF7; --shadow-tint: rgba(43, 34, 117, .14); --scrim: rgba(22, 21, 31, .45);
   --line: #E6E2DA; --line-strong: #E6E2DA;
   --text: #16151F; --text-muted: #56536A; --text-subtle: #6E6B7E;
   --accent: #4A3CE0; --accent-hover: #3A2DB8; --accent-soft: #4A3CE0; --focus: #4A3CE0;
@@ -89,45 +91,11 @@ body {
   box-shadow: 0 0 0 3px rgba(107, 92, 255, .25);
 }
 
+/* Page background: the Night or Dawn scene behind its overlay (spec: the old
+   grid lines and stripes are removed). --scene and --scene-overlay switch
+   with the theme. */
 .signature-bg {
   position: relative;
   isolation: isolate;
-  overflow: hidden;
-  --signature-image: linear-gradient(transparent, transparent);
-  background:
-    linear-gradient(to bottom, rgba(10, 10, 10, 0.36), #0a0a0a 92%),
-    linear-gradient(145deg, rgba(20, 184, 166, 0.12), transparent 28%),
-    linear-gradient(315deg, rgba(245, 158, 11, 0.1), transparent 24%),
-    var(--signature-image),
-    #0a0a0a;
-  background-position: center;
-  background-size: auto, auto, auto, cover, auto;
-}
-
-.signature-bg::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  z-index: -2;
-  background-image:
-    linear-gradient(rgba(255, 255, 255, 0.045) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.045) 1px, transparent 1px);
-  background-size: 56px 56px;
-  mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.95), rgba(0, 0, 0, 0.42) 55%, transparent);
-}
-
-.signature-bg::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  z-index: -1;
-  background:
-    repeating-linear-gradient(
-      115deg,
-      transparent 0 46px,
-      rgba(56, 189, 248, 0.055) 47px,
-      transparent 49px 96px
-    ),
-    linear-gradient(to bottom, rgba(10, 10, 10, 0.12), #0a0a0a 88%);
-  pointer-events: none;
+  background: var(--scene-overlay), var(--scene) center top / cover fixed, var(--bg);
 }

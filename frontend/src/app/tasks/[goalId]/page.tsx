@@ -165,7 +165,7 @@ export default function TaskJournalPage() {
         </header>
 
         {goal.notes && (
-          <section className="rounded-card border border-line bg-surface p-5 shadow-lg shadow-black/15 backdrop-blur">
+          <section className="rounded-card border border-line bg-surface p-5 shadow-lg shadow-tint backdrop-blur">
             <h2 className="text-sm font-semibold uppercase tracking-wide text-fg-subtle">
               Task context
             </h2>
@@ -184,7 +184,7 @@ export default function TaskJournalPage() {
         <section className="grid gap-6 lg:grid-cols-[340px_minmax(0,1fr)]">
           <form
             onSubmit={handleAddEntry}
-            className="rounded-card border border-line bg-surface p-5 shadow-lg shadow-black/15 backdrop-blur"
+            className="rounded-card border border-line bg-surface p-5 shadow-lg shadow-tint backdrop-blur"
           >
             <h2 className="text-base font-semibold">Add journal entry</h2>
             <p className="mt-1 text-sm text-fg-subtle">
@@ -261,13 +261,13 @@ export default function TaskJournalPage() {
             <button
               type="submit"
               disabled={saving || !reflection.trim()}
-              className="mt-5 w-full rounded-control bg-accent px-4 py-3 text-sm font-semibold transition-colors hover:bg-accent-hover disabled:opacity-40 disabled:cursor-not-allowed"
+              className="mt-5 w-full rounded-control bg-accent text-white px-4 py-3 text-sm font-semibold transition-colors hover:bg-accent-hover disabled:opacity-40 disabled:cursor-not-allowed"
             >
               {saving ? "Saving..." : "Add entry"}
             </button>
           </form>
 
-          <section className="rounded-card border border-line bg-surface p-5 shadow-lg shadow-black/15 backdrop-blur">
+          <section className="rounded-card border border-line bg-surface p-5 shadow-lg shadow-tint backdrop-blur">
             <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
               <div>
                 <h2 className="text-base font-semibold">Journal timeline</h2>

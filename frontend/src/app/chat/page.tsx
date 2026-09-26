@@ -192,7 +192,7 @@ export default function ChatPage() {
       </header>
 
       <main className="mx-auto grid min-h-0 w-full max-w-6xl flex-1 grid-cols-1 gap-4 px-4 py-5 lg:grid-cols-[minmax(0,1fr)_340px]">
-        <section className="flex min-h-[70vh] flex-col overflow-hidden rounded-2xl border border-line bg-black/35">
+        <section className="flex min-h-[70vh] flex-col overflow-hidden rounded-card border border-line bg-surface backdrop-blur-[16px]">
           <div className="border-b border-line px-5 py-4">
             <h2 className="text-base font-semibold">Task-aware chat</h2>
             <p className="mt-1 text-sm text-fg-subtle">
@@ -288,7 +288,7 @@ export default function ChatPage() {
         </section>
 
         <aside className="flex min-h-0 flex-col gap-4">
-          <section className="rounded-2xl border border-line bg-black/35 p-4">
+          <section className="rounded-card border border-line bg-surface backdrop-blur-[16px] p-4">
             <div className="mb-4 flex items-start justify-between gap-3">
               <div>
                 <h2 className="text-sm font-semibold text-fg">Task context</h2>
@@ -334,7 +334,7 @@ export default function ChatPage() {
             </div>
           </section>
 
-          <section className="rounded-2xl border border-line bg-black/35 p-4">
+          <section className="rounded-card border border-line bg-surface backdrop-blur-[16px] p-4">
             <h2 className="text-sm font-semibold text-fg">Recent reflections</h2>
             <div className="mt-4 space-y-3">
               {recentLogs.length === 0 ? (
