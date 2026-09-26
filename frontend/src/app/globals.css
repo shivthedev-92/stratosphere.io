@@ -121,3 +121,14 @@ body {
   .typing-dot { animation: none; opacity: .6; }
 }
 
+
+/* Sign-in buttons. Colours from Google's and Microsoft's button guidelines:
+   their light variants on Dawn, their dark variants on Night. */
+.oauth-google { background: #FFFFFF; color: #1F1F1F; border-color: #747775; }
+.oauth-google:hover { background: #F2F2F2; }
+.oauth-microsoft { background: #FFFFFF; color: #5E5E5E; border-color: #8C8C8C; }
+.oauth-microsoft:hover { background: #F3F3F3; }
+:root:not([data-theme="dawn"]) .oauth-google { background: #131314; color: #E3E3E3; border-color: #8E918F; }
+:root:not([data-theme="dawn"]) .oauth-google:hover { background: #1F1F21; }
+:root:not([data-theme="dawn"]) .oauth-microsoft { background: #2F2F2F; color: #FFFFFF; border-color: #2F2F2F; }
+:root:not([data-theme="dawn"]) .oauth-microsoft:hover { background: #3B3B3B; }

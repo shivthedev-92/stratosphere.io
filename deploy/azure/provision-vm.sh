@@ -2,7 +2,9 @@
 set -euo pipefail
 
 readonly RESOURCE_GROUP="${AZURE_RESOURCE_GROUP:-stratosphere-demo-rg}"
-readonly LOCATION="${AZURE_LOCATION:-centralindia}"
+# South India: Standard_B2ats_v2 was not offered to a new free-trial
+# subscription in Central India (checked 2026-09-26 with az vm list-skus).
+readonly LOCATION="${AZURE_LOCATION:-southindia}"
 readonly VM_NAME="${AZURE_VM_NAME:-stratosphere-demo-vm}"
 readonly ADMIN_USER="${AZURE_ADMIN_USER:-azureuser}"
 readonly VM_SIZE="${AZURE_VM_SIZE:-Standard_B2ats_v2}"
@@ -112,7 +114,9 @@ az vm create \
   --ssh-key-values "$SSH_PUBLIC_KEY_PATH" \
   --os-disk-size-gb 64 \
   --storage-sku Premium_LRS \
-  --security-type Standard \
+  --security-type TrustedLaunch \
+  --enable-secure-boot true \
+  --enable-vtpm true \
   --os-disk-delete-option Delete \
   --tags project=stratosphere environment=production \
   --output none

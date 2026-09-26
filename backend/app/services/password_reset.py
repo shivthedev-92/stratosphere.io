@@ -26,7 +26,9 @@ def hash_reset_token(token: str) -> str:
 
 def create_password_reset_request(db: Session, email: str) -> str | None:
     user = db.query(User).filter(User.email == email).first()
-    if user is None:
+    # Accounts that sign in with Google/Microsoft have no password to reset;
+    # issuing one here would add a password route into them.
+    if user is None or user.hashed_password is None:
         return None
 
     token = token_urlsafe(RESET_TOKEN_BYTES)

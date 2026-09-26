@@ -22,3 +22,9 @@
         -Server
     }
 }
+
+# www.<domain> redirects to the bare domain (one canonical URL for cookies,
+# CORS and links). Caddy gets a certificate for it once its DNS record exists.
+www.{$SITE_ADDRESS} {
+    redir https://{$SITE_ADDRESS}{uri} permanent
+}

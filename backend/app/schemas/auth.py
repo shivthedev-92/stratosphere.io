@@ -81,6 +81,11 @@ class MessageOut(BaseModel):
     message: str
 
 
+class AuthConfigOut(BaseModel):
+    providers: list[str]
+    password_signup: bool
+
+
 class TokenOut(BaseModel):
     access_token: str
     token_type: str = "bearer"

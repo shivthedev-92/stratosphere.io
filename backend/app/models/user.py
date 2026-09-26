@@ -14,7 +14,18 @@
 
 import uuid
 
-from sqlalchemy import BigInteger, Boolean, Column, Date, DateTime, Integer, String, func
+from sqlalchemy import (
+    BigInteger,
+    Boolean,
+    Column,
+    Date,
+    DateTime,
+    ForeignKey,
+    Integer,
+    String,
+    UniqueConstraint,
+    func,
+)
 from sqlalchemy.dialects.postgresql import UUID
 
 from app.db import Base
@@ -38,7 +49,8 @@ class User(Base):
     career_track = Column(String, nullable=True)
     # One of app.avatars.AVATAR_IDS, or null for the initial-letter fallback.
     avatar_id = Column(String(40), nullable=True)
-    hashed_password = Column(String, nullable=False)
+    # Null for accounts that only sign in with Google or Microsoft.
+    hashed_password = Column(String, nullable=True)
     # Bumped whenever the password changes. Access tokens carry the value they
     # were minted with, so incrementing this invalidates every existing session.
     token_version = Column(Integer, nullable=False, default=0, server_default="0")
@@ -55,3 +67,28 @@ class User(Base):
     @property
     def telegram_linked(self) -> bool:
         return self.telegram_chat_id is not None
+
+
+class OAuthIdentity(Base):
+    """A Google or Microsoft account that signs in as a user.
+
+    (provider, subject) is the provider's stable id for the account; the email
+    can change on the provider side and is kept only for reference.
+    """
+
+    __tablename__ = "oauth_identities"
+    __table_args__ = (
+        UniqueConstraint("provider", "subject", name="uq_oauth_identities_provider_subject"),
+    )
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    user_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    provider = Column(String(20), nullable=False)
+    subject = Column(String(255), nullable=False)
+    email = Column(String, nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
