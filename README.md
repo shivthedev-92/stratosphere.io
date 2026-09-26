@@ -1,129 +1,192 @@
-# Stratosphere — Productivity App
+# Stratosphere
 
-A habit-building and life-coaching app. See [`system-prompt.txt`](./system-prompt.txt) for the full product vision.
+**A calmer way to choose, reflect, and finish your day.**
+
+Stratosphere is a habit and planning app for flying above the traffic: pick what matters today, notice how it went, and get a clear next step. It pairs a simple task list with reflections and a task-aware AI coach, and it can nudge you on Telegram when it's time.
+
+The product vision lives in [`ZPROJECT_ASSETS/system-prompt.txt`](ZPROJECT_ASSETS/system-prompt.txt).
+
+![Dashboard](docs/images/dashboard.png)
+
+> The UI is being redesigned for launch; screenshots show the current build with sample data.
+
+---
+
+## Features
+
+### Plan your day
+Add action items with a priority, as either a **moment-based goal** ("after coffee") or a **timed task** with a reminder. A calendar shows what's coming up.
+
+### Reflect without judgment
+Log how each task went, whether it's done, and how it felt. Each task keeps its own timeline of reflections, and a missed day is never framed as failure.
+
+### AI life coach
+A coach that knows your current tasks and recent reflections. Replies stream in word by word and stay short, warm and practical. Production uses **Claude Haiku 4.5**; local development can use a free **Ollama** model instead.
+
+![AI coach](docs/images/coach-chat.png)
+
+### Safety first
+Stratosphere is a planning tool, not therapy. If a message or reflection contains self-harm or suicide language, the AI is **never called**: the user gets fixed, human-written guidance and verified Indian crisis lines instead. Reflections are always saved; the resources appear alongside them.
+
+<img src="docs/images/safety-card.png" alt="Crisis resources card" width="520">
+
+### Telegram reminders
+Connect Telegram from **Settings** and get a message when a timed task is due, usually within 30 seconds. Messages contain the task title only, never notes or reflections.
+
+<img src="docs/images/telegram-settings.png" alt="Telegram reminders settings" width="560">
+
+### Built-in spend controls
+The paid AI coach is capped per user (50 replies in any 24 hours by default), the conversation history sent with each message is size-limited, and requests are rate-limited per IP. A typical coach message costs about $0.002.
+
+### Web and mobile
+A Next.js web app and an Expo (React Native) mobile app share the same FastAPI backend.
+
+---
 
 ## Stack
 
 | Layer | Tech |
 |-------|------|
-| Frontend | Next.js 16 (App Router) + TypeScript + Tailwind |
-| Backend | FastAPI + SQLAlchemy 2 + Alembic |
+| Web | Next.js 16 (App Router), React 19, TypeScript, Tailwind |
+| Mobile | Expo 54 (React Native) |
+| Backend | FastAPI, SQLAlchemy 2, Alembic |
 | Database | PostgreSQL 16 |
-| Auth | JWT + bcrypt; HttpOnly web cookie and mobile bearer token |
-| AI Coach | Ollama (default) · Anthropic API (optional) |
+| Auth | JWT + bcrypt; HttpOnly cookie (web), bearer token (mobile) |
+| AI coach | Claude Haiku 4.5 via the Anthropic API (production), Ollama (local) |
+| Reminders | Telegram Bot API |
+| Hosting | One Azure Linux VM: Docker Compose + Caddy (HTTPS) |
 
 ---
 
-## Prerequisites
+## Run it locally
 
+### Prerequisites
 - [Docker](https://docs.docker.com/get-docker/) (for Postgres)
-- Python 3.12 + [uv](https://docs.astral.sh/uv/getting-started/installation/)
+- Python 3.12 and [uv](https://docs.astral.sh/uv/getting-started/installation/)
 - Node 20+
-- [Ollama](https://ollama.com/download) — for the AI coach
+- [Ollama](https://ollama.com/download), only if you want the free local AI coach
 
----
-
-## First-time setup
-
-### 1. Pull the AI model
-```bash
-ollama pull llama3.1:8b
-```
-
-### 2. Start Postgres
+### 1. Database
 ```bash
 docker compose up -d
 ```
 
-### 3. Backend
+### 2. Backend (http://localhost:8000)
 ```bash
 cd backend
-
-# Install dependencies
 uv sync
-
-# Copy env and fill in JWT_SECRET (run: python -c "import secrets; print(secrets.token_hex(32))")
 cp .env.example .env
-
-# Run migrations
+# Set JWT_SECRET: python -c "import secrets; print(secrets.token_hex(32))"
 uv run alembic upgrade head
-
-# Start the API server
 uv run uvicorn app.main:app --reload
-# → http://localhost:8000
-# → http://localhost:8000/docs  (Swagger UI)
 ```
+API docs: http://localhost:8000/docs
 
-### 4. Frontend
+### 3. Web app (http://localhost:3000)
 ```bash
 cd frontend
 cp .env.local.example .env.local
 npm install
 npm run dev
-# → http://localhost:3000
 ```
 
----
+### 4. Mobile app (optional)
+```bash
+cd mobile
+cp .env.example .env   # set your computer's LAN IP to test on a phone
+npm install
+npm start
+```
 
-## Using the app
-
-1. Open `http://localhost:3000`
-2. Click **Get started** → create an account
-3. You land on the dashboard
-4. Add action items for the day, then use **Reflect** to log what went well or what got in the way
-5. Click **Life Coach** to chat with the AI coach
-
----
-
-## Switching to the Anthropic API
-
-> **Note:** Anthropic Pro (claude.ai) does **not** include API access. Fund separately at [console.anthropic.com](https://console.anthropic.com).
-
-In `backend/.env`:
+### 5. Choose an AI coach
+In `backend/.env`, either run locally for free:
+```
+AI_PROVIDER=ollama
+OLLAMA_MODEL=llama3.1:8b      # then: ollama pull llama3.1:8b
+```
+or use Claude:
 ```
 AI_PROVIDER=anthropic
-ANTHROPIC_API_KEY=sk-ant-...
+ANTHROPIC_API_KEY=sk-ant-...   # from console.anthropic.com (separate from a claude.ai subscription)
 ANTHROPIC_MODEL=claude-haiku-4-5
 ```
+Restart the backend after changing it.
 
-Restart the backend. No code changes needed.
+### 6. Telegram reminders (optional)
+1. In Telegram, message [@BotFather](https://t.me/BotFather) and send `/newbot`.
+2. In `backend/.env`, set `TELEGRAM_BOT_TOKEN` and `TELEGRAM_BOT_USERNAME` (without `@`), then restart the backend.
+3. In the web app, open **Settings → Telegram reminders → Connect Telegram** and press **Start**.
 
 ---
 
-## Production deployment
+## Configuration
 
-The recommended Azure path runs the existing Caddy, Next.js, FastAPI, and PostgreSQL stack on one Linux VM. See [AZURE_DEPLOYMENT.md](AZURE_DEPLOYMENT.md) for provisioning, secure networking, TLS, deployment, health checks, backups, and teardown.
+Key settings in `backend/.env` (full list in [`backend/.env.example`](backend/.env.example)):
 
-## AWS recruiter demo
+| Setting | Purpose | Default |
+|---|---|---|
+| `AI_PROVIDER` | `ollama`, `anthropic` or `disabled` | `ollama` |
+| `ANTHROPIC_MODEL` | Claude model for the coach | `claude-haiku-4-5` |
+| `COACH_DAILY_MESSAGE_LIMIT` | Coach replies per user in any 24 hours (0 = no limit) | `50` |
+| `COACH_HISTORY_MAX_CHARS` | Chat history sent with each coach message | `6000` |
+| `TELEGRAM_BOT_TOKEN`, `TELEGRAM_BOT_USERNAME` | Telegram reminders; leave empty to disable | empty |
+| `SMTP_*` | Password-reset email | empty |
 
-The production demo uses Docker Compose on one EC2 instance with Caddy-managed HTTPS, Next.js,
-FastAPI, and PostgreSQL. Follow [`DEPLOYMENT.md`](./DEPLOYMENT.md). The production configuration
-disables the AI coach until a hosted provider is explicitly configured.
+Never commit `.env` files; they are git-ignored.
+
+---
+
+## Tests
+
+```bash
+cd backend && uv run pytest tests/unit     # backend tests
+cd frontend && npx tsc --noEmit            # web type-check
+cd mobile && npx tsc --noEmit              # mobile type-check
+```
+
+---
+
+## Deployment
+
+Stratosphere deploys to **Azure**: one Linux VM running Caddy, Next.js, FastAPI and PostgreSQL with Docker Compose. See [docs/deployment/azure.md](docs/deployment/azure.md) for provisioning, networking, TLS, deploys, backups and teardown.
+
+Older AWS, Render and Netlify setups are kept in [`deploy/archive/`](deploy/archive/README.md) for reference only.
+
+---
+
+## Safety and scope
+
+Stratosphere helps people plan and reflect on their own goals. It is **not** therapy, counselling or medical advice, and it is not a crisis service. The crisis resources are listed in [`backend/app/services/safety.py`](backend/app/services/safety.py) and must be re-verified before every release.
 
 ---
 
 ## Project layout
 
 ```
-productivity-app/
-├── system-prompt.txt      Product spec (source of truth)
-├── BUILD_PLAN.md          Implementation handoff doc
-├── docker-compose.yml     Postgres for local dev
-├── backend/               FastAPI + SQLAlchemy
-│   ├── app/
-│   │   ├── api/           Routes: auth, me, goals, chat
-│   │   ├── models/        SQLAlchemy models: users, goals, goal logs
-│   │   ├── schemas/       Pydantic schemas
-│   │   ├── services/      AI coach (Ollama + Anthropic)
-│   │   ├── config.py      Settings from env
-│   │   ├── db.py          Engine + session
-│   │   ├── security.py    JWT + bcrypt
-│   │   └── deps.py        FastAPI dependencies
-│   └── alembic/           Migrations
-└── frontend/              Next.js app
-    └── src/app/
-        ├── page.tsx        Landing
-        ├── (auth)/        Login + Signup
-        ├── dashboard/     Protected dashboard
-        └── chat/          AI life coach chat
+stratosphere.io/
+├── backend/                 FastAPI + SQLAlchemy + Alembic
+│   └── app/
+│       ├── api/             Routes: auth, me, goals, chat, notifications, support
+│       ├── models/          SQLAlchemy models
+│       ├── schemas/         Pydantic schemas
+│       └── services/        AI coach, safety gate, spend limits, reminders, Telegram
+├── frontend/                Next.js web app
+├── mobile/                  Expo (React Native) app
+├── deploy/
+│   ├── Caddyfile
+│   ├── azure/               Compose file, env template, provision/bootstrap/deploy scripts
+│   └── archive/             Old AWS / Render / Netlify configs (not maintained)
+├── docs/
+│   ├── images/              README screenshots
+│   ├── deployment/azure.md  Azure deployment guide
+│   ├── archive/             Old deployment guides
+│   ├── history/             Build plan, bug-fix log, past summaries
+│   └── notes/               Personal reference notes (git-ignored)
+├── ZPROJECT_ASSETS/         Product spec, wireframe, imagery
+├── project-icons-images/    App icons (iOS / Android / store)
+└── docker-compose.yml       Postgres for local development
 ```
+
+---
+
+Copyright © 2024 Sivarajan Kakamaniyan. All rights reserved. The source is public for viewing; no licence is granted to copy, modify or redistribute it.
