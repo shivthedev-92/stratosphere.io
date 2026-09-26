@@ -238,7 +238,9 @@ def resolve_user(db: Session, identity: VerifiedIdentity) -> User:
 
     1. A known identity signs in as its user.
     2. Otherwise an existing user with the same email gets this identity
-       linked (the provider has verified the address).
+       linked (the provider has verified the address). If that account's
+       email was never verified, the verified owner takes it over; see
+       _claim_unverified_account.
     3. Otherwise a new password-less user is created.
     """
     linked = (
@@ -262,6 +264,8 @@ def resolve_user(db: Session, identity: VerifiedIdentity) -> User:
         user = User(email=identity.email, name=identity.name, hashed_password=None)
         db.add(user)
         db.flush()
+    elif db.query(OAuthIdentity).filter(OAuthIdentity.user_id == user.id).first() is None:
+        _claim_unverified_account(user)
     db.add(
         OAuthIdentity(
             user_id=user.id,
@@ -273,3 +277,20 @@ def resolve_user(db: Session, identity: VerifiedIdentity) -> User:
     db.commit()
     db.refresh(user)
     return user
+
+
+def _claim_unverified_account(user: User) -> None:
+    """Hand an email-matched account to the provider-verified owner.
+
+    Password sign-up never proved email ownership, so an account with no
+    linked identity may have been registered by someone else with the
+    victim's address ("pre-account hijacking"). Linking the verified owner
+    into it as-is would let that person keep signing in and read whatever
+    the owner adds. The verified owner wins: the password and any pending
+    reset link are removed, and bumping token_version ends every existing
+    session. A legitimate owner simply signs in with the provider from now on.
+    """
+    user.hashed_password = None
+    user.password_reset_token_hash = None
+    user.password_reset_expires_at = None
+    user.token_version = (user.token_version or 0) + 1

@@ -215,11 +215,39 @@ def test_new_identity_creates_passwordless_user():
 
 
 def test_existing_email_is_linked_not_duplicated():
-    existing = User(id=uuid.uuid4(), email="alex@example.com", name="Alex", hashed_password="x")
-    db = FakeDB(users=[existing])
+    existing = User(id=uuid.uuid4(), email="alex@example.com", name="Alex", hashed_password=None)
+    other = OAuthIdentity(
+        user_id=existing.id, provider="microsoft", subject="ms-1", email="alex@example.com"
+    )
+    db = FakeDB(users=[existing], identities=[other])
+    existing.token_version = 3
     assert oauth.resolve_user(db, IDENTITY) is existing
     assert len(db.users) == 1
-    assert db.identities[0].user_id == existing.id
+    assert {i.provider for i in db.identities} == {"microsoft", "google"}
+    # Already verified through Microsoft: nothing is revoked.
+    assert existing.token_version == 3
+
+
+def test_linking_takes_over_an_unverified_password_account():
+    # A password account nobody ever verified could belong to someone who
+    # registered the victim's address first (pre-account hijacking).
+    squatter = User(
+        id=uuid.uuid4(),
+        email="alex@example.com",
+        name="Not Alex",
+        hashed_password="attacker-knows-this",
+        password_reset_token_hash="pending",
+        password_reset_expires_at=datetime.now(timezone.utc) + timedelta(minutes=30),
+        token_version=0,
+    )
+    db = FakeDB(users=[squatter])
+    user = oauth.resolve_user(db, IDENTITY)
+    assert user is squatter
+    assert user.hashed_password is None
+    assert user.password_reset_token_hash is None
+    assert user.password_reset_expires_at is None
+    # Every session issued before the link is now rejected.
+    assert user.token_version == 1
 
 
 def test_known_identity_signs_in_even_if_email_changed():
