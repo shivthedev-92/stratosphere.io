@@ -32,6 +32,7 @@ import { ContactForm } from "@/components/contact-form";
 import { CompletedReflectionsTable } from "@/components/completed-reflections-table";
 import { EmptyGoalsIllustration } from "@/components/illustrations";
 import { MonthPriorityCalendar } from "@/components/month-priority-calendar";
+import { MotivationalBanner } from "@/components/motivational-banner";
 import { ProgressSystem } from "@/components/progress-system";
 import { ReflectGoalModal } from "@/components/reflect-goal-modal";
 import { TaskDetailModal } from "@/components/task-detail-modal";
@@ -612,12 +613,7 @@ export default function DashboardPage() {
           </div>
         ) : null}
 
-        <section className="rounded-lg border border-white/10 bg-neutral-900/80 p-5 shadow-lg shadow-black/15 backdrop-blur">
-          <p className="text-center text-sm italic text-neutral-300">
-            ✦ &ldquo;A Success or a Failure in Goal is Defined only by you. Please use this
-            data as a helper rather than a definition of what you are.&rdquo;
-          </p>
-        </section>
+        <MotivationalBanner />
 
         {error && (
           <div className="rounded-lg border border-red-900/60 bg-red-950/40 p-4 text-sm text-red-200">
