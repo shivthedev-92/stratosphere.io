@@ -12,13 +12,18 @@
 # Version 0.1.0 | 2024-06
 ############################################################################
 
+import json
+from collections.abc import AsyncIterator
 from datetime import datetime, timezone
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException
+from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
+from starlette.concurrency import run_in_threadpool
 
-from app.db import get_db
+from app.config import settings
+from app.db import SessionLocal, get_db
 from app.deps import get_current_user
 from app.models.chat import ChatMessageRecord, ChatSession
 from app.models.goal import Goal, GoalLog
@@ -30,8 +35,15 @@ from app.schemas.chat import (
     ChatSessionCreate,
     ChatSessionDetailOut,
     ChatSessionOut,
+    SafetyNoticeOut,
 )
 from app.services.ai_coach import get_coach
+from app.services.coach_budget import enforce_daily_limit, trim_history
+from app.services.safety import (
+    CRISIS_MESSAGE,
+    build_crisis_notice,
+    detect_crisis,
+)
 
 router = APIRouter(tags=["chat"])
 
@@ -78,7 +90,10 @@ def get_chat_session(
     session = get_owned_session(session_id, current_user, db)
     messages = (
         db.query(ChatMessageRecord)
-        .filter(ChatMessageRecord.session_id == session.id, ChatMessageRecord.user_id == current_user.id)
+        .filter(
+            ChatMessageRecord.session_id == session.id,
+            ChatMessageRecord.user_id == current_user.id,
+        )
         .order_by(ChatMessageRecord.created_at.asc())
         .all()
     )
@@ -91,21 +106,26 @@ async def chat(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ) -> ChatOut:
+    # Order matters: crisis gate, then the daily limit, then the session.
+    # A user in crisis is answered whatever their usage, and a rejected
+    # message must not leave an empty chat session behind.
+    crisis = detect_crisis(data.message) is not None
+    if not crisis:
+        enforce_daily_limit(db, current_user.id)
     session = get_or_create_session(data, current_user, db)
-    saved_messages = (
-        db.query(ChatMessageRecord)
-        .filter(ChatMessageRecord.session_id == session.id, ChatMessageRecord.user_id == current_user.id)
-        .order_by(ChatMessageRecord.created_at.asc())
-        .limit(30)
-        .all()
-    )
-    history = [ChatMessage(role=message.role, content=message.content) for message in saved_messages]
-    if not history:
-        history = data.history[-20:]
+    history = _load_history(session.id, current_user, db, data)
 
-    coach = get_coach()
-    task_context = build_task_context(current_user, db, session.goal_id)
-    reply = await coach.reply(history, data.message, task_context)
+    # Safety gate. This runs BEFORE the coach and, on a hit, the model is
+    # never called - the user gets fixed human-authored copy instead of a
+    # generated one. See app/services/safety.py for why.
+    safety: SafetyNoticeOut | None = None
+    if crisis:
+        reply = CRISIS_MESSAGE
+        safety = build_crisis_notice()
+    else:
+        coach = get_coach()
+        task_context = build_task_context(current_user, db, session.goal_id)
+        reply = await coach.reply(history, data.message, task_context)
 
     db.add(
         ChatMessageRecord(
@@ -128,14 +148,45 @@ async def chat(
     session.updated_at = datetime.now(timezone.utc)
     db.add(session)
     db.commit()
-    return ChatOut(reply=reply, session_id=session.id)
+    return ChatOut(reply=reply, session_id=session.id, safety=safety)
+
+
+
+def _load_history(
+    session_id: UUID,
+    current_user: User,
+    db: Session,
+    data: ChatIn,
+) -> list[ChatMessage]:
+    """Recent turns for this session, oldest first. Falls back to whatever the
+    client sent when the session has no stored messages yet."""
+    saved_messages = (
+        db.query(ChatMessageRecord)
+        .filter(
+            ChatMessageRecord.session_id == session_id,
+            ChatMessageRecord.user_id == current_user.id,
+        )
+        .order_by(ChatMessageRecord.created_at.desc())
+        .limit(30)
+        .all()
+    )
+    saved_messages.reverse()
+    history = [
+        ChatMessage(role=message.role, content=message.content) for message in saved_messages
+    ]
+    # Size-capped whichever source it came from; the client-supplied fallback
+    # is otherwise up to 30 x 8,000 characters. See coach_budget.py.
+    return trim_history(history or data.history[-20:], settings.COACH_HISTORY_MAX_CHARS)
 
 
 def get_or_create_session(data: ChatIn, current_user: User, db: Session) -> ChatSession:
     if data.session_id:
         session = get_owned_session(data.session_id, current_user, db)
         if data.goal_id and session.goal_id and session.goal_id != data.goal_id:
-            raise HTTPException(status_code=400, detail="Chat session is already linked to a different task")
+            raise HTTPException(
+                status_code=400,
+                detail="Chat session is already linked to a different task",
+            )
         if data.goal_id and not session.goal_id:
             get_owned_goal(data.goal_id, current_user, db)
             session.goal_id = data.goal_id
@@ -221,7 +272,8 @@ def build_task_context(current_user: User, db: Session, focus_goal_id: UUID | No
         if latest_log:
             status = "task completed" if goal.completed else "task open"
         lines.append(
-            f"{index}. {emoji}{goal.title} | priority={goal.priority} | scheduled_for={scheduled_for} | latest_status={status}"
+            f"{index}. {emoji}{goal.title} | priority={goal.priority} | "
+            f"scheduled_for={scheduled_for} | latest_status={status}"
         )
         if goal.notes:
             lines.append(f"   Notes: {truncate_text(goal.notes, 180)}")
@@ -237,7 +289,8 @@ def build_task_context(current_user: User, db: Session, focus_goal_id: UUID | No
             created_at = log.created_at.isoformat() if log.created_at else "unknown date"
             emotion = log.emotion_label or "not set"
             lines.append(
-                f"- {created_at}: emotion={emotion}, reflection={truncate_text(log.reflection, 160)}"
+                f"- {created_at}: emotion={emotion}, "
+                f"reflection={truncate_text(log.reflection, 160)}"
             )
 
     return "\n".join(lines)
@@ -260,3 +313,100 @@ def make_title(message: str) -> str:
     if len(title) <= 48:
         return title
     return f"{title[:45]}..."
+
+
+def _sse(event: str, payload: dict) -> str:
+    """One Server-Sent Event frame."""
+    return f"event: {event}\ndata: {json.dumps(payload)}\n\n"
+
+
+def _persist_turn(session_id: UUID, user_id: UUID, user_message: str, reply: str) -> None:
+    """Write the finished turn using a FRESH session.
+
+    The request-scoped session from Depends(get_db) is already closed by the
+    time the StreamingResponse body runs, so it cannot be used here.
+    """
+    db = SessionLocal()
+    try:
+        db.add(
+            ChatMessageRecord(
+                session_id=session_id, user_id=user_id, role="user", content=user_message
+            )
+        )
+        db.add(
+            ChatMessageRecord(
+                session_id=session_id, user_id=user_id, role="assistant", content=reply
+            )
+        )
+        chat_session = db.query(ChatSession).filter(ChatSession.id == session_id).first()
+        if chat_session is not None:
+            if chat_session.title == "New chat":
+                chat_session.title = make_title(user_message)
+            chat_session.updated_at = datetime.now(timezone.utc)
+            db.add(chat_session)
+        db.commit()
+    finally:
+        db.close()
+
+
+@router.post("/chat/stream")
+async def chat_stream(
+    data: ChatIn,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> StreamingResponse:
+    """Token-by-token coach reply over SSE.
+
+    POST /chat (non-streaming) is kept for the mobile client, which expects a
+    single JSON body. Both share the same provider and the same safety gate.
+    """
+    # Same order as POST /chat: crisis gate, daily limit, then the session.
+    # The limit raises a normal 429 before any stream starts.
+    crisis = detect_crisis(data.message) is not None
+    if not crisis:
+        enforce_daily_limit(db, current_user.id)
+    session = get_or_create_session(data, current_user, db)
+    session_id = session.id
+    user_id = current_user.id
+
+    # Everything the generator needs is read here, while the request-scoped
+    # session is still open.
+    history = _load_history(session_id, current_user, db, data)
+    task_context = None if crisis else build_task_context(current_user, db, session.goal_id)
+
+    async def event_stream() -> AsyncIterator[str]:
+        # Safety gate, same rule as the blocking endpoint: on a hit the coach
+        # is never constructed and nothing is generated.
+        if crisis:
+            yield _sse("safety", build_crisis_notice().model_dump())
+            yield _sse("token", {"text": CRISIS_MESSAGE})
+            await run_in_threadpool(
+                _persist_turn, session_id, user_id, data.message, CRISIS_MESSAGE
+            )
+            yield _sse("done", {"session_id": str(session_id)})
+            return
+
+        collected: list[str] = []
+        try:
+            coach = get_coach()
+            async for chunk in coach.stream_reply(history, data.message, task_context):
+                collected.append(chunk)
+                yield _sse("token", {"text": chunk})
+        except HTTPException as exc:
+            yield _sse("error", {"detail": exc.detail})
+        except Exception:
+            yield _sse("error", {"detail": "The AI coach is unavailable right now."})
+        finally:
+            # Persist whatever was produced, even on a disconnect or error, so
+            # a partial reply is not silently lost from the transcript.
+            reply = "".join(collected)
+            if reply:
+                await run_in_threadpool(_persist_turn, session_id, user_id, data.message, reply)
+
+        yield _sse("done", {"session_id": str(session_id)})
+
+    return StreamingResponse(
+        event_stream(),
+        media_type="text/event-stream",
+        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+    )

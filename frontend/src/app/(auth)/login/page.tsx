@@ -4,7 +4,7 @@ import { useState, FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { BackgroundShell } from "@/components/background-shell";
-import { api, saveToken } from "@/lib/api";
+import { api } from "@/lib/api";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -18,8 +18,7 @@ export default function LoginPage() {
     setError("");
     setLoading(true);
     try {
-      const { access_token } = await api.login(email, password);
-      saveToken(access_token);
+      await api.login(email, password);
       router.push("/dashboard");
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Login failed");

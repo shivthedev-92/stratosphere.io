@@ -1,0 +1,129 @@
+# CodeRabbit configuration for Stratosphere.
+# Docs: https://docs.coderabbit.ai/reference/yaml-template
+#
+# Note: this file only takes effect once the CodeRabbit GitHub App is installed
+# on the repository (https://github.com/apps/coderabbitai). Until then it is
+# inert.
+
+language: "en-US"
+
+tone_instructions: >
+  Be direct and specific. Cite file and line for every finding. Prefer
+  concrete failure scenarios over general advice, and say plainly when
+  something is fine.
+
+reviews:
+  # "chill" reports real problems without flooding PRs with nitpicks.
+  # Raise to "assertive" if you want style-level suggestions too.
+  profile: "chill"
+
+  # Do not let the bot block merges; it advises, humans decide.
+  request_changes_workflow: false
+
+  high_level_summary: true
+  review_status: true
+  collapse_walkthrough: false
+  poem: false
+
+  auto_review:
+    enabled: true
+    drafts: false
+    auto_incremental_review: true
+    base_branches:
+      - "main"
+
+  path_filters:
+    # Lockfiles and build output are noise in review.
+    - "!**/package-lock.json"
+    - "!**/uv.lock"
+    - "!**/.next/**"
+    - "!**/node_modules/**"
+    - "!**/dist/**"
+    - "!**/__pycache__/**"
+    - "!**/*.svg"
+    # Vendored copies of third-party agent tooling (graphify, OpenSpec).
+    # Fix issues upstream; local edits are overwritten on update.
+    - "!.agents/**"
+    - "!.claude/skills/**"
+    - "!.claude/commands/**"
+    - "!**/*.jpg"
+    - "!**/*.png"
+
+  path_instructions:
+    - path: "backend/app/api/**/*.py"
+      instructions: >
+        These are FastAPI routers. For every endpoint that reads or mutates a
+        record, confirm the query filters on the authenticated user's id, not
+        just the resource id — a missing user_id filter is an IDOR. Check that
+        route ordering does not let a literal path (for example /goals/logs)
+        be shadowed by a parameterised one (/goals/{goal_id}). Flag any new
+        endpoint that accepts unbounded input without a length limit in its
+        Pydantic schema.
+
+    - path: "backend/app/security.py"
+      instructions: >
+        Authentication primitives. Any change here affects every session.
+        Verify JWTs are decoded with an explicit algorithms allowlist, that
+        the token_version claim is still issued, and that no code path
+        compares secrets or hashes with a plain == on user input.
+
+    - path: "backend/app/deps.py"
+      instructions: >
+        This is the single authorisation chokepoint. Confirm the token_version
+        check against the user record is intact — removing it silently
+        restores revoked sessions after a password reset.
+
+    - path: "backend/app/rate_limit.py"
+      instructions: >
+        State here is per-process, so any change must stay correct under a
+        single worker and must not grow memory without bound. Verify the
+        X-Forwarded-For parsing still counts hops from the right-hand side;
+        reading the leftmost entry lets a client spoof its identity, and
+        reading the wrong index collapses all callers into one bucket.
+
+    - path: "backend/alembic/versions/*.py"
+      instructions: >
+        Check down_revision chains to exactly one existing head, that every
+        added non-nullable column has a server_default (existing rows must
+        not violate it), and that downgrade actually reverses upgrade.
+
+    - path: "frontend/src/**/*.tsx"
+      instructions: >
+        Flag any dangerouslySetInnerHTML, direct innerHTML assignment, or
+        rendering of unsanitised user content. This project has none today
+        and should stay that way.
+
+    - path: "**/Dockerfile"
+      instructions: >
+        Confirm the image drops root with a USER directive before CMD, and
+        that no secret is baked in via ARG or ENV.
+
+    - path: "deploy/**"
+      instructions: >
+        Reverse proxy and deployment config. Check that security headers are
+        preserved and that no port other than 80/443 is exposed publicly.
+
+  tools:
+    ruff:
+      enabled: true
+    semgrep:
+      enabled: true
+    gitleaks:
+      enabled: true
+    eslint:
+      enabled: true
+    actionlint:
+      enabled: true
+    hadolint:
+      enabled: true
+    yamllint:
+      enabled: true
+    markdownlint:
+      enabled: false
+
+chat:
+  auto_reply: true
+
+knowledge_base:
+  learnings:
+    scope: "auto"

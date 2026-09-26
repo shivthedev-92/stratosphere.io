@@ -15,6 +15,7 @@
 
 "use client";
 
+import { CrisisOverlay } from "@/components/crisis-notice";
 import { FormEvent, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -26,12 +27,15 @@ import {
   type NotificationOut,
   type Priority,
   type UserOut,
+  type SafetyNoticeOut,
 } from "@/lib/api";
 import { BackgroundShell } from "@/components/background-shell";
 import { ContactForm } from "@/components/contact-form";
 import { CompletedReflectionsTable } from "@/components/completed-reflections-table";
 import { EmptyGoalsIllustration } from "@/components/illustrations";
 import { MonthPriorityCalendar } from "@/components/month-priority-calendar";
+import { MotivationalBanner } from "@/components/motivational-banner";
+import { TelegramSettings } from "@/components/telegram-settings";
 import { ProgressSystem } from "@/components/progress-system";
 import { ReflectGoalModal } from "@/components/reflect-goal-modal";
 import { TaskDetailModal } from "@/components/task-detail-modal";
@@ -244,9 +248,34 @@ export default function DashboardPage() {
     };
   }, [goals.length, isTimed]);
 
-  function handleLogout() {
+  async function handleLogout() {
+    // The session cookie is HttpOnly and only the server can clear it, so a
+    // failed logout must not look like a successful one.
+    try {
+      await api.logout();
+    } catch {
+      setError("Couldn't sign you out. Check your connection and try again.");
+      return;
+    }
     clearToken();
     router.push("/");
+  }
+
+  async function handleDeleteAccount() {
+    const confirmed = window.confirm(
+      "Permanently delete your account, tasks, reflections, chats, and support tickets? This cannot be undone.",
+    );
+    if (!confirmed) return;
+    setSaving(true);
+    try {
+      await api.deleteMe();
+      clearToken();
+      router.push("/");
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Could not delete account");
+    } finally {
+      setSaving(false);
+    }
   }
 
   async function handleMarkAllNotificationsRead() {
@@ -318,6 +347,8 @@ export default function DashboardPage() {
     }
   }
 
+  const [safetyNotice, setSafetyNotice] = useState<SafetyNoticeOut | null>(null);
+
   async function handleLogGoal(e: FormEvent) {
     e.preventDefault();
     if (!activeGoal || !reflection.trim()) return;
@@ -330,6 +361,8 @@ export default function DashboardPage() {
         soulful,
       });
       setGoalLogs((current) => [...current, log]);
+      // The reflection is already saved; this only surfaces resources.
+      if (log.safety) setSafetyNotice(log.safety);
       setActiveGoal(null);
       setReflection("");
       setSoulful(null);
@@ -567,6 +600,7 @@ export default function DashboardPage() {
                   <p className="mt-2 break-words text-sm font-semibold text-white">{user.email}</p>
                 </div>
               </div>
+              <TelegramSettings />
               <div className="mt-6 rounded-lg border border-white/10 bg-neutral-950/60 p-4">
                 <h3 className="text-base font-bold">Contact us</h3>
                 <p className="mt-1 text-sm text-neutral-400">
@@ -576,16 +610,25 @@ export default function DashboardPage() {
                   <ContactForm defaultName={user.name} defaultEmail={user.email} source="web" />
                 </div>
               </div>
+              <div className="mt-6 rounded-lg border border-red-900/70 bg-red-950/20 p-4">
+                <h3 className="text-base font-bold text-red-200">Delete account</h3>
+                <p className="mt-1 text-sm text-neutral-400">
+                  Permanently removes your profile, tasks, reflections, chats, notifications, and support tickets.
+                </p>
+                <button
+                  type="button"
+                  onClick={handleDeleteAccount}
+                  disabled={saving}
+                  className="mt-4 rounded-lg border border-red-700 px-4 py-2 text-sm font-semibold text-red-200 hover:bg-red-950/60 disabled:opacity-50"
+                >
+                  Delete my account
+                </button>
+              </div>
             </section>
           </div>
         ) : null}
 
-        <section className="rounded-lg border border-white/10 bg-neutral-900/80 p-5 shadow-lg shadow-black/15 backdrop-blur">
-          <p className="text-center text-sm italic text-neutral-300">
-            ✦ &ldquo;A Success or a Failure in Goal is Defined only by you. Please use this
-            data as a helper rather than a definition of what you are.&rdquo;
-          </p>
-        </section>
+        <MotivationalBanner />
 
         {error && (
           <div className="rounded-lg border border-red-900/60 bg-red-950/40 p-4 text-sm text-red-200">
@@ -896,6 +939,10 @@ export default function DashboardPage() {
         <ProgressSystem goals={goals} logs={goalLogs} />
         <CompletedReflectionsTable goals={goals} logs={goalLogs} onReuseGoal={handleReuseGoal} />
       </div>
+
+      {safetyNotice && (
+        <CrisisOverlay notice={safetyNotice} onClose={() => setSafetyNotice(null)} />
+      )}
 
       {activeGoal && (
         <ReflectGoalModal

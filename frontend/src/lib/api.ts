@@ -1,27 +1,16 @@
 const BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000";
 
-function getToken(): string | null {
-  if (typeof window === "undefined") return null;
-  return localStorage.getItem("token");
-}
-
-export function saveToken(token: string): void {
-  localStorage.setItem("token", token);
-}
-
 export function clearToken(): void {
+  // Remove tokens created by older versions. Current web auth uses an HttpOnly cookie.
   localStorage.removeItem("token");
 }
 
 async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
-  const token = getToken();
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
     ...(init.headers as Record<string, string>),
   };
-  if (token) headers["Authorization"] = `Bearer ${token}`;
-
-  const res = await fetch(`${BASE_URL}${path}`, { ...init, headers });
+  const res = await fetch(`${BASE_URL}${path}`, { ...init, headers, credentials: "include" });
   if (!res.ok) {
     const body = await res.json().catch(() => ({}));
     throw new Error(body?.detail ?? `HTTP ${res.status}`);
@@ -64,9 +53,26 @@ export type ChatMessage = {
   content: string;
 };
 
+export type CrisisResourceOut = {
+  name: string;
+  numbers: string[];
+  hours: string;
+  note: string;
+};
+
+/** Present only when the message tripped crisis detection on the server.
+ *  When set, `reply` is fixed human-authored copy and the AI coach was
+ *  never called. Render it distinctly - never as a normal chat bubble. */
+export type SafetyNoticeOut = {
+  kind: "crisis";
+  emergency_number: string;
+  resources: CrisisResourceOut[];
+};
+
 export type ChatOut = {
   reply: string;
   session_id: string;
+  safety?: SafetyNoticeOut | null;
 };
 
 export type ChatSessionOut = {
@@ -132,6 +138,17 @@ export type GoalLogCreate = {
   emotion_label?: EmotionLabel | null;
 };
 
+export type TelegramStatusOut = {
+  available: boolean;
+  linked: boolean;
+  linked_at: string | null;
+};
+
+export type TelegramLinkOut = {
+  url: string;
+  expires_at: string;
+};
+
 export type GoalLogOut = {
   id: string;
   goal_id: string;
@@ -140,6 +157,8 @@ export type GoalLogOut = {
   soulful: boolean | null;
   emotion_label: EmotionLabel | null;
   created_at: string;
+  /** Additive only - the reflection is always saved regardless. */
+  safety?: SafetyNoticeOut | null;
 };
 
 export type NotificationOut = {
@@ -171,7 +190,88 @@ export type SupportTicketOut = SupportTicketCreate & {
   created_at: string;
 };
 
+
+/**
+ * Streams a coach reply over Server-Sent Events.
+ *
+ * Falls back to nothing clever: the caller gets `onToken` for each chunk,
+ * `onSafety` if the crisis gate fired (in which case no model ran), and
+ * `onError` for a server-sent error frame. Resolves with the session id.
+ */
+export async function chatStream(
+  message: string,
+  opts: {
+    sessionId?: string | null;
+    goalId?: string | null;
+    /** Sent as a fallback; the server prefers the stored session history. */
+    history?: ChatMessage[];
+    onToken: (text: string) => void;
+    onSafety?: (notice: SafetyNoticeOut) => void;
+    onError?: (detail: string) => void;
+    signal?: AbortSignal;
+  },
+): Promise<string | null> {
+  const res = await fetch(`${BASE_URL}/chat/stream`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    signal: opts.signal,
+    body: JSON.stringify({
+      message,
+      session_id: opts.sessionId ?? null,
+      goal_id: opts.goalId ?? null,
+      history: (opts.history ?? []).slice(-20),
+    }),
+  });
+  if (!res.ok || !res.body) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body?.detail ?? `HTTP ${res.status}`);
+  }
+
+  const reader = res.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = "";
+  let sessionId: string | null = null;
+
+  const handleFrame = (frame: string) => {
+    let event = "message";
+    const dataLines: string[] = [];
+    for (const line of frame.split("\n")) {
+      if (line.startsWith("event: ")) event = line.slice(7).trim();
+      else if (line.startsWith("data: ")) dataLines.push(line.slice(6));
+    }
+    if (!dataLines.length) return;
+    let payload: Record<string, unknown>;
+    try {
+      payload = JSON.parse(dataLines.join("\n"));
+    } catch {
+      return;
+    }
+    if (event === "token") opts.onToken(String(payload.text ?? ""));
+    else if (event === "safety") opts.onSafety?.(payload as unknown as SafetyNoticeOut);
+    else if (event === "error") opts.onError?.(String(payload.detail ?? "Something went wrong"));
+    else if (event === "done") sessionId = (payload.session_id as string) ?? null;
+  };
+
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    buffer += decoder.decode(value, { stream: true });
+    // SSE frames are separated by a blank line.
+    let split: number;
+    while ((split = buffer.indexOf("\n\n")) !== -1) {
+      handleFrame(buffer.slice(0, split));
+      buffer = buffer.slice(split + 2);
+    }
+  }
+  if (buffer.trim()) handleFrame(buffer);
+  return sessionId;
+}
+
 export const api = {
+  telegramStatus: () => request<TelegramStatusOut>("/me/telegram"),
+  telegramLink: () => request<TelegramLinkOut>("/me/telegram/link", { method: "POST" }),
+  telegramUnlink: () => request<void>("/me/telegram", { method: "DELETE" }),
   signup: (email: string, password: string, name: string) =>
     request<TokenOut>("/auth/signup", {
       method: "POST",
@@ -184,10 +284,18 @@ export const api = {
       body: JSON.stringify({ email, password }),
     }),
 
+  logout: () => request<void>("/auth/logout", { method: "POST" }),
+
   requestPasswordReset: (email: string) =>
     request<MessageOut>("/auth/password-reset/request", {
       method: "POST",
       body: JSON.stringify({ email }),
+    }),
+
+  confirmPasswordReset: (token: string, password: string) =>
+    request<MessageOut>("/auth/password-reset/confirm", {
+      method: "POST",
+      body: JSON.stringify({ token, password }),
     }),
 
   me: () => request<UserOut>("/me"),
@@ -197,6 +305,8 @@ export const api = {
       method: "PATCH",
       body: JSON.stringify(data),
     }),
+
+  deleteMe: () => request<void>("/me", { method: "DELETE" }),
 
   notifications: () => request<NotificationOut[]>("/notifications"),
 

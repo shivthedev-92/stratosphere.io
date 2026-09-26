@@ -14,7 +14,7 @@
 
 import uuid
 
-from sqlalchemy import Boolean, Column, Date, DateTime, String, func
+from sqlalchemy import BigInteger, Boolean, Column, Date, DateTime, Integer, String, func
 from sqlalchemy.dialects.postgresql import UUID
 
 from app.db import Base
@@ -28,10 +28,28 @@ class User(Base):
     name = Column(String, nullable=False)
     phone_number = Column(String, nullable=True)
     date_of_birth = Column(Date, nullable=True)
-    in_app_notifications_enabled = Column(Boolean, nullable=False, default=True, server_default="true")
+    in_app_notifications_enabled = Column(
+        Boolean,
+        nullable=False,
+        default=True,
+        server_default="true",
+    )
     age_group = Column(String, nullable=True)
     career_track = Column(String, nullable=True)
     hashed_password = Column(String, nullable=False)
+    # Bumped whenever the password changes. Access tokens carry the value they
+    # were minted with, so incrementing this invalidates every existing session.
+    token_version = Column(Integer, nullable=False, default=0, server_default="0")
     password_reset_token_hash = Column(String, nullable=True)
     password_reset_expires_at = Column(DateTime(timezone=True), nullable=True)
+    # Telegram reminders. The chat id is set when the user presses Start in
+    # the bot with a valid one-time link token (hashed, short-lived).
+    telegram_chat_id = Column(BigInteger, nullable=True, unique=True)
+    telegram_linked_at = Column(DateTime(timezone=True), nullable=True)
+    telegram_link_token_hash = Column(String, nullable=True)
+    telegram_link_expires_at = Column(DateTime(timezone=True), nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    @property
+    def telegram_linked(self) -> bool:
+        return self.telegram_chat_id is not None

@@ -5,6 +5,8 @@
 .env.*
 !.env.example
 !.env.local.example
+!.env.aws.example
+!.env.azure.example
 
 # Python
 __pycache__/
@@ -26,5 +28,20 @@ pnpm-debug.log*
 # Local tooling
 .codex
 .codex/
-.claude/
+
+# Claude Code: share the skills and commands installed by graphify/openspec,
+# but keep per-machine settings out of the repo.
+.claude/*
+!.claude/skills/
+!.claude/commands/
+!.claude/settings.json
+!.claude/CLAUDE.md
+.claude/settings.local.json
+
+# Graphify build output — regenerate with `graphify update .`
+graphify-out/
+
 ZPROJECT_ASSETS/*
+
+# Personal reference notes (pasted third-party material); kept local only
+docs/notes/

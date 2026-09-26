@@ -19,7 +19,10 @@ from sqlalchemy.orm import Session, declarative_base, sessionmaker
 
 from app.config import settings
 
-engine = create_engine(settings.DATABASE_URL)
+# pool_pre_ping issues a cheap liveness check before handing out a pooled
+# connection. Managed Postgres (Azure Flexible Server) drops idle connections
+# during maintenance windows; without this the first request after one fails.
+engine = create_engine(settings.DATABASE_URL, pool_pre_ping=True, pool_recycle=1800)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 

@@ -1,10 +1,13 @@
 "use client";
 
+import { CrisisOverlay } from "@/components/crisis-notice";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { FormEvent, useEffect, useState } from "react";
 import { BackgroundShell } from "@/components/background-shell";
-import { api, type GoalLogOut, type GoalOut, type Priority } from "@/lib/api";
+import { api, type GoalLogOut, type GoalOut, type Priority,
+  type SafetyNoticeOut,
+} from "@/lib/api";
 
 const priorityMeta: Record<Priority, { emoji: string; label: string; classes: string }> = {
   low: {
@@ -74,6 +77,8 @@ export default function TaskJournalPage() {
       .finally(() => setLoading(false));
   }, [goalId, router]);
 
+  const [safetyNotice, setSafetyNotice] = useState<SafetyNoticeOut | null>(null);
+
   async function handleAddEntry(e: FormEvent) {
     e.preventDefault();
     if (!reflection.trim()) return;
@@ -86,6 +91,8 @@ export default function TaskJournalPage() {
         soulful,
       });
       setLogs((current) => [log, ...current]);
+      // The entry is already saved; this only surfaces resources.
+      if (log.safety) setSafetyNotice(log.safety);
       setReflection("");
       setCompleted(true);
       setSoulful(true);
@@ -118,6 +125,10 @@ export default function TaskJournalPage() {
   );
 
   return (
+    <>
+      {safetyNotice && (
+        <CrisisOverlay notice={safetyNotice} onClose={() => setSafetyNotice(null)} />
+      )}
     <BackgroundShell className="min-h-screen text-white" showSwitcher>
       <div className="relative z-10 mx-auto flex w-full max-w-5xl flex-col gap-6 px-4 py-6 sm:px-8 sm:py-10">
         <header className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -299,5 +310,6 @@ export default function TaskJournalPage() {
         </section>
       </div>
     </BackgroundShell>
+    </>
   );
 }

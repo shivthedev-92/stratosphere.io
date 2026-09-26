@@ -13,7 +13,7 @@
 ############################################################################
 
 from datetime import datetime, timezone
-from uuid import UUID
+from uuid import UUID, uuid4
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
@@ -24,6 +24,8 @@ from app.models.goal import Goal, GoalLog
 from app.models.notification import Notification
 from app.models.user import User
 from app.schemas.goal import GoalCreate, GoalLogCreate, GoalLogOut, GoalOut, GoalUpdate
+from app.services.reminders import build_reminder, sync_goal_reminder
+from app.services.safety import build_crisis_notice, detect_crisis
 
 router = APIRouter(prefix="/goals", tags=["goals"])
 
@@ -48,6 +50,8 @@ def create_goal(
     db: Session = Depends(get_db),
 ) -> Goal:
     goal = Goal(
+        # Explicit id so the reminder can reference the goal before flush.
+        id=uuid4(),
         user_id=current_user.id,
         title=data.title,
         emoji=data.emoji,
@@ -57,16 +61,19 @@ def create_goal(
         priority=data.priority,
     )
     db.add(goal)
-    if current_user.in_app_notifications_enabled:
-        title = "Task reminder set" if goal.is_timed and goal.scheduled_for else "Action item added"
-        notification = Notification(
-            user_id=current_user.id,
-            title=title,
-            body=goal.title,
-            category="reminder" if goal.is_timed and goal.scheduled_for else "task",
-            due_at=goal.scheduled_for if goal.is_timed else None,
+    reminder = build_reminder(goal, current_user)
+    if reminder is not None:
+        db.add(reminder)
+    elif current_user.in_app_notifications_enabled:
+        db.add(
+            Notification(
+                user_id=current_user.id,
+                goal_id=goal.id,
+                title="Action item added",
+                body=goal.title,
+                category="task",
+            )
         )
-        db.add(notification)
     db.commit()
     db.refresh(goal)
     return goal
@@ -80,6 +87,7 @@ def update_goal(
     db: Session = Depends(get_db),
 ) -> Goal:
     goal = get_owned_goal(goal_id, current_user, db)
+    before = (goal.title, goal.is_timed, goal.scheduled_for, getattr(goal, "completed", False))
     goal.title = data.title
     goal.emoji = data.emoji
     goal.notes = data.notes
@@ -90,6 +98,11 @@ def update_goal(
         goal.completed = data.completed
         goal.completed_at = datetime.now(timezone.utc) if data.completed else None
     db.add(goal)
+    after = (goal.title, goal.is_timed, goal.scheduled_for, getattr(goal, "completed", False))
+    if after != before:
+        # Rescheduled, un-timed, renamed or (un)completed: the pending
+        # reminder must follow, or it fires at the old time or for a done task.
+        sync_goal_reminder(db, goal, current_user)
     db.commit()
     db.refresh(goal)
     return goal
@@ -149,7 +162,7 @@ def create_goal_log(
     data: GoalLogCreate,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
-) -> GoalLog:
+) -> GoalLogOut:
     goal = get_owned_goal(goal_id, current_user, db)
     log = GoalLog(
         user_id=current_user.id,
@@ -171,7 +184,13 @@ def create_goal_log(
         )
     db.commit()
     db.refresh(log)
-    return log
+
+    # Additive safety notice. The reflection is already committed above -
+    # detection never blocks or discards what the user wrote.
+    out = GoalLogOut.model_validate(log)
+    if detect_crisis(data.reflection) is not None:
+        out.safety = build_crisis_notice()
+    return out
 
 
 def get_owned_goal(goal_id: UUID, current_user: User, db: Session) -> Goal:
