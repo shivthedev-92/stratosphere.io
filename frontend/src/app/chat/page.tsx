@@ -123,6 +123,9 @@ export default function ChatPage() {
     const userMessage = message.trim();
     setInput("");
     setError("");
+    // Empty the live region first so an identical reply is still a change
+    // (and so still announced).
+    setAnnouncement("");
 
     const updatedHistory: ChatMessage[] = [...history, { role: "user", content: userMessage }];
     setHistory(updatedHistory);
