@@ -19,6 +19,7 @@ import { useState, useRef, useEffect, FormEvent, useMemo } from "react";
 import { CrisisNotice, CoachDisclaimer, CRISIS_FALLBACK_MESSAGE } from "@/components/crisis-notice";
 import { chatStream } from "@/lib/api";
 import { ArrowLeft } from "@phosphor-icons/react";
+import { AsterAvatar, CoachBubble, TypingDots } from "@/components/aster";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { BackgroundShell } from "@/components/background-shell";
@@ -182,8 +183,13 @@ export default function ChatPage() {
     <BackgroundShell className="flex min-h-screen flex-col text-fg" showSwitcher>
       <header className="flex items-center justify-between border-b border-line py-4 pl-6 pr-20">
         <div>
-          <p className="text-xs font-semibold uppercase text-accent-soft">AI life coach</p>
-          <h1 className="text-lg font-semibold">AI Assistant</h1>
+          <div className="flex items-center gap-3">
+            <AsterAvatar size={40} />
+            <div>
+              <p className="text-xs font-semibold uppercase text-accent-soft">AI life coach</p>
+              <h1 className="text-lg font-semibold">Aster</h1>
+            </div>
+          </div>
         </div>
         <Link href="/dashboard" className="inline-flex items-center gap-1.5 text-sm text-fg-muted transition-colors hover:text-fg">
           <ArrowLeft size={16} aria-hidden="true" />
@@ -234,32 +240,27 @@ export default function ChatPage() {
                   </div>
                 );
               }
+              if (msg.role === "assistant") {
+                return <CoachBubble key={i}>{msg.content}</CoachBubble>;
+              }
               return (
-                <div key={i} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
-                  <div
-                    className={`max-w-[85%] whitespace-pre-wrap rounded-2xl px-4 py-3 text-sm leading-relaxed ${
-                      msg.role === "user" ? "bg-accent text-white" : "bg-surface text-fg"
-                    }`}
-                  >
+                <div key={i} className="flex justify-end">
+                  <div className="max-w-[85%] whitespace-pre-wrap rounded-[18px_18px_6px_18px] bg-accent px-4 py-3 text-sm leading-relaxed text-white">
                     {msg.content}
                   </div>
                 </div>
               );
             })}
             {streaming && (
-              <div className="flex justify-start">
-                <div className="max-w-[85%] whitespace-pre-wrap rounded-2xl bg-surface px-4 py-3 text-sm leading-relaxed text-fg">
-                  {streaming}
-                  <span className="ml-0.5 inline-block h-4 w-1.5 translate-y-0.5 animate-pulse bg-fg-muted" />
-                </div>
-              </div>
+              <CoachBubble mood="thinking">
+                {streaming}
+                <span className="ml-0.5 inline-block h-4 w-1.5 translate-y-0.5 animate-pulse bg-fg-muted motion-reduce:animate-none" />
+              </CoachBubble>
             )}
             {loading && !streaming && (
-              <div className="flex justify-start">
-                <div className="rounded-2xl bg-surface px-4 py-3 text-sm text-fg-muted animate-pulse">
-                  Thinking…
-                </div>
-              </div>
+              <CoachBubble mood="thinking">
+                <TypingDots />
+              </CoachBubble>
             )}
             {error && <p className="text-center text-sm text-danger">{error}</p>}
             <div ref={bottomRef} />

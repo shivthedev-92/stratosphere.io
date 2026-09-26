@@ -66,7 +66,7 @@ export function TaskDetailModal({
     <div className="fixed inset-0 z-30 flex items-end bg-scrim p-4 sm:items-center sm:justify-center">
       <form
         onSubmit={handleSubmit}
-        className="w-full max-w-lg rounded-card border border-line bg-surface p-5 shadow-2xl"
+        className="w-full max-w-lg rounded-card border border-line bg-surface-solid p-5 shadow-2xl"
       >
         <div className="flex items-start justify-between gap-4">
           <div>

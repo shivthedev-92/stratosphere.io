@@ -29,6 +29,7 @@ export type UserOut = {
   phone_number: string | null;
   date_of_birth: string | null;
   in_app_notifications_enabled: boolean;
+  avatar_id: string | null;
   created_at: string;
 };
 
@@ -304,6 +305,12 @@ export const api = {
     request<UserOut>("/me", {
       method: "PATCH",
       body: JSON.stringify(data),
+    }),
+
+  updateAvatar: (avatarId: string | null) =>
+    request<UserOut>("/me/avatar", {
+      method: "PUT",
+      body: JSON.stringify({ avatar_id: avatarId }),
     }),
 
   deleteMe: () => request<void>("/me", { method: "DELETE" }),

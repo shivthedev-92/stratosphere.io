@@ -36,6 +36,8 @@ class User(Base):
     )
     age_group = Column(String, nullable=True)
     career_track = Column(String, nullable=True)
+    # One of app.avatars.AVATAR_IDS, or null for the initial-letter fallback.
+    avatar_id = Column(String(40), nullable=True)
     hashed_password = Column(String, nullable=False)
     # Bumped whenever the password changes. Access tokens carry the value they
     # were minted with, so incrementing this invalidates every existing session.

@@ -1,7 +1,7 @@
 import pytest
 from pydantic import ValidationError
 
-from app.schemas.auth import PasswordResetConfirmIn, SignupIn, UserUpdate
+from app.schemas.auth import AvatarUpdate, PasswordResetConfirmIn, SignupIn, UserUpdate
 
 
 def test_signup_normalizes_identity_fields():
@@ -30,3 +30,25 @@ def test_password_reset_requires_a_strong_password():
 def test_overlong_password_fails_login_cleanly():
     from app.security import hash_password, verify_password
     assert verify_password("x" * 100, hash_password("x" * 10)) is False
+
+
+def test_avatar_accepts_known_ids_and_null():
+    assert AvatarUpdate(avatar_id="sky-comet").avatar_id == "sky-comet"
+    assert AvatarUpdate(avatar_id=None).avatar_id is None
+
+
+@pytest.mark.parametrize("avatar_id", ["", "sky-nope", "../aster/aster-happy", "CREW-TEAL"])
+def test_avatar_rejects_unknown_ids(avatar_id: str):
+    with pytest.raises(ValidationError):
+        AvatarUpdate(avatar_id=avatar_id)
+
+
+def test_avatar_ids_match_frontend_files():
+    from pathlib import Path
+
+    from app.avatars import AVATAR_IDS
+
+    avatars = Path(__file__).resolve().parents[3] / "frontend" / "public" / "avatars"
+    if not avatars.is_dir():
+        pytest.skip("frontend checkout not present")
+    assert {p.stem for p in avatars.glob("*.svg")} == AVATAR_IDS

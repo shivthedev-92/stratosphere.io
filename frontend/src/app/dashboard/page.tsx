@@ -39,6 +39,7 @@ import { DayIcon, PriorityIcon } from "@/components/icons";
 import { MotivationalBanner } from "@/components/motivational-banner";
 import { TelegramSettings } from "@/components/telegram-settings";
 import { ThemeSwitcher } from "@/components/theme";
+import { AvatarPicker, UserAvatar } from "@/components/avatar-picker";
 import { ProgressSystem } from "@/components/progress-system";
 import { ReflectGoalModal } from "@/components/reflect-goal-modal";
 import { TaskDetailModal } from "@/components/task-detail-modal";
@@ -65,15 +66,6 @@ const priorityMeta: Record<Priority, { label: string; chip: string; selected: st
     selected: "border-high bg-high-bg font-semibold text-high",
   },
 };
-
-function getInitials(name: string) {
-  return name
-    .trim()
-    .split(/\s+/)
-    .slice(0, 2)
-    .map((part) => part[0]?.toUpperCase())
-    .join("");
-}
 
 function getSubmitLabel(isSaving: boolean, isTimed: boolean, scheduledFor: string) {
   if (isSaving) return "Saving...";
@@ -167,6 +159,8 @@ export default function DashboardPage() {
   const [unreadNotifications, setUnreadNotifications] = useState(0);
   const [showNotifications, setShowNotifications] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [avatarError, setAvatarError] = useState("");
+  const avatarRequest = useRef(0);
   const [title, setTitle] = useState("");
   const [notes, setNotes] = useState("");
   const [isTimed, setIsTimed] = useState(false);
@@ -255,6 +249,23 @@ export default function DashboardPage() {
     }
     clearToken();
     router.push("/");
+  }
+
+  async function handleAvatarChange(avatarId: string) {
+    if (!user || avatarId === user.avatar_id) return;
+    const previous = user.avatar_id;
+    // Show the pick at once; only the latest request may write back.
+    const request = ++avatarRequest.current;
+    setAvatarError("");
+    setUser({ ...user, avatar_id: avatarId });
+    try {
+      const updated = await api.updateAvatar(avatarId);
+      if (request === avatarRequest.current) setUser(updated);
+    } catch (err: unknown) {
+      if (request !== avatarRequest.current) return;
+      setUser((current) => (current ? { ...current, avatar_id: previous } : current));
+      setAvatarError(err instanceof Error ? err.message : "Could not save your avatar");
+    }
   }
 
   async function handleDeleteAccount() {
@@ -451,11 +462,13 @@ export default function DashboardPage() {
             <button
               type="button"
               onClick={() => setShowSettings(true)}
-              className="grid h-14 w-14 shrink-0 place-items-center rounded-control border border-line-strong bg-surface text-base font-bold shadow-lg shadow-tint transition-colors hover:border-accent"
+              className={`shrink-0 shadow-lg shadow-tint transition-transform duration-200 ease-calm hover:scale-105 motion-reduce:transition-none motion-reduce:hover:scale-100 ${
+                user.avatar_id ? "rounded-full" : "rounded-control"
+              }`}
               aria-label="Open profile settings"
               title="Profile settings"
             >
-              {getInitials(user.name) || "U"}
+              <UserAvatar avatarId={user.avatar_id} name={user.name} size={56} />
             </button>
             <div>
               <p className="inline-flex items-center gap-1.5 text-sm text-fg-muted">
@@ -505,7 +518,7 @@ export default function DashboardPage() {
               aria-label="Close notifications"
               onClick={() => setShowNotifications(false)}
             />
-            <section className="relative z-10 max-h-[82vh] w-full max-w-xl rounded-panel border border-line bg-surface p-5 shadow-2xl shadow-tint">
+            <section className="relative z-10 max-h-[82vh] w-full max-w-xl rounded-panel border border-line bg-surface-solid p-5 shadow-2xl shadow-tint">
               <div className="flex items-start justify-between gap-4">
                 <div>
                   <h2 className="text-lg font-bold">Notifications</h2>
@@ -575,7 +588,7 @@ export default function DashboardPage() {
               aria-label="Close settings"
               onClick={() => setShowSettings(false)}
             />
-            <section className="relative z-10 max-h-[82vh] w-full max-w-2xl overflow-y-auto rounded-panel border border-line bg-surface p-5 shadow-2xl shadow-tint">
+            <section className="relative z-10 max-h-[82vh] w-full max-w-2xl overflow-y-auto rounded-panel border border-line bg-surface-solid p-5 shadow-2xl shadow-tint">
               <div className="mb-5 flex items-start justify-between gap-4">
                 <div>
                   <h2 className="text-lg font-bold">Profile settings</h2>
@@ -597,6 +610,20 @@ export default function DashboardPage() {
                   <p className="text-xs font-bold uppercase text-fg-subtle">Email</p>
                   <p className="mt-2 break-words text-sm font-semibold text-fg">{user.email}</p>
                 </div>
+              </div>
+              <div className="mt-6 rounded-card border border-line bg-field p-4">
+                <h3 className="text-base font-bold">Profile avatar</h3>
+                <p className="mt-1 text-sm text-fg-muted">
+                  Pick a crew helmet or a piece of sky. It shows at the top of your dashboard.
+                </p>
+                <div className="mt-4">
+                  <AvatarPicker value={user.avatar_id} onChange={handleAvatarChange} />
+                </div>
+                {avatarError ? (
+                  <p role="alert" className="mt-3 text-sm text-danger">
+                    {avatarError}
+                  </p>
+                ) : null}
               </div>
               <div className="mt-6 rounded-card border border-line bg-field p-4">
                 <h3 className="text-base font-bold">Appearance</h3>
