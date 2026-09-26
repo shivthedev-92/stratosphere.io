@@ -44,6 +44,11 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 
 @router.post("/signup", response_model=TokenOut, status_code=status.HTTP_201_CREATED)
 def signup(data: SignupIn, response: Response, db: Session = Depends(get_db)) -> TokenOut:
+    if not settings.PASSWORD_SIGNUP_ENABLED:
+        raise HTTPException(
+            status_code=403,
+            detail="New accounts sign up with Google or Microsoft.",
+        )
     if db.query(User).filter(User.email == data.email).first():
         raise HTTPException(status_code=409, detail="Email already registered")
     user = User(
@@ -62,9 +67,9 @@ def signup(data: SignupIn, response: Response, db: Session = Depends(get_db)) ->
 @router.post("/login", response_model=TokenOut)
 def login(data: LoginIn, response: Response, db: Session = Depends(get_db)) -> TokenOut:
     user = db.query(User).filter(User.email == data.email).first()
-    if user is None:
-        # Spend the bcrypt time anyway so a missing account is not detectable
-        # from response latency.
+    if user is None or user.hashed_password is None:
+        # Spend the bcrypt time anyway so a missing account (or one that only
+        # signs in with Google/Microsoft) is not detectable from latency.
         burn_password_verify()
         raise HTTPException(status_code=401, detail="Invalid credentials")
     if not verify_password(data.password, user.hashed_password):

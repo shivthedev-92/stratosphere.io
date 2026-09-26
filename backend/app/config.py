@@ -55,6 +55,22 @@ class Settings(BaseSettings):
 
     CORS_ORIGINS: str = "http://localhost:3000"
 
+    # Sign-in with Google / Microsoft (personal accounts). A provider is
+    # offered only when both its id and secret are set. Redirect URIs are
+    # OAUTH_REDIRECT_BASE + /auth/oauth/<provider>/callback and must match
+    # the ones registered with each provider exactly.
+    GOOGLE_CLIENT_ID: str | None = None
+    GOOGLE_CLIENT_SECRET: str | None = None
+    MICROSOFT_CLIENT_ID: str | None = None
+    MICROSOFT_CLIENT_SECRET: str | None = None
+    OAUTH_REDIRECT_BASE: str = "http://localhost:8000"
+    # Comma-separated email domains allowed to sign in (e.g. "gmail.com,
+    # outlook.com"). Empty allows any address the provider has verified.
+    OAUTH_ALLOWED_EMAIL_DOMAINS: str = ""
+    # New accounts come from Google or Microsoft only. Existing password
+    # accounts can still sign in with their password.
+    PASSWORD_SIGNUP_ENABLED: bool = False
+
     # Telegram reminders. Both token and username (without @) come from
     # @BotFather; leave them unset to disable the feature entirely.
     TELEGRAM_BOT_TOKEN: str | None = None
@@ -77,6 +93,14 @@ class Settings(BaseSettings):
         if isinstance(v, str) and v.startswith("postgresql://"):
             return v.replace("postgresql://", "postgresql+psycopg://", 1)
         return v
+
+    @property
+    def oauth_allowed_email_domains(self) -> set[str]:
+        return {
+            domain.strip().lower().lstrip("@")
+            for domain in self.OAUTH_ALLOWED_EMAIL_DOMAINS.split(",")
+            if domain.strip()
+        }
 
     @property
     def cors_origins(self) -> list[str]:

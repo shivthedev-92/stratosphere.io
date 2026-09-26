@@ -1,10 +1,11 @@
 "use client";
 
-import { useState, FormEvent } from "react";
+import { useEffect, useState, FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { BackgroundShell } from "@/components/background-shell";
 import { BrandMark } from "@/components/brand-mark";
+import { OAuthButtons, oauthErrorMessage, useAuthConfig } from "@/components/oauth-buttons";
 import { api } from "@/lib/api";
 
 export default function LoginPage() {
@@ -13,6 +14,14 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const { config } = useAuthConfig();
+  const [providerError, setProviderError] = useState("");
+
+  // A failed Google/Microsoft sign-in comes back as /login?error=<code>.
+  useEffect(() => {
+    const code = new URLSearchParams(window.location.search).get("error");
+    if (code) setProviderError(oauthErrorMessage(code));
+  }, []);
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -38,6 +47,23 @@ export default function LoginPage() {
           <h1 className="text-2xl font-bold text-fg">Welcome back</h1>
           <p className="text-fg-muted text-sm mt-1">Pick up right where you left off.</p>
         </div>
+
+        {providerError ? (
+          <p role="alert" className="rounded-control border border-danger/30 bg-danger-bg px-3 py-2 text-sm text-danger">
+            {providerError}
+          </p>
+        ) : null}
+
+        {config && config.providers.length > 0 ? (
+          <>
+            <OAuthButtons providers={config.providers} />
+            <div className="flex items-center gap-3 text-xs text-fg-subtle">
+              <span className="h-px flex-1 bg-line" />
+              or sign in with your password
+              <span className="h-px flex-1 bg-line" />
+            </div>
+          </>
+        ) : null}
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
@@ -67,7 +93,11 @@ export default function LoginPage() {
             />
           </div>
 
-          {error && <p className="text-danger text-sm">{error}</p>}
+          {error && (
+            <p role="alert" className="text-danger text-sm">
+              {error}
+            </p>
+          )}
 
           <button
             type="submit"

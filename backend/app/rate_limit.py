@@ -24,6 +24,10 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
     LIMITS = {
         ("POST", "/auth/signup"): (5, 60),
         ("POST", "/auth/login"): (10, 60),
+        ("GET", "/auth/oauth/google/start"): (20, 60),
+        ("GET", "/auth/oauth/google/callback"): (20, 60),
+        ("GET", "/auth/oauth/microsoft/start"): (20, 60),
+        ("GET", "/auth/oauth/microsoft/callback"): (20, 60),
         ("POST", "/auth/password-reset/request"): (5, 300),
         ("POST", "/auth/password-reset/confirm"): (5, 300),
         ("POST", "/support/tickets"): (5, 300),
