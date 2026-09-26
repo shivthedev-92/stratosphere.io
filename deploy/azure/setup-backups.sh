@@ -4,8 +4,8 @@
 # SAS token, config file and cron entry.
 #
 # Creates a private storage account and container, a lifecycle rule that
-# deletes backups after BACKUP_RETENTION_DAYS, and a create/write-only SAS
-# token. Then installs backup-db.sh and a nightly cron job on the VM and runs
+# deletes backups after BACKUP_RETENTION_DAYS, and a create-only SAS
+# token under a revocable stored access policy. Then installs backup-db.sh and a nightly cron job on the VM and runs
 # one backup to prove it works.
 set -euo pipefail
 
@@ -77,14 +77,44 @@ az storage account management-policy create \
   --policy "@$POLICY_FILE" \
   --output none
 
-# Create + write only, HTTPS only, one year. Re-run this script to rotate it.
-SAS="$(az storage container generate-sas \
-  --name "$CONTAINER" \
+# The VM's token hangs off a stored access policy on the container, so it
+# can be revoked: deleting the policy invalidates every token issued under
+# it (an ad hoc SAS stays valid until expiry unless the account key itself
+# is rotated). Each run replaces the previous policy, which revokes the
+# old token. Create-only ("c"): the VM can add new backups but can never
+# overwrite, read, list or delete existing ones.
+readonly POLICY_PREFIX="vm-backup-writer-"
+POLICY_NAME="${POLICY_PREFIX}$(date -u +%Y%m%d%H%M%S)"
+readonly POLICY_NAME
+for old_policy in $(az storage container policy list \
+  --container-name "$CONTAINER" \
   --account-name "$STORAGE_ACCOUNT" \
   --account-key "$ACCOUNT_KEY" \
-  --permissions cw \
-  --https-only \
+  --query "keys(@)" --output tsv); do
+  if [[ "$old_policy" == "$POLICY_PREFIX"* ]]; then
+    az storage container policy delete \
+      --container-name "$CONTAINER" \
+      --name "$old_policy" \
+      --account-name "$STORAGE_ACCOUNT" \
+      --account-key "$ACCOUNT_KEY" \
+      --output none
+    echo "Revoked old backup token (policy $old_policy)."
+  fi
+done
+az storage container policy create \
+  --container-name "$CONTAINER" \
+  --name "$POLICY_NAME" \
+  --permissions c \
   --expiry "$(date -u -d '+1 year' +%Y-%m-%dT%H:%MZ)" \
+  --account-name "$STORAGE_ACCOUNT" \
+  --account-key "$ACCOUNT_KEY" \
+  --output none
+SAS="$(az storage container generate-sas \
+  --name "$CONTAINER" \
+  --policy-name "$POLICY_NAME" \
+  --https-only \
+  --account-name "$STORAGE_ACCOUNT" \
+  --account-key "$ACCOUNT_KEY" \
   --output tsv)"
 unset ACCOUNT_KEY
 
@@ -105,6 +135,8 @@ set -euo pipefail
 line="$1 /opt/stratosphere/bin/backup-db.sh >> /opt/stratosphere/backup.log 2>&1"
 { crontab -l 2>/dev/null | grep -v '/opt/stratosphere/bin/backup-db.sh' || true; echo "$line"; } | crontab -
 echo "Cron: $line"
+# A new access policy can take up to 30 seconds to take effect.
+sleep 30
 /opt/stratosphere/bin/backup-db.sh
 REMOTE
 

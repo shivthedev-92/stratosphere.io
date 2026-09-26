@@ -2,8 +2,8 @@
 # Nightly PostgreSQL backup to Azure Blob Storage. Runs on the VM from cron;
 # installed by setup-backups.sh, which also writes the config file below.
 #
-# The SAS token can only create and write blobs (no read, list or delete), so
-# a compromised VM cannot read or wipe earlier backups. Retention is handled
+# The SAS token can only create new blobs (no overwrite, read, list or
+# delete), so a compromised VM cannot read, replace or wipe earlier backups. Retention is handled
 # by a lifecycle rule on the storage account, not by this script.
 set -euo pipefail
 
@@ -26,7 +26,7 @@ if [[ -z "$BACKUP_CONTAINER_URL" || -z "$BACKUP_SAS" ]]; then
 fi
 
 readonly STAMP="$(date -u +%Y%m%dT%H%M%SZ)"
-readonly BLOB="stratosphere-$STAMP.dump"
+readonly BLOB_BASE="stratosphere-$STAMP"
 DUMP="$(mktemp /tmp/stratosphere-backup.XXXXXX)"
 readonly DUMP
 trap 'rm -f -- "$DUMP"' EXIT
@@ -44,11 +44,23 @@ if [[ ! -s "$DUMP" ]]; then
   exit 1
 fi
 
-curl --fail --silent --show-error \
-  --retry 3 --retry-delay 10 \
-  -X PUT \
-  -H "x-ms-blob-type: BlockBlob" \
-  --upload-file "$DUMP" \
-  "$BACKUP_CONTAINER_URL/$BLOB?$BACKUP_SAS"
+# The token can only create blobs, never overwrite them. If an upload fails
+# after Azure has stored the blob, retrying under the same name would get
+# 409 Conflict, so each attempt uses its own name. A rare duplicate simply
+# expires with the other backups.
+for attempt in 1 2 3; do
+  blob="$BLOB_BASE.dump"
+  [[ "$attempt" -gt 1 ]] && blob="$BLOB_BASE-retry$attempt.dump"
+  if curl --fail --silent --show-error \
+    -X PUT \
+    -H "x-ms-blob-type: BlockBlob" \
+    --upload-file "$DUMP" \
+    "$BACKUP_CONTAINER_URL/$blob?$BACKUP_SAS"; then
+    echo "$(date -u +%FT%TZ) uploaded $blob ($(stat -c %s "$DUMP") bytes)"
+    exit 0
+  fi
+  sleep 10
+done
 
-echo "$(date -u +%FT%TZ) uploaded $BLOB ($(stat -c %s "$DUMP") bytes)"
+echo "$(date -u +%FT%TZ) backup failed: upload did not succeed after 3 attempts" >&2
+exit 1
