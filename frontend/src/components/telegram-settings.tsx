@@ -49,6 +49,7 @@ export function TelegramSettings() {
   // Computers (fine pointer) get a QR code; a phone can't scan its own screen.
   const [showQr, setShowQr] = useState(false);
   const [copied, setCopied] = useState(false);
+  const copyTimer = useRef<number | null>(null);
   const commandField = useRef<HTMLInputElement>(null);
   const [testState, setTestState] = useState<"idle" | "sending" | "sent">("idle");
   const [testMessage, setTestMessage] = useState("");
@@ -72,7 +73,10 @@ export function TelegramSettings() {
 
   useEffect(() => {
     loadStatus();
-    return stopPolling;
+    return () => {
+      stopPolling();
+      if (copyTimer.current !== null) window.clearTimeout(copyTimer.current);
+    };
   }, []);
 
   useEffect(() => {
@@ -90,6 +94,9 @@ export function TelegramSettings() {
           stopPolling();
           setLinkUrl(null);
           setStatus(next);
+          // Reconnected: an earlier "bot was blocked" explanation is done.
+          setTestMessage("");
+          setTestState("idle");
         }
       } catch {
         // transient; keep polling until expiry
@@ -116,7 +123,9 @@ export function TelegramSettings() {
     try {
       await navigator.clipboard.writeText(command);
       setCopied(true);
-      window.setTimeout(() => setCopied(false), 2000);
+      // Restart the timer on every copy, so a second copy keeps "Copied" up.
+      if (copyTimer.current !== null) window.clearTimeout(copyTimer.current);
+      copyTimer.current = window.setTimeout(() => setCopied(false), 2000);
     } catch {
       // Clipboard blocked: select the text so it can be copied by hand.
       commandField.current?.select();
@@ -143,6 +152,8 @@ export function TelegramSettings() {
     setError("");
     try {
       await api.telegramUnlink();
+      setTestMessage("");
+      setTestState("idle");
       setStatus(await api.telegramStatus());
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Could not disconnect Telegram");
@@ -218,7 +229,9 @@ export function TelegramSettings() {
         </button>
       )}
 
-      {testMessage && status?.linked ? (
+      {/* Stays visible after a blocked bot unlinks the chat, so the reason is
+          still on screen next to "Connect Telegram"; cleared on reconnect. */}
+      {testMessage ? (
         <p role="status" className={`mt-3 text-sm ${testState === "sent" ? "text-fg-muted" : "text-danger"}`}>
           {testMessage}
         </p>

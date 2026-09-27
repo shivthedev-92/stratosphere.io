@@ -29,6 +29,7 @@ from app.schemas.auth import (
 )
 from app.services.telegram import (
     TelegramBlocked,
+    TelegramChatMissing,
     TelegramError,
     create_link,
     send_test_message,
@@ -128,14 +129,14 @@ async def telegram_test(
         raise HTTPException(status_code=409, detail="Connect Telegram first.")
     try:
         await send_test_message(current_user.telegram_chat_id)
-    except TelegramBlocked:
-        # The chat was deleted or the bot blocked: this link is dead.
+    except (TelegramBlocked, TelegramChatMissing):
+        # The chat was deleted or the bot blocked: this link is dead. Any
+        # other rejection says nothing about the chat, so the link is kept.
         await run_in_threadpool(unlink_user, db, current_user)
         raise HTTPException(
             status_code=409,
             detail=(
-                "Telegram says the bot was blocked or the chat was deleted. "
-                "Connect Telegram again."
+                "Telegram says the bot was blocked or the chat was deleted. Connect Telegram again."
             ),
         ) from None
     except TelegramError:

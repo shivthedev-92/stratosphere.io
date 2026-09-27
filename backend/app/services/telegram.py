@@ -209,6 +209,12 @@ class TelegramRejected(TelegramError):
     Retrying the same request cannot succeed."""
 
 
+class TelegramChatMissing(TelegramRejected):
+    """The chat no longer exists ("chat not found"): the link is dead, the same
+    as a blocked bot. Other rejections (a bad request, a bot misconfiguration)
+    say nothing about the chat and must not unlink it."""
+
+
 class TelegramClient:
     def __init__(self, http: httpx.AsyncClient, token: str, base: str) -> None:
         self._http = http
@@ -226,8 +232,11 @@ class TelegramClient:
         except ValueError:
             raise TelegramError(f"{method}: HTTP {response.status_code}") from None
         if not data.get("ok"):
-            detail = f"{method}: {data.get('description', 'error')}"
+            description = str(data.get("description", "error"))
+            detail = f"{method}: {description}"
             if 400 <= response.status_code < 500 and response.status_code != 429:
+                if "chat not found" in description.lower():
+                    raise TelegramChatMissing(detail)
                 raise TelegramRejected(detail)
             raise TelegramError(detail)
         return data["result"]
@@ -326,8 +335,8 @@ async def dispatch_once(
         try:
             await client.send_message(reminder.chat_id, format_reminder(reminder.task_title))
             sent += 1
-        except TelegramBlocked:
-            logger.info("telegram: chat blocked the bot; unlinking")
+        except (TelegramBlocked, TelegramChatMissing):
+            logger.info("telegram: chat blocked the bot or no longer exists; unlinking")
             await asyncio.to_thread(_with_session, session_factory, unlink_chat, reminder.chat_id)
         except TelegramRejected as exc:
             # Permanent: keep the claim so it is not resent every tick.

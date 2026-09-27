@@ -63,6 +63,24 @@ def test_blocked_bot_unlinks_and_asks_to_reconnect(setup):
     assert setup.unlinked == ["u1"]
 
 
+def test_missing_chat_unlinks_too(setup):
+    async def missing(_chat_id):
+        raise tg.TelegramChatMissing("sendMessage: Bad Request: chat not found")
+
+    setup.monkeypatch.setattr(me_api, "send_test_message", missing)
+    assert setup.http.post("/me/telegram/test").status_code == 409
+    assert setup.unlinked == ["u1"]
+
+
+def test_other_rejections_keep_the_link(setup):
+    async def rejected(_chat_id):
+        raise tg.TelegramRejected("sendMessage: Bad Request: message is too long")
+
+    setup.monkeypatch.setattr(me_api, "send_test_message", rejected)
+    assert setup.http.post("/me/telegram/test").status_code == 502
+    assert setup.unlinked == []
+
+
 def test_temporary_failure_keeps_the_link(setup):
     async def down(_chat_id):
         raise tg.TelegramError("sendMessage: network error")
