@@ -3,8 +3,7 @@
 import { FormEvent, Suspense, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { BackgroundShell } from "@/components/background-shell";
-import { BrandMark } from "@/components/brand-mark";
+import { AUTH_INPUT, AUTH_PRIMARY_BUTTON, AuthShell } from "@/components/auth-shell";
 import { api } from "@/lib/api";
 
 function ResetPasswordForm() {
@@ -29,62 +28,59 @@ function ResetPasswordForm() {
     }
   }
 
-  return (
-    <div className="relative z-10 w-full max-w-md space-y-6 rounded-card border border-line bg-surface p-6 shadow-2xl shadow-tint backdrop-blur">
-      <div className="text-center">
-        <Link href="/" className="mb-5 inline-flex rounded-chip" aria-label="Stratosphere home">
-          <BrandMark compact size="md" />
-        </Link>
-        <h1 className="text-2xl font-bold text-fg">Choose a new password</h1>
-        <p className="mt-1 text-sm text-fg-muted">Use at least eight characters.</p>
-      </div>
-
-      {!token ? (
-        <p className="rounded-control border border-danger/30 bg-danger-bg p-4 text-sm text-danger">
-          This reset link is missing its token. Request a new link.
+  if (!token) {
+    return (
+      <p className="rounded-control border border-danger/30 bg-danger-bg p-4 text-sm text-danger">
+        This reset link is missing its token. Request a new link.
+      </p>
+    );
+  }
+  if (message) {
+    return (
+      <div className="flex flex-col gap-3">
+        <p role="status" className="rounded-control border border-low/30 bg-low-bg p-4 text-sm text-low">
+          {message}
         </p>
-      ) : message ? (
-        <div className="space-y-4">
-          <p className="rounded-control border border-low/30 bg-low-bg p-4 text-sm text-low">
-            {message}
-          </p>
-          <Link href="/login" className="block text-center font-semibold text-accent-soft hover:text-accent-soft">
-            Sign in
-          </Link>
-        </div>
-      ) : (
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <input
-            type="password"
-            value={password}
-            onChange={(event) => setPassword(event.target.value)}
-            required
-            minLength={8}
-            maxLength={72}
-            autoComplete="new-password"
-            placeholder="New password"
-            className="w-full rounded-control border border-line-strong bg-field px-4 py-2 text-fg outline-none focus:border-accent"
-          />
-          {error && <p className="text-sm text-danger">{error}</p>}
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full rounded-control bg-accent py-3 font-semibold text-white hover:bg-accent-hover disabled:opacity-40 disabled:cursor-not-allowed"
-          >
-            {loading ? "Updating..." : "Update password"}
-          </button>
-        </form>
+        <Link href="/login" className="text-center font-semibold text-accent-soft hover:underline">
+          Sign in
+        </Link>
+      </div>
+    );
+  }
+  return (
+    <form onSubmit={handleSubmit} className="flex flex-col gap-3">
+      <label className="flex flex-col gap-1.5 text-sm font-medium text-fg">
+        New password
+        <input
+          type="password"
+          value={password}
+          onChange={(event) => setPassword(event.target.value)}
+          required
+          minLength={8}
+          maxLength={72}
+          autoComplete="new-password"
+          placeholder="At least 8 characters"
+          className={AUTH_INPUT}
+        />
+      </label>
+      {error && (
+        <p role="alert" className="text-sm text-danger">
+          {error}
+        </p>
       )}
-    </div>
+      <button type="submit" disabled={loading} className={`mt-1 ${AUTH_PRIMARY_BUTTON}`}>
+        {loading ? "Updating…" : "Update password"}
+      </button>
+    </form>
   );
 }
 
 export default function ResetPasswordPage() {
   return (
-    <BackgroundShell className="flex min-h-screen items-center justify-center px-4 text-fg" showSwitcher>
-      <Suspense fallback={<p className="text-fg-muted">Loading...</p>}>
+    <AuthShell title="Choose a new password." subtitle="Use at least eight characters.">
+      <Suspense fallback={<p className="text-sm text-fg-muted">Loading…</p>}>
         <ResetPasswordForm />
       </Suspense>
-    </BackgroundShell>
+    </AuthShell>
   );
 }

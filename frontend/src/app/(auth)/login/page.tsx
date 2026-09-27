@@ -3,8 +3,7 @@
 import { useEffect, useState, FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { BackgroundShell } from "@/components/background-shell";
-import { BrandMark } from "@/components/brand-mark";
+import { AUTH_INPUT, AUTH_PRIMARY_BUTTON, AuthShell, OrDivider } from "@/components/auth-shell";
 import { OAuthButtons, oauthErrorMessage, useAuthConfig } from "@/components/oauth-buttons";
 import { api } from "@/lib/api";
 
@@ -38,83 +37,72 @@ export default function LoginPage() {
   }
 
   return (
-    <BackgroundShell className="flex min-h-screen items-center justify-center px-4 text-fg" showSwitcher>
-      <div className="relative z-10 w-full max-w-md space-y-6 rounded-card border border-line bg-surface p-6 shadow-2xl shadow-tint backdrop-blur">
-        <div className="text-center">
-          <Link href="/" className="mb-5 inline-flex rounded-chip" aria-label="Stratosphere home">
-            <BrandMark compact size="md" />
-          </Link>
-          <h1 className="text-2xl font-bold text-fg">Welcome back</h1>
-          <p className="text-fg-muted text-sm mt-1">Pick up right where you left off.</p>
-        </div>
-
-        {providerError ? (
-          <p role="alert" className="rounded-control border border-danger/30 bg-danger-bg px-3 py-2 text-sm text-danger">
-            {providerError}
-          </p>
-        ) : null}
-
-        {config && config.providers.length > 0 ? (
-          <>
-            <OAuthButtons providers={config.providers} />
-            <div className="flex items-center gap-3 text-xs text-fg-subtle">
-              <span className="h-px flex-1 bg-line" />
-              or sign in with your password
-              <span className="h-px flex-1 bg-line" />
-            </div>
-          </>
-        ) : null}
-
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-sm text-fg-muted mb-1">Email</label>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              placeholder="you@example.com"
-              className="w-full px-4 py-2 rounded-control bg-field text-fg border border-line-strong focus:outline-none focus:border-accent"
-            />
-          </div>
-          <div>
-            <div className="mb-1 flex items-center justify-between gap-3">
-              <label className="block text-sm text-fg-muted">Password</label>
-              <Link href="/forgot-password" className="text-xs font-semibold text-accent-soft hover:text-accent-soft">
-                Forgot password?
-              </Link>
-            </div>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              className="w-full px-4 py-2 rounded-control bg-field text-fg border border-line-strong focus:outline-none focus:border-accent"
-            />
-          </div>
-
-          {error && (
-            <p role="alert" className="text-danger text-sm">
-              {error}
-            </p>
-          )}
-
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full py-3 rounded-control bg-accent hover:bg-accent-hover disabled:opacity-40 disabled:cursor-not-allowed font-semibold text-white transition-colors"
-          >
-            {loading ? "Signing in…" : "Sign in"}
-          </button>
-        </form>
-
-        <p className="text-center text-sm text-fg-subtle">
-          No account yet?{" "}
-          <Link href="/signup" className="text-accent-soft hover:underline">
-            Create one
-          </Link>
+    <AuthShell
+      title="A calmer way to finish your day."
+      subtitle="Sign in to plan today's action items and pick up where you left off."
+    >
+      {providerError ? (
+        <p role="alert" className="rounded-control border border-danger/30 bg-danger-bg px-3 py-2 text-sm text-danger">
+          {providerError}
         </p>
-      </div>
-    </BackgroundShell>
+      ) : null}
+
+      {/* TODO(sign-in-with-apple): the handoff shows "Continue with Apple". It needs the paid Apple
+          Developer Program and a backend provider; Google and Microsoft are the live options today. */}
+      {config && config.providers.length > 0 ? (
+        <>
+          <OAuthButtons providers={config.providers} />
+          <OrDivider label="or sign in with your password" />
+        </>
+      ) : null}
+
+      <form onSubmit={handleSubmit} className="flex flex-col gap-3">
+        <label className="flex flex-col gap-1.5 text-sm font-medium text-fg">
+          Email
+          <input
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+            autoComplete="email"
+            placeholder="you@example.com"
+            className={AUTH_INPUT}
+          />
+        </label>
+        <label className="flex flex-col gap-1.5 text-sm font-medium text-fg">
+          <span className="flex items-center justify-between gap-3">
+            Password
+            <Link href="/forgot-password" className="text-xs font-semibold text-accent-soft hover:underline">
+              Forgot password?
+            </Link>
+          </span>
+          <input
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+            autoComplete="current-password"
+            className={AUTH_INPUT}
+          />
+        </label>
+
+        {error && (
+          <p role="alert" className="text-sm text-danger">
+            {error}
+          </p>
+        )}
+
+        <button type="submit" disabled={loading} className={`mt-1 ${AUTH_PRIMARY_BUTTON}`}>
+          {loading ? "Signing in…" : "Sign in"}
+        </button>
+      </form>
+
+      <p className="pt-1 text-center text-sm text-fg-muted">
+        New to Stratosphere?{" "}
+        <Link href="/signup" className="font-semibold text-accent-soft hover:underline">
+          Create an account
+        </Link>
+      </p>
+    </AuthShell>
   );
 }
