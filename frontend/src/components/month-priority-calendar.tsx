@@ -92,7 +92,7 @@ export function MonthPriorityCalendar({
               onClick={() => onDateSelect?.(getDateKey(date))}
               className={`relative grid aspect-square place-items-center rounded-md border text-xs ${
                 selectedDateKey === getDateKey(date)
-                  ? "border-accent bg-indigo-600/30 text-fg"
+                  ? "border-accent bg-accent/20 text-fg"
                   : isToday
                   ? "border-accent text-fg"
                   : "border-line text-fg-muted"
