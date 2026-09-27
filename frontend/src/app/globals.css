@@ -149,3 +149,105 @@ body {
   --heat-3: #6B5CFF;
   --heat-4: #3A2DB8;
 }
+
+/* ---------------------------------------------------------------------------
+   Landing and sign-in sky (design/handoff-landing). Night is the default;
+   Dawn swaps the palette. Objects are <img> SVGs: each has a Night and a Dawn
+   file, and .only-night / .only-dawn show the one for the current theme.
+   --------------------------------------------------------------------------- */
+:root {
+  --sky: linear-gradient(180deg, #05040C 0%, #0B0A1A 45%, #1A1450 100%);
+  --earth: #0B0A14;
+  --atmo: #6B5CFF;
+  --limb-line: rgba(167, 155, 255, 0.55);
+  --star: #FFFFFF;
+  --comet: #FFFFFF;
+  --btn2: rgba(255, 255, 255, 0.06);
+  --app-bg: #0B0A14;
+  --phone-shadow: 0 40px 80px -30px rgba(0, 0, 0, 0.9);
+  --card-shadow: 0 30px 80px -30px rgba(0, 0, 0, 0.8);
+}
+[data-theme="dawn"] {
+  --sky: linear-gradient(180deg, #EEEBF7 0%, #F7F3EE 42%, #FBE2CF 100%);
+  --earth: #F7F5F1;
+  --atmo: #F2A76B;
+  --limb-line: rgba(242, 167, 107, 0.7);
+  --star: #8C84BE;
+  --comet: #C9788A;
+  --btn2: rgba(255, 255, 255, 0.7);
+  --app-bg: #F7F5F1;
+  --phone-shadow: 0 40px 80px -40px rgba(80, 50, 20, 0.45);
+  --card-shadow: 0 30px 70px -30px rgba(80, 50, 20, 0.3);
+}
+[data-theme="dawn"] .only-night,
+:root:not([data-theme="dawn"]) .only-dawn { display: none !important; }
+
+.hero-sky { background: var(--sky); }
+.earth-limb {
+  position: absolute; left: -25%; width: 150%; height: 1200px; top: calc(100% - 170px);
+  border-radius: 50%; background: var(--earth); z-index: 1;
+  box-shadow: 0 -40px 140px -20px var(--atmo), inset 0 1px 0 var(--limb-line);
+}
+.sun-glow {
+  position: absolute; left: 50%; bottom: 60px; width: 900px; height: 420px; transform: translateX(-50%);
+  border-radius: 50%; background: radial-gradient(closest-side, rgba(247, 167, 107, 0.55), rgba(247, 167, 107, 0));
+}
+:root:not([data-theme="dawn"]) .sun-glow { display: none; }
+/* Dawn keeps only the stars in the upper third, softer. */
+[data-theme="dawn"] .sky-star { opacity: 0.45 !important; animation: none !important; }
+[data-theme="dawn"] .sky-star.low-star { display: none; }
+
+.sky-object { position: absolute; pointer-events: none; animation: drift var(--d) ease-in-out var(--delay, 0s) infinite; }
+.sky-object img { display: block; width: 100%; height: auto; }
+.sky-planet { right: 4%; top: 13%; width: 230px; --r: -6deg; --d: 14s; }
+.sky-moon { left: 6%; top: 15%; width: 76px; --d: 11s; --delay: 1.5s; }
+.sky-sat-a { left: 3%; top: 52%; width: 190px; --r: -14deg; --d: 12s; --delay: 0.8s; }
+.sky-sat-b { right: 13%; top: 66%; width: 110px; opacity: 0.85; --r: 20deg; --d: 10s; --delay: 2.2s; }
+.sky-aster { right: 5%; top: 38%; width: 120px; --r: 8deg; --d: 9s; --delay: 0.4s; }
+@media (max-width: 1359px) {
+  .sky-planet { right: -40px; top: 9%; width: 170px; opacity: 0.9; }
+  .sky-moon { left: 2%; top: 11%; width: 52px; }
+  .sky-sat-a { left: -30px; top: 64%; width: 130px; }
+  .sky-sat-b { display: none; }
+  .sky-aster { right: 1.5%; top: 60%; width: 84px; }
+}
+@media (max-width: 767px) {
+  /* Phones: only the planet, the moon and Aster, kept clear of the text. */
+  .sky-sat-a, .sky-comet, .sky-car { display: none; }
+  .sky-planet { right: -36px; top: 5%; width: 118px; }
+  .sky-moon { left: 3%; top: 9%; width: 40px; }
+  .sky-aster { right: 2%; top: 74%; width: 56px; }
+  /* A wider ellipse keeps the horizon a gentle curve on a narrow screen. */
+  .earth-limb { left: -120%; width: 340%; }
+}
+.sky-car { position: absolute; left: 0; top: calc(100% - 262px); width: 300px; animation: carfly 38s linear infinite; }
+.sky-car > div { animation: bob 3.2s ease-in-out infinite; }
+.sky-car img { display: block; width: 100%; height: auto; }
+.sky-comet {
+  position: absolute; width: 150px; height: 2px; border-radius: 2px; opacity: 0;
+  background: linear-gradient(90deg, var(--comet), transparent);
+  animation: comet 13s ease-out var(--delay, 0s) infinite;
+}
+
+@keyframes drift {
+  0%, 100% { transform: translate3d(0, 0, 0) rotate(var(--r, 0deg)); }
+  50% { transform: translate3d(0, -16px, 0) rotate(calc(var(--r, 0deg) + 3deg)); }
+}
+@keyframes carfly { 0% { transform: translateX(-420px); } 100% { transform: translateX(calc(100vw + 420px)); } }
+@keyframes bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-7px); } }
+@keyframes twinkle { 0%, 100% { opacity: 0.9; } 50% { opacity: 0.2; } }
+@keyframes comet {
+  0% { transform: translate(0, 0) rotate(-24deg); opacity: 0; }
+  3% { opacity: 1; }
+  12% { transform: translate(-560px, 250px) rotate(-24deg); opacity: 0; }
+  100% { transform: translate(-560px, 250px) rotate(-24deg); opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .sky-object, .sky-car > div, .sky-star, .sky-comet { animation: none !important; }
+  .sky-object { transform: rotate(var(--r, 0deg)); }
+  .sky-car { animation: none; transform: translateX(6vw); }
+}
+
+/* Screens carousel: native scroll-snap, no visible scrollbar. */
+.screens-track { scrollbar-width: none; }
+.screens-track::-webkit-scrollbar { display: none; }

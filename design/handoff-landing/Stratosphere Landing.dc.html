@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=Newsreader:ital,opsz,wght@1,6..72,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css">
+<link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/fill/style.css">
+<style>
+body{margin:0;background:#0B0A14;font-family:'Instrument Sans',system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+a{color:inherit;text-decoration:none}a:hover{text-decoration:none;opacity:.85}
+input,button{font-family:inherit}
+@keyframes drift{0%,100%{transform:translate3d(0,0,0) rotate(var(--r,0deg))}50%{transform:translate3d(0,-16px,0) rotate(calc(var(--r,0deg) + 3deg))}}
+@keyframes carfly{0%{transform:translateX(-420px)}100%{transform:translateX(calc(100vw + 420px))}}
+@keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-7px)}}
+@keyframes twinkle{0%,100%{opacity:.9}50%{opacity:.2}}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.15}}
+@keyframes comet{0%{transform:translate(0,0) rotate(-24deg);opacity:0}3%{opacity:1}12%{transform:translate(-560px,250px) rotate(-24deg);opacity:0}100%{transform:translate(-560px,250px) rotate(-24deg);opacity:0}}
+@media (prefers-reduced-motion: reduce){*{animation:none!important}}
+</style>
+</helmet>
+<div style="{{ vars }}">
+<div style="min-height:100vh;background:var(--section,#0B0A14);color:var(--ink,#F3F2F8);transition:background .3s">
+
+<section data-screen-label="Hero" style="position:relative;min-height:960px;overflow:hidden;background:var(--sky,#0B0A1A)">
+{{ sky }}
+<div style="position:absolute;left:-25%;width:150%;height:1200px;top:calc(100% - 170px);border-radius:50%;background:var(--earth,#0B0A14);box-shadow:0 -40px 140px -20px var(--atmo,#6B5CFF), inset 0 1px 0 var(--limb-line,rgba(167,155,255,.5));z-index:1"></div>
+
+<nav style="position:absolute;top:0;left:0;right:0;z-index:5">
+<div style="max-width:1240px;margin:0 auto;height:76px;padding:0 32px;display:flex;align-items:center;justify-content:space-between;gap:24px">
+<a href="#" style="display:flex;align-items:center;gap:10px;color:var(--ink,#F3F2F8)">
+<svg viewBox="0 0 64 64" width="30" height="30" style="color:var(--mark,#A79BFF)"><defs><mask id="lm-nav"><rect width="64" height="64" fill="black"></rect><circle cx="32" cy="32" r="27" fill="white"></circle><rect x="0" y="18" width="64" height="2.2" fill="black"></rect><rect x="0" y="28.5" width="64" height="2.8" fill="black"></rect><rect x="0" y="40" width="64" height="3.4" fill="black"></rect></mask></defs><rect width="64" height="64" fill="currentColor" mask="url(#lm-nav)"></rect></svg>
+<span style="font-size:19px;font-weight:600;letter-spacing:-0.02em">Stratosphere</span>
+</a>
+<div style="display:flex;align-items:center;gap:32px;font-size:15px;font-weight:500;color:var(--muted,#A6A3B8)">
+<a href="#screens" style="color:var(--muted,#A6A3B8)" style-hover="color:var(--ink,#F3F2F8)">Screens</a>
+<a href="#" style="color:var(--muted,#A6A3B8)" style-hover="color:var(--ink,#F3F2F8)">Aster, your coach</a>
+<a href="#" style="color:var(--muted,#A6A3B8)" style-hover="color:var(--ink,#F3F2F8)">For teams</a>
+<a href="#" style="color:var(--muted,#A6A3B8)" style-hover="color:var(--ink,#F3F2F8)">Contact</a>
+</div>
+<div style="display:flex;align-items:center;gap:10px">
+<button onClick="{{ toggleTheme }}" aria-label="Switch theme" style="width:40px;height:40px;border-radius:12px;border:1px solid var(--line,#2A2840);background:var(--btn2,rgba(255,255,255,.06));color:var(--ink,#F3F2F8);display:flex;align-items:center;justify-content:center;font-size:18px;cursor:pointer"><i class="ph {{ themeIcon }}"></i></button>
+<a href="#" style="height:40px;padding:0 16px;display:flex;align-items:center;font-size:15px;font-weight:500;color:var(--ink,#F3F2F8)">Sign in</a>
+<a href="#" style="height:40px;padding:0 18px;border-radius:12px;display:flex;align-items:center;gap:8px;background:var(--accent,#5B4CF0);color:#FFFFFF;font-size:15px;font-weight:600" style-hover="background:var(--accent-hover,#6B5CFF);opacity:1">Get the app</a>
+</div>
+</div>
+</nav>
+
+<sc-if value="{{ isA }}" hint-placeholder-val="{{ true }}">
+<div style="position:relative;z-index:3;max-width:min(860px, calc(100vw - 280px));margin:0 auto;padding:176px 24px 0;display:flex;flex-direction:column;align-items:center;text-align:center;gap:28px">
+<a href="#screens" style="display:inline-flex;align-items:center;gap:10px;padding:6px 14px 6px 6px;border-radius:999px;border:1px solid var(--line,#2A2840);background:var(--surface,rgba(19,18,31,.72));backdrop-filter:blur(12px);font-size:14px;font-weight:500;color:var(--muted,#A6A3B8)"><span style="padding:3px 10px;border-radius:999px;background:var(--accent-soft,rgba(107,92,255,.16));color:var(--accent-text,#C7BFFF);font-size:12px;font-weight:600">New</span>Now on the App Store for iPhone<i class="ph ph-arrow-right"></i></a>
+<h1 style="margin:0;font-size:clamp(46px,5.4vw,76px);font-weight:600;letter-spacing:-0.045em;line-height:1.02;text-wrap:balance">A calmer way to choose, reflect, and finish your day.</h1>
+<p style="margin:0;max-width:600px;font-size:19px;line-height:1.55;color:var(--muted,#A6A3B8);text-wrap:pretty">Stratosphere helps you plan action items, record how they felt, and use those reflections to make better decisions tomorrow.</p>
+<div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;justify-content:center;margin-top:4px">
+<a href="#" style="height:54px;padding:0 26px;border-radius:14px;display:flex;align-items:center;gap:10px;background:var(--accent,#5B4CF0);color:#FFFFFF;font-size:16px;font-weight:600;box-shadow:0 10px 30px -10px var(--accent,#5B4CF0)" style-hover="background:var(--accent-hover,#6B5CFF);opacity:1">Get started<i class="ph ph-arrow-right"></i></a>
+<a href="#" style="height:54px;padding:0 24px;border-radius:14px;display:flex;align-items:center;border:1px solid var(--line,#2A2840);background:var(--btn2,rgba(255,255,255,.06));backdrop-filter:blur(12px);color:var(--ink,#F3F2F8);font-size:16px;font-weight:600">Sign in</a>
+<a href="#" aria-label="Download on the App Store" style="height:54px;padding:0 18px 0 14px;border-radius:14px;display:flex;align-items:center;gap:10px;background:#000000;border:1px solid #3A3A3F;color:#FFFFFF">
+<i class="ph-fill ph-apple-logo" style="font-size:28px"></i>
+<span style="display:flex;flex-direction:column;align-items:flex-start;line-height:1.05"><span style="font-size:11px;font-weight:500">Download on the</span><span style="font-size:20px;font-weight:600;letter-spacing:-0.02em">App Store</span></span>
+</a>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ isB }}" hint-placeholder-val="{{ false }}">
+<div style="position:relative;z-index:3;max-width:560px;margin:0 auto;padding:128px 24px 0;display:flex;flex-direction:column;align-items:center;text-align:center;gap:24px">
+<h1 style="margin:0;font-size:52px;font-weight:600;letter-spacing:-0.04em;line-height:1.04;text-wrap:balance">A calmer way to finish your day.</h1>
+<p style="margin:0;font-size:17px;line-height:1.5;color:var(--muted,#A6A3B8)">Sign in to plan today's action items and pick up where you left off.</p>
+<div style="width:100%;max-width:420px;box-sizing:border-box;padding:28px;border-radius:24px;border:1px solid var(--line,#2A2840);background:var(--surface,rgba(19,18,31,.72));backdrop-filter:blur(20px);box-shadow:var(--card-shadow,0 30px 80px -30px rgba(0,0,0,.8));display:flex;flex-direction:column;gap:12px;text-align:left">
+<button style="height:50px;border-radius:14px;border:none;background:var(--apple-bg,#FFFFFF);color:var(--apple-ink,#000000);font-size:16px;font-weight:600;display:flex;align-items:center;justify-content:center;gap:10px;cursor:pointer"><i class="ph-fill ph-apple-logo" style="font-size:20px"></i>Continue with Apple</button>
+<button style="height:50px;border-radius:14px;border:1px solid var(--line,#2A2840);background:var(--btn2,rgba(255,255,255,.06));color:var(--ink,#F3F2F8);font-size:16px;font-weight:600;display:flex;align-items:center;justify-content:center;gap:10px;cursor:pointer"><i class="ph ph-google-logo" style="font-size:20px"></i>Continue with Google</button>
+<div style="display:flex;align-items:center;gap:12px;margin:6px 0;font-size:13px;color:var(--subtle,#8A879E)"><span style="flex:1;height:1px;background:var(--line,#2A2840)"></span>or<span style="flex:1;height:1px;background:var(--line,#2A2840)"></span></div>
+<label style="display:flex;flex-direction:column;gap:8px;font-size:14px;font-weight:500">Email
+<input type="email" placeholder="you@example.com" style="height:50px;box-sizing:border-box;padding:0 16px;border-radius:14px;border:1px solid var(--line,#2A2840);background:var(--input,#0B0A14);color:var(--ink,#F3F2F8);font-size:16px;outline:none" style-focus="border-color:var(--accent,#5B4CF0);box-shadow:0 0 0 3px var(--accent-soft,rgba(107,92,255,.16))">
+</label>
+<button style="height:50px;border-radius:14px;border:none;background:var(--accent,#5B4CF0);color:#FFFFFF;font-size:16px;font-weight:600;cursor:pointer;margin-top:4px" style-hover="background:var(--accent-hover,#6B5CFF)">Continue with email</button>
+<div style="text-align:center;font-size:14px;color:var(--muted,#A6A3B8);margin-top:6px">New to Stratosphere? <a href="#" style="color:var(--accent-text,#C7BFFF);font-weight:600">Create an account</a></div>
+</div>
+<a href="#" aria-label="Download on the App Store" style="height:48px;padding:0 16px 0 12px;border-radius:12px;display:flex;align-items:center;gap:9px;background:#000000;border:1px solid #3A3A3F;color:#FFFFFF">
+<i class="ph-fill ph-apple-logo" style="font-size:24px"></i>
+<span style="display:flex;flex-direction:column;align-items:flex-start;line-height:1.05"><span style="font-size:10px;font-weight:500">Download on the</span><span style="font-size:18px;font-weight:600;letter-spacing:-0.02em">App Store</span></span>
+</a>
+</div>
+</sc-if>
+</section>
+
+<section id="screens" data-screen-label="Screens carousel" style="position:relative;padding:40px 0 120px;background:var(--section,#0B0A14)">
+<div style="max-width:1240px;margin:0 auto;padding:0 32px;display:flex;align-items:flex-end;justify-content:space-between;gap:32px;flex-wrap:wrap">
+<div style="display:flex;flex-direction:column;gap:16px;max-width:680px">
+<div style="font-size:13px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--accent-text,#C7BFFF)">Inside the app</div>
+<h2 style="margin:0;font-size:46px;font-weight:600;letter-spacing:-0.035em;line-height:1.08;text-wrap:balance">Your day, reflections, and progress in one iPhone app.</h2>
+<p style="margin:0;font-size:18px;line-height:1.55;color:var(--muted,#A6A3B8);text-wrap:pretty">Open with a calm brand experience, review scheduled priorities on the calendar, and track completed work alongside the reflections that shaped it.</p>
+</div>
+<div style="display:flex;gap:10px">
+<button onClick="{{ prev }}" aria-label="Previous" style="width:48px;height:48px;border-radius:999px;border:1px solid var(--line,#2A2840);background:var(--btn2,rgba(255,255,255,.06));color:var(--ink,#F3F2F8);font-size:20px;display:flex;align-items:center;justify-content:center;cursor:pointer"><i class="ph ph-arrow-left"></i></button>
+<button onClick="{{ next }}" aria-label="Next" style="width:48px;height:48px;border-radius:999px;border:1px solid var(--line,#2A2840);background:var(--btn2,rgba(255,255,255,.06));color:var(--ink,#F3F2F8);font-size:20px;display:flex;align-items:center;justify-content:center;cursor:pointer"><i class="ph ph-arrow-right"></i></button>
+</div>
+</div>
+
+<div ref="{{ track }}" style="margin-top:48px;display:flex;gap:36px;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;padding:12px max(32px, calc((100vw - 1176px) / 2)) 24px;scroll-padding:0 max(32px, calc((100vw - 1176px) / 2))">
+
+<figure style="margin:0;flex:none;scroll-snap-align:start;display:flex;flex-direction:column;align-items:center;gap:20px">
+<div style="width:300px;height:624px;box-sizing:border-box;padding:10px;border-radius:50px;background:#0E0D16;box-shadow:var(--phone-shadow,0 40px 80px -30px rgba(0,0,0,.9)), 0 0 0 1px #2A2840">
+<div style="position:relative;height:100%;border-radius:40px;overflow:hidden;background:linear-gradient(180deg,#15123A 0%,#0B0A14 70%);color:#F3F2F8;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px">
+<div style="position:absolute;top:11px;left:50%;transform:translateX(-50%);width:92px;height:27px;border-radius:20px;background:#000"></div>
+<div style="position:absolute;top:0;left:0;right:0;height:48px;padding:0 28px;display:flex;align-items:center;justify-content:space-between;font-size:14px;font-weight:600"><span>9:41</span><span style="display:flex;gap:5px;font-size:14px"><i class="ph-fill ph-cell-signal-full"></i><i class="ph-fill ph-wifi-high"></i><i class="ph-fill ph-battery-full"></i></span></div>
+<div style="position:absolute;left:-40%;right:-40%;bottom:-420px;height:560px;border-radius:50%;background:#0B0A14;box-shadow:0 -20px 80px -10px #6B5CFF, inset 0 1px 0 rgba(167,155,255,.5)"></div>
+<svg viewBox="0 0 64 64" width="84" height="84" style="color:#A79BFF;position:relative"><defs><mask id="lm-launch"><rect width="64" height="64" fill="black"></rect><circle cx="32" cy="32" r="27" fill="white"></circle><rect x="0" y="18" width="64" height="2.2" fill="black"></rect><rect x="0" y="28.5" width="64" height="2.8" fill="black"></rect><rect x="0" y="40" width="64" height="3.4" fill="black"></rect></mask></defs><rect width="64" height="64" fill="currentColor" mask="url(#lm-launch)"></rect></svg>
+<div style="position:relative;display:flex;flex-direction:column;align-items:center;gap:6px"><div style="font-size:26px;font-weight:600;letter-spacing:-0.03em">Stratosphere</div><div style="font-family:'Newsreader',Georgia,serif;font-style:italic;font-size:17px;color:#A6A3B8">your habits in your control</div></div>
+</div>
+</div>
+<figcaption style="font-size:16px;font-weight:600">Brand launch</figcaption>
+</figure>
+
+<figure style="margin:0;flex:none;scroll-snap-align:start;display:flex;flex-direction:column;align-items:center;gap:20px">
+<div style="width:300px;height:624px;box-sizing:border-box;padding:10px;border-radius:50px;background:#0E0D16;box-shadow:var(--phone-shadow,0 40px 80px -30px rgba(0,0,0,.9)), 0 0 0 1px #2A2840">
+<div style="position:relative;height:100%;border-radius:40px;overflow:hidden;background:var(--app-bg,#0B0A14);color:var(--ink,#F3F2F8);display:flex;flex-direction:column">
+<div style="position:absolute;top:11px;left:50%;transform:translateX(-50%);width:92px;height:27px;border-radius:20px;background:#000"></div>
+<div style="height:48px;flex:none;padding:0 28px;display:flex;align-items:center;justify-content:space-between;font-size:14px;font-weight:600"><span>9:41</span><span style="display:flex;gap:5px"><i class="ph-fill ph-cell-signal-full"></i><i class="ph-fill ph-wifi-high"></i><i class="ph-fill ph-battery-full"></i></span></div>
+<div style="padding:10px 18px 0;display:flex;flex-direction:column;gap:14px">
+<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px"><div style="display:flex;flex-direction:column;gap:3px;min-width:0"><span style="font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--subtle,#8A879E)">Sunday, 27 Sep</span><span style="font-size:20px;font-weight:600;letter-spacing:-0.02em;white-space:nowrap">Hello, Sivarajan</span></div><img src="assets/aster-happy.svg" alt="" style="width:36px;height:36px;border-radius:50%"></div>
+<div style="padding:14px;border-radius:16px;background:var(--raised,#1C1A2B);display:flex;flex-direction:column;gap:10px"><div style="display:flex;justify-content:space-between;font-size:13px"><span style="font-weight:600">3 of 5 done</span><span style="color:var(--muted,#A6A3B8)">Keep going</span></div><div style="height:6px;border-radius:6px;background:var(--line,#2A2840);overflow:hidden"><div style="width:60%;height:100%;background:var(--accent,#5B4CF0);border-radius:6px"></div></div></div>
+<div style="font-size:15px;font-weight:600">Today's Action Items</div>
+<div style="display:flex;flex-direction:column;gap:8px">
+<div style="padding:11px 12px;border-radius:14px;background:var(--raised,#1C1A2B);display:flex;align-items:center;gap:10px"><i class="ph-fill ph-check-circle" style="font-size:22px;color:var(--accent-text,#A79BFF)"></i><span style="flex:1;font-size:13px;font-weight:500;color:var(--muted,#A6A3B8);text-decoration:line-through">Review action items</span><span style="font-size:11px;font-weight:600;color:var(--low,#3CCFB4);display:flex;align-items:center;gap:3px"><i class="ph ph-plant"></i>Low</span></div>
+<div style="padding:11px 12px;border-radius:14px;background:var(--raised,#1C1A2B);display:flex;align-items:center;gap:10px"><i class="ph-fill ph-check-circle" style="font-size:22px;color:var(--accent-text,#A79BFF)"></i><span style="flex:1;font-size:13px;font-weight:500;color:var(--muted,#A6A3B8);text-decoration:line-through">Book flight to San Francisco</span><span style="font-size:11px;font-weight:600;color:var(--high,#F2B24C);display:flex;align-items:center;gap:3px"><i class="ph ph-flame"></i>High</span></div>
+<div style="padding:11px 12px;border-radius:14px;background:var(--raised,#1C1A2B);display:flex;align-items:center;gap:10px"><i class="ph-fill ph-check-circle" style="font-size:22px;color:var(--accent-text,#A79BFF)"></i><span style="flex:1;font-size:13px;font-weight:500;color:var(--muted,#A6A3B8);text-decoration:line-through">30 min walk</span><span style="font-size:11px;font-weight:600;color:var(--low,#3CCFB4);display:flex;align-items:center;gap:3px"><i class="ph ph-plant"></i>Low</span></div>
+<div style="padding:11px 12px;border-radius:14px;background:var(--raised,#1C1A2B);display:flex;align-items:center;gap:10px"><i class="ph ph-circle-dashed" style="font-size:22px;color:var(--nd,#8A879E)"></i><span style="flex:1;font-size:13px;font-weight:500">Draft Q4 plan</span><span style="font-size:11px;font-weight:600;color:var(--med,#6CC0F5);display:flex;align-items:center;gap:3px"><i class="ph ph-lightning"></i>Medium</span></div>
+<div style="padding:11px 12px;border-radius:14px;background:var(--raised,#1C1A2B);display:flex;align-items:center;gap:10px"><i class="ph ph-circle-dashed" style="font-size:22px;color:var(--nd,#8A879E)"></i><span style="flex:1;font-size:13px;font-weight:500">Call Amma</span><span style="font-size:11px;font-weight:600;color:var(--low,#3CCFB4);display:flex;align-items:center;gap:3px"><i class="ph ph-plant"></i>Low</span></div>
+</div>
+</div>
+<div style="position:absolute;left:0;right:0;bottom:0;height:72px;border-top:1px solid var(--line,#2A2840);background:var(--app-bg,#0B0A14);display:flex;justify-content:space-around;padding-top:12px;font-size:23px;color:var(--subtle,#8A879E)"><i class="ph-fill ph-house" style="color:var(--accent-text,#A79BFF)"></i><i class="ph ph-calendar-blank"></i><i class="ph ph-chat-circle"></i><i class="ph ph-chart-bar"></i></div>
+</div>
+</div>
+<figcaption style="font-size:16px;font-weight:600">Today</figcaption>
+</figure>
+
+<figure style="margin:0;flex:none;scroll-snap-align:start;display:flex;flex-direction:column;align-items:center;gap:20px">
+<div style="width:300px;height:624px;box-sizing:border-box;padding:10px;border-radius:50px;background:#0E0D16;box-shadow:var(--phone-shadow,0 40px 80px -30px rgba(0,0,0,.9)), 0 0 0 1px #2A2840">
+<div style="position:relative;height:100%;border-radius:40px;overflow:hidden;background:var(--app-bg,#0B0A14);color:var(--ink,#F3F2F8);display:flex;flex-direction:column">
+<div style="position:absolute;top:11px;left:50%;transform:translateX(-50%);width:92px;height:27px;border-radius:20px;background:#000"></div>
+<div style="height:48px;flex:none;padding:0 28px;display:flex;align-items:center;justify-content:space-between;font-size:14px;font-weight:600"><span>9:41</span><span style="display:flex;gap:5px"><i class="ph-fill ph-cell-signal-full"></i><i class="ph-fill ph-wifi-high"></i><i class="ph-fill ph-battery-full"></i></span></div>
+<div style="padding:10px 18px 0;display:flex;flex-direction:column;gap:14px">
+<div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:23px;font-weight:600;letter-spacing:-0.02em">May 2026</span><span style="display:flex;gap:6px"><span style="width:30px;height:30px;border-radius:10px;background:var(--raised,#1C1A2B);display:flex;align-items:center;justify-content:center"><i class="ph ph-caret-left"></i></span><span style="width:30px;height:30px;border-radius:10px;background:var(--raised,#1C1A2B);display:flex;align-items:center;justify-content:center"><i class="ph ph-caret-right"></i></span></span></div>
+<div style="padding:12px 8px;border-radius:16px;background:var(--raised,#1C1A2B);display:grid;grid-template-columns:repeat(7,1fr);row-gap:4px;text-align:center">
+<span style="font-size:10px;font-weight:600;color:var(--subtle,#8A879E);padding-bottom:4px">S</span><span style="font-size:10px;font-weight:600;color:var(--subtle,#8A879E)">M</span><span style="font-size:10px;font-weight:600;color:var(--subtle,#8A879E)">T</span><span style="font-size:10px;font-weight:600;color:var(--subtle,#8A879E)">W</span><span style="font-size:10px;font-weight:600;color:var(--subtle,#8A879E)">T</span><span style="font-size:10px;font-weight:600;color:var(--subtle,#8A879E)">F</span><span style="font-size:10px;font-weight:600;color:var(--subtle,#8A879E)">S</span>
+<sc-for list="{{ days }}" as="d" hint-placeholder-count="35">
+<div style="height:34px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px"><span style="{{ d.style }}">{{ d.n }}</span><span style="display:flex;gap:2px;height:4px"><sc-for list="{{ d.dots }}" as="c" hint-placeholder-count="0"><span style="{{ c }}"></span></sc-for></span></div>
+</sc-for>
+</div>
+<div style="display:flex;flex-direction:column;gap:8px"><span style="font-size:13px;font-weight:600;color:var(--muted,#A6A3B8)">Tuesday, 12 May</span>
+<div style="padding:11px 12px;border-radius:14px;background:var(--raised,#1C1A2B);display:flex;align-items:center;gap:10px"><span style="width:4px;height:28px;border-radius:4px;background:var(--med,#6CC0F5)"></span><span style="flex:1;display:flex;flex-direction:column;gap:2px"><span style="font-size:13px;font-weight:500">Draft Q4 plan</span><span style="font-size:11px;color:var(--subtle,#8A879E)">10:00 · Medium</span></span></div>
+</div>
+</div>
+<div style="position:absolute;left:0;right:0;bottom:0;height:72px;border-top:1px solid var(--line,#2A2840);background:var(--app-bg,#0B0A14);display:flex;justify-content:space-around;padding-top:12px;font-size:23px;color:var(--subtle,#8A879E)"><i class="ph ph-house"></i><i class="ph-fill ph-calendar-blank" style="color:var(--accent-text,#A79BFF)"></i><i class="ph ph-chat-circle"></i><i class="ph ph-chart-bar"></i></div>
+</div>
+</div>
+<figcaption style="font-size:16px;font-weight:600">Calendar</figcaption>
+</figure>
+
+<figure style="margin:0;flex:none;scroll-snap-align:start;display:flex;flex-direction:column;align-items:center;gap:20px">
+<div style="width:300px;height:624px;box-sizing:border-box;padding:10px;border-radius:50px;background:#0E0D16;box-shadow:var(--phone-shadow,0 40px 80px -30px rgba(0,0,0,.9)), 0 0 0 1px #2A2840">
+<div style="position:relative;height:100%;border-radius:40px;overflow:hidden;background:var(--app-bg,#0B0A14);color:var(--ink,#F3F2F8);display:flex;flex-direction:column">
+<div style="position:absolute;top:11px;left:50%;transform:translateX(-50%);width:92px;height:27px;border-radius:20px;background:#000"></div>
+<div style="height:48px;flex:none;padding:0 28px;display:flex;align-items:center;justify-content:space-between;font-size:14px;font-weight:600"><span>9:41</span><span style="display:flex;gap:5px"><i class="ph-fill ph-cell-signal-full"></i><i class="ph-fill ph-wifi-high"></i><i class="ph-fill ph-battery-full"></i></span></div>
+<div style="padding:10px 18px 0;display:flex;flex-direction:column;gap:16px">
+<div style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--muted,#A6A3B8)"><i class="ph ph-caret-left" style="font-size:16px"></i>Reflection</div>
+<div style="display:flex;flex-direction:column;gap:6px"><span style="font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--subtle,#8A879E)">Task context</span><span style="font-size:20px;font-weight:600;letter-spacing:-0.02em;line-height:1.2">Book flight to San Francisco</span></div>
+<div style="display:flex;flex-direction:column;gap:10px"><span style="font-size:14px;font-weight:500">How did it go?</span>
+<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px">
+<span style="height:40px;border-radius:12px;background:var(--low,#3CCFB4);color:var(--on-low,#0B0A14);font-size:13px;font-weight:600;display:flex;align-items:center;justify-content:center;gap:4px"><i class="ph ph-check"></i>Done</span>
+<span style="height:40px;border-radius:12px;border:1px solid var(--line,#2A2840);font-size:13px;font-weight:500;display:flex;align-items:center;justify-content:center;color:var(--muted,#A6A3B8)">Unsure</span>
+<span style="height:40px;border-radius:12px;border:1px solid var(--line,#2A2840);font-size:13px;font-weight:500;display:flex;align-items:center;justify-content:center;color:var(--muted,#A6A3B8)">Not done</span>
+</div></div>
+<div style="display:flex;flex-direction:column;gap:10px"><span style="font-size:14px;font-weight:500">Specific notes</span>
+<div style="min-height:150px;padding:14px;border-radius:14px;background:var(--raised,#1C1A2B);font-family:'Newsreader',Georgia,serif;font-style:italic;font-size:17px;line-height:1.45">Booked the Delta tickets before lunch. Felt lighter once it was off my list.</div></div>
+<div style="height:48px;border-radius:14px;background:var(--accent,#5B4CF0);color:#FFFFFF;font-size:15px;font-weight:600;display:flex;align-items:center;justify-content:center">Save reflection</div>
+</div>
+</div>
+</div>
+<figcaption style="font-size:16px;font-weight:600">Reflect without pressure</figcaption>
+</figure>
+
+<figure style="margin:0;flex:none;scroll-snap-align:start;display:flex;flex-direction:column;align-items:center;gap:20px">
+<div style="width:300px;height:624px;box-sizing:border-box;padding:10px;border-radius:50px;background:#0E0D16;box-shadow:var(--phone-shadow,0 40px 80px -30px rgba(0,0,0,.9)), 0 0 0 1px #2A2840">
+<div style="position:relative;height:100%;border-radius:40px;overflow:hidden;background:var(--app-bg,#0B0A14);color:var(--ink,#F3F2F8);display:flex;flex-direction:column">
+<div style="position:absolute;top:11px;left:50%;transform:translateX(-50%);width:92px;height:27px;border-radius:20px;background:#000"></div>
+<div style="height:48px;flex:none;padding:0 28px;display:flex;align-items:center;justify-content:space-between;font-size:14px;font-weight:600"><span>9:41</span><span style="display:flex;gap:5px"><i class="ph-fill ph-cell-signal-full"></i><i class="ph-fill ph-wifi-high"></i><i class="ph-fill ph-battery-full"></i></span></div>
+<div style="padding:8px 18px 12px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--line,#2A2840)"><img src="assets/aster-happy.svg" alt="" style="width:36px;height:36px;border-radius:50%"><span style="display:flex;flex-direction:column"><span style="font-size:15px;font-weight:600">Aster</span><span style="font-size:11px;color:var(--subtle,#8A879E)">Your life coach</span></span></div>
+<div style="padding:16px 14px;display:flex;flex-direction:column;gap:10px;font-size:13px;line-height:1.45">
+<div style="align-self:flex-start;max-width:82%;padding:10px 12px;border-radius:16px 16px 16px 4px;background:var(--raised,#1C1A2B)">You finished 3 of 5 today. Which one felt heaviest?</div>
+<div style="align-self:flex-end;max-width:82%;padding:10px 12px;border-radius:16px 16px 4px 16px;background:var(--accent,#5B4CF0);color:#FFFFFF">The flight booking, honestly. I kept putting it off.</div>
+<div style="align-self:flex-start;max-width:82%;padding:10px 12px;border-radius:16px 16px 16px 4px;background:var(--raised,#1C1A2B)">That's common with high-priority items. Tomorrow, try the hardest one first while your energy is high.</div>
+<div style="align-self:flex-end;max-width:82%;padding:10px 12px;border-radius:16px 16px 4px 16px;background:var(--accent,#5B4CF0);color:#FFFFFF">Okay, I'll try that.</div>
+</div>
+<div style="position:absolute;left:12px;right:12px;bottom:26px;height:44px;border-radius:22px;border:1px solid var(--line,#2A2840);background:var(--raised,#1C1A2B);display:flex;align-items:center;justify-content:space-between;padding:0 6px 0 16px;font-size:13px;color:var(--subtle,#8A879E)">Message Aster<span style="width:32px;height:32px;border-radius:50%;background:var(--accent,#5B4CF0);color:#FFFFFF;display:flex;align-items:center;justify-content:center"><i class="ph ph-arrow-up"></i></span></div>
+</div>
+</div>
+<figcaption style="font-size:16px;font-weight:600">Ask the life coach</figcaption>
+</figure>
+
+<figure style="margin:0;flex:none;scroll-snap-align:start;display:flex;flex-direction:column;align-items:center;gap:20px">
+<div style="width:300px;height:624px;box-sizing:border-box;padding:10px;border-radius:50px;background:#0E0D16;box-shadow:var(--phone-shadow,0 40px 80px -30px rgba(0,0,0,.9)), 0 0 0 1px #2A2840">
+<div style="position:relative;height:100%;border-radius:40px;overflow:hidden;background:var(--app-bg,#0B0A14);color:var(--ink,#F3F2F8);display:flex;flex-direction:column">
+<div style="position:absolute;top:11px;left:50%;transform:translateX(-50%);width:92px;height:27px;border-radius:20px;background:#000"></div>
+<div style="height:48px;flex:none;padding:0 28px;display:flex;align-items:center;justify-content:space-between;font-size:14px;font-weight:600"><span>9:41</span><span style="display:flex;gap:5px"><i class="ph-fill ph-cell-signal-full"></i><i class="ph-fill ph-wifi-high"></i><i class="ph-fill ph-battery-full"></i></span></div>
+<div style="padding:10px 18px 0;display:flex;flex-direction:column;gap:14px">
+<span style="font-size:23px;font-weight:600;letter-spacing:-0.02em">Progress</span>
+<div style="display:grid;grid-template-columns:1fr 1fr;padding:3px;border-radius:12px;background:var(--raised,#1C1A2B);font-size:12px;font-weight:600;text-align:center"><span style="padding:7px;border-radius:9px;background:var(--app-bg,#0B0A14)">Progress</span><span style="padding:7px;color:var(--muted,#A6A3B8)">Reflections</span></div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+<div style="padding:12px;border-radius:14px;background:var(--raised,#1C1A2B);display:flex;flex-direction:column;gap:2px"><span style="font-size:24px;font-weight:600">15</span><span style="font-size:11px;color:var(--muted,#A6A3B8)">Completed</span></div>
+<div style="padding:12px;border-radius:14px;background:var(--raised,#1C1A2B);display:flex;flex-direction:column;gap:2px"><span style="font-size:24px;font-weight:600">5</span><span style="font-size:11px;color:var(--muted,#A6A3B8)">Open</span></div>
+</div>
+<div style="padding:14px;border-radius:16px;background:var(--raised,#1C1A2B);display:flex;flex-direction:column;gap:12px"><span style="font-size:13px;font-weight:600">This week</span>
+<div style="height:110px;display:flex;align-items:flex-end;gap:10px">
+<sc-for list="{{ week }}" as="w" hint-placeholder-count="7"><div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;height:100%;justify-content:flex-end"><span style="{{ w.style }}"></span><span style="font-size:10px;color:var(--subtle,#8A879E)">{{ w.d }}</span></div></sc-for>
+</div></div>
+<div style="padding:14px;border-radius:16px;background:var(--raised,#1C1A2B);display:flex;flex-direction:column;gap:6px"><span style="font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--subtle,#8A879E)">Latest reflection</span><span style="font-family:'Newsreader',Georgia,serif;font-style:italic;font-size:15px;line-height:1.4">"One difficult day does not erase what you have built."</span></div>
+</div>
+<div style="position:absolute;left:0;right:0;bottom:0;height:72px;border-top:1px solid var(--line,#2A2840);background:var(--app-bg,#0B0A14);display:flex;justify-content:space-around;padding-top:12px;font-size:23px;color:var(--subtle,#8A879E)"><i class="ph ph-house"></i><i class="ph ph-calendar-blank"></i><i class="ph ph-chat-circle"></i><i class="ph-fill ph-chart-bar" style="color:var(--accent-text,#A79BFF)"></i></div>
+</div>
+</div>
+<figcaption style="font-size:16px;font-weight:600">Review your rhythm</figcaption>
+</figure>
+
+</div>
+</section>
+
+<footer style="border-top:1px solid var(--line,#2A2840);background:var(--section,#0B0A14)">
+<div style="max-width:1240px;margin:0 auto;padding:28px 32px;display:flex;justify-content:space-between;align-items:center;gap:20px;flex-wrap:wrap;font-size:14px;color:var(--muted,#A6A3B8)">
+<span>© 2026 Stratosphere</span>
+<div style="display:flex;gap:24px"><a href="#">Privacy</a><a href="#">Terms</a><a href="#">Contact</a></div>
+</div>
+</footer>
+
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;direction&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;Launch hero&quot;,&quot;Sign-in card&quot;],&quot;default&quot;:&quot;Launch hero&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;theme&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;Night&quot;,&quot;Dawn&quot;],&quot;default&quot;:&quot;Night&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;motion&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;}}">
+class Component extends DCLogic {
+  state = { theme: null };
+  track = React.createRef();
+  onResize = () => this.setState({ w: window.innerWidth });
+  componentDidMount() { window.addEventListener('resize', this.onResize); this.onResize(); }
+  componentWillUnmount() { window.removeEventListener('resize', this.onResize); }
+  compact() { return (this.state.w ?? window.innerWidth) < 1360; }
+
+  palette(night) {
+    return night ? {
+      planetA: '#8676FF', planetB: '#2B2275', band: '#A79BFF', ring: '#C7BFFF',
+      moonA: '#E4E1F2', moonB: '#8A879E', crater: '#A6A3B8',
+      sBody: '#E4E1F2', sBand: '#8A879E', panel: '#2B2275', panelLine: '#6B5CFF', arm: '#8A879E',
+      car: '#F3F2F8', carShade: '#C9C6D8', glass: '#15123A', glassHi: '#6B5CFF', pod: '#2A2840', glow: '#8676FF', trail: '#A79BFF',
+      star: '#FFFFFF'
+    } : {
+      planetA: '#F7C9A8', planetB: '#C9788A', band: '#FBE3CF', ring: '#E7A07A',
+      moonA: '#FFFFFF', moonB: '#D9D3C8', crater: '#E6E2DA',
+      sBody: '#FFFFFF', sBand: '#C9C3B8', panel: '#3A2DB8', panelLine: '#8676FF', arm: '#B5AFA4',
+      car: '#FFFFFF', carShade: '#E6E2DA', glass: '#2B2275', glassHi: '#8676FF', pod: '#C9C3B8', glow: '#F2A76B', trail: '#E7A07A',
+      star: '#8C84BE'
+    };
+  }
+
+  svgs(p) {
+    const planet = `<svg viewBox="0 0 220 150" width="100%"><defs><linearGradient id="pg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${p.planetA}"/><stop offset="1" stop-color="${p.planetB}"/></linearGradient><clipPath id="pc"><circle cx="110" cy="75" r="52"/></clipPath></defs><ellipse cx="110" cy="80" rx="100" ry="22" fill="none" stroke="${p.ring}" stroke-width="5" opacity=".55"/><circle cx="110" cy="75" r="52" fill="url(#pg)"/><g clip-path="url(#pc)" opacity=".35"><rect x="40" y="52" width="150" height="8" fill="${p.band}" transform="rotate(-8 110 75)"/><rect x="40" y="80" width="150" height="14" fill="${p.band}" transform="rotate(-8 110 75)"/></g><path d="M10 80 A100 22 0 0 0 210 80" fill="none" stroke="${p.ring}" stroke-width="5"/></svg>`;
+    const moon = `<svg viewBox="0 0 100 100" width="100%"><defs><linearGradient id="mg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${p.moonA}"/><stop offset="1" stop-color="${p.moonB}"/></linearGradient></defs><circle cx="50" cy="50" r="40" fill="url(#mg)"/><circle cx="36" cy="40" r="8" fill="${p.crater}" opacity=".7"/><circle cx="60" cy="62" r="11" fill="${p.crater}" opacity=".55"/><circle cx="62" cy="32" r="5" fill="${p.crater}" opacity=".6"/></svg>`;
+    const sat = (id) => `<svg viewBox="0 0 180 100" width="100%"><g stroke="${p.arm}" stroke-width="3"><line x1="58" y1="50" x2="74" y2="50"/><line x1="106" y1="50" x2="122" y2="50"/></g><rect x="4" y="30" width="56" height="40" rx="4" fill="${p.panel}"/><g stroke="${p.panelLine}" stroke-width="1.4" opacity=".8"><line x1="18" y1="30" x2="18" y2="70"/><line x1="32" y1="30" x2="32" y2="70"/><line x1="46" y1="30" x2="46" y2="70"/><line x1="4" y1="50" x2="60" y2="50"/></g><rect x="120" y="30" width="56" height="40" rx="4" fill="${p.panel}"/><g stroke="${p.panelLine}" stroke-width="1.4" opacity=".8"><line x1="134" y1="30" x2="134" y2="70"/><line x1="148" y1="30" x2="148" y2="70"/><line x1="162" y1="30" x2="162" y2="70"/><line x1="120" y1="50" x2="176" y2="50"/></g><rect x="72" y="28" width="36" height="46" rx="9" fill="${p.sBody}"/><rect x="72" y="46" width="36" height="6" fill="${p.sBand}"/><path d="M78 28 Q90 6 102 28 Z" fill="${p.sBody}" stroke="${p.sBand}" stroke-width="2"/><line x1="90" y1="18" x2="90" y2="6" stroke="${p.arm}" stroke-width="2"/><circle cx="90" cy="5" r="3.2" fill="#F2B24C" style="animation:blink 2.4s ease-in-out infinite"/></svg>`;
+    const car = `<svg viewBox="0 0 320 100" width="100%"><defs><linearGradient id="ct" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="${p.trail}" stop-opacity="0"/><stop offset="1" stop-color="${p.trail}" stop-opacity=".7"/></linearGradient><linearGradient id="cb" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${p.car}"/><stop offset="1" stop-color="${p.carShade}"/></linearGradient><filter id="cf" x="-50%" y="-200%" width="200%" height="500%"><feGaussianBlur stdDeviation="6"/></filter></defs><rect x="0" y="52" width="120" height="3" rx="1.5" fill="url(#ct)"/><rect x="30" y="62" width="96" height="2" rx="1" fill="url(#ct)" opacity=".6"/><ellipse cx="210" cy="84" rx="86" ry="7" fill="${p.glow}" opacity=".55" filter="url(#cf)"/><path d="M122 60 C130 44 170 34 212 34 C252 34 288 42 306 56 C312 61 308 68 298 68 L132 70 C120 70 116 66 122 60 Z" fill="url(#cb)"/><path d="M180 36 C194 18 236 16 262 38 Z" fill="${p.glass}"/><path d="M196 30 C206 22 222 21 232 24" stroke="${p.glassHi}" stroke-width="2" fill="none" stroke-linecap="round"/><rect x="140" y="56" width="160" height="2.4" rx="1.2" fill="${p.glassHi}" opacity=".8"/><ellipse cx="302" cy="58" rx="4" ry="2.6" fill="#FFF6D6"/><rect x="120" y="58" width="6" height="4" rx="2" fill="#F0707A"/><rect x="146" y="68" width="40" height="8" rx="4" fill="${p.pod}"/><rect x="246" y="68" width="40" height="8" rx="4" fill="${p.pod}"/><ellipse cx="166" cy="78" rx="18" ry="2.5" fill="${p.glow}" opacity=".9"/><ellipse cx="266" cy="78" rx="18" ry="2.5" fill="${p.glow}" opacity=".9"/></svg>`;
+    const aster = `<svg viewBox="0 0 130 160" width="100%"><rect x="36" y="54" width="58" height="56" rx="16" fill="#A79BFF"/><g transform="rotate(-38 38 76)"><rect x="18" y="68" width="18" height="40" rx="9" fill="#E4E1F2"/><circle cx="27" cy="110" r="9" fill="#C7BFFF"/></g><g transform="rotate(22 94 76)"><rect x="92" y="68" width="18" height="38" rx="9" fill="#E4E1F2"/><circle cx="101" cy="108" r="9" fill="#C7BFFF"/></g><rect x="40" y="62" width="50" height="58" rx="20" fill="#E4E1F2"/><circle cx="65" cy="88" r="4" fill="#F2B24C"/><rect x="44" y="108" width="17" height="34" rx="8.5" fill="#E4E1F2" transform="rotate(8 52 110)"/><rect x="69" y="108" width="17" height="34" rx="8.5" fill="#E4E1F2" transform="rotate(-12 78 110)"/><rect x="42" y="134" width="20" height="12" rx="6" fill="#C7BFFF" transform="rotate(8 52 110)"/><rect x="68" y="134" width="20" height="12" rx="6" fill="#C7BFFF" transform="rotate(-12 78 110)"/><line x1="65" y1="12" x2="65" y2="4" stroke="#F7F6FC" stroke-width="2.4"/><circle cx="65" cy="4" r="3.6" fill="#F2B24C" style="animation:blink 3s ease-in-out infinite"/><rect x="26" y="34" width="7" height="16" rx="3.5" fill="#C7BFFF"/><rect x="97" y="34" width="7" height="16" rx="3.5" fill="#C7BFFF"/><circle cx="65" cy="42" r="31" fill="#F7F6FC"/><rect x="42" y="26" width="46" height="32" rx="16" fill="#15123A"/><rect x="48" y="30" width="10" height="3" rx="1.5" fill="#FFFFFF" opacity=".35"/><circle cx="56" cy="41" r="3.2" fill="#A79BFF"/><circle cx="74" cy="41" r="3.2" fill="#A79BFF"/><path d="M58 48 Q65 53 72 48" stroke="#A79BFF" stroke-width="2.4" fill="none" stroke-linecap="round"/></svg>`;
+    return { planet, moon, sat, car, aster };
+  }
+
+  buildSky(night, motion) {
+    const h = React.createElement;
+    const p = this.palette(night);
+    const s = this.svgs(p);
+    const anim = (d, delay = 0) => motion ? `drift ${d}s ease-in-out ${delay}s infinite` : 'none';
+    let seed = 7;
+    const rnd = () => { seed = (seed * 9301 + 49297) % 233280; return seed / 233280; };
+    const stars = [];
+    for (let i = 0; i < 120; i++) {
+      const x = rnd() * 100, y = rnd() * 82, sz = rnd() < 0.15 ? 2.4 : rnd() < 0.5 ? 1.6 : 1;
+      if (!night && y > 34) continue;
+      const tw = rnd() < 0.3;
+      stars.push(h('span', { key: 's' + i, style: {
+        position: 'absolute', left: x + '%', top: y + '%', width: sz, height: sz, borderRadius: '50%',
+        background: p.star, opacity: night ? (0.35 + rnd() * 0.6) : 0.45,
+        animation: motion && tw ? `twinkle ${3 + rnd() * 4}s ease-in-out ${rnd() * 4}s infinite` : 'none'
+      } }));
+    }
+    const obj = (key, style, html, d, delay, r = 0) => h('div', { key, style: { position: 'absolute', pointerEvents: 'none', '--r': r + 'deg', animation: anim(d, delay), ...style }, dangerouslySetInnerHTML: { __html: html } });
+    const comet = (key, top, left, delay) => h('span', { key, style: {
+      position: 'absolute', top, left, width: 150, height: 2, borderRadius: 2,
+      background: `linear-gradient(90deg, ${night ? '#FFFFFF' : '#C9788A'}, transparent)`, opacity: 0,
+      animation: motion ? `comet 13s ease-out ${delay}s infinite` : 'none'
+    } });
+    return h('div', { style: { position: 'absolute', inset: 0, overflow: 'hidden', pointerEvents: 'none', zIndex: 1 } },
+      ...stars,
+      night ? null : h('div', { key: 'sun', style: { position: 'absolute', left: '50%', bottom: 60, width: 900, height: 420, transform: 'translateX(-50%)', borderRadius: '50%', background: 'radial-gradient(closest-side, rgba(247,167,107,.55), rgba(247,167,107,0))' } }),
+      comet('c1', '12%', '72%', 2), comet('c2', '26%', '38%', 8.5),
+      ...(this.compact() ? [
+        obj('planet', { right: '-40px', top: '9%', width: 170, opacity: .9 }, s.planet, 14, 0, -6),
+        obj('moon', { left: '2%', top: '11%', width: 52 }, s.moon, 11, 1.5),
+        obj('sat1', { left: '-30px', top: '64%', width: 130 }, s.sat('a'), 12, 0.8, -14),
+        obj('aster', { right: '1.5%', top: '60%', width: 84 }, s.aster, 9, 0.4, 8)
+      ] : [
+        obj('planet', { right: '4%', top: '13%', width: 230 }, s.planet, 14, 0, -6),
+        obj('moon', { left: '6%', top: '15%', width: 76 }, s.moon, 11, 1.5),
+        obj('sat1', { left: '3%', top: '52%', width: 190 }, s.sat('a'), 12, 0.8, -14),
+        obj('sat2', { right: '13%', top: '66%', width: 110, opacity: .85 }, s.sat('b'), 10, 2.2, 20),
+        obj('aster', { right: '5%', top: '38%', width: 120 }, s.aster, 9, 0.4, 8)
+      ]),
+      h('div', { key: 'car', style: { position: 'absolute', left: 0, top: 'calc(100% - 262px)', width: 300, animation: motion ? 'carfly 38s linear infinite' : 'none', transform: motion ? undefined : 'translateX(6vw)' } },
+        h('div', { style: { animation: motion ? 'bob 3.2s ease-in-out infinite' : 'none' }, dangerouslySetInnerHTML: { __html: s.car } }))
+    );
+  }
+
+  renderVals() {
+    const theme = this.state.theme ?? this.props.theme ?? 'Night';
+    const night = theme !== 'Dawn';
+    const motion = this.props.motion ?? true;
+    const dir = this.props.direction ?? 'Launch hero';
+    const vars = night ? {
+      '--sky': 'linear-gradient(180deg,#05040C 0%,#0B0A1A 45%,#1A1450 100%)', '--earth': '#0B0A14', '--atmo': '#6B5CFF', '--limb-line': 'rgba(167,155,255,.55)',
+      '--section': '#0B0A14', '--ink': '#F3F2F8', '--muted': '#A6A3B8', '--subtle': '#8A879E', '--line': '#2A2840',
+      '--surface': 'rgba(19,18,31,.72)', '--raised': '#1C1A2B', '--input': '#0B0A14', '--btn2': 'rgba(255,255,255,.06)',
+      '--accent': '#5B4CF0', '--accent-hover': '#6B5CFF', '--accent-soft': 'rgba(107,92,255,.18)', '--accent-text': '#A79BFF', '--mark': '#A79BFF',
+      '--apple-bg': '#FFFFFF', '--apple-ink': '#000000', '--app-bg': '#0B0A14',
+      '--low': '#3CCFB4', '--med': '#6CC0F5', '--high': '#F2B24C', '--nd': '#8A879E', '--on-low': '#0B0A14',
+      '--phone-shadow': '0 40px 80px -30px rgba(0,0,0,.9)', '--card-shadow': '0 30px 80px -30px rgba(0,0,0,.8)'
+    } : {
+      '--sky': 'linear-gradient(180deg,#EEEBF7 0%,#F7F3EE 42%,#FBE2CF 100%)', '--earth': '#F7F5F1', '--atmo': '#F2A76B', '--limb-line': 'rgba(242,167,107,.7)',
+      '--section': '#F7F5F1', '--ink': '#16151F', '--muted': '#56536A', '--subtle': '#6E6B7E', '--line': '#E6E2DA',
+      '--surface': 'rgba(255,255,255,.82)', '--raised': '#FFFFFF', '--input': '#FFFFFF', '--btn2': 'rgba(255,255,255,.7)',
+      '--accent': '#4A3CE0', '--accent-hover': '#3A2DB8', '--accent-soft': 'rgba(74,60,224,.10)', '--accent-text': '#4A3CE0', '--mark': '#4A3CE0',
+      '--apple-bg': '#000000', '--apple-ink': '#FFFFFF', '--app-bg': '#F7F5F1',
+      '--low': '#0E8A76', '--med': '#1C73B0', '--high': '#9A5F08', '--nd': '#6E6B7E', '--on-low': '#FFFFFF',
+      '--phone-shadow': '0 40px 80px -40px rgba(80,50,20,.45)', '--card-shadow': '0 30px 70px -30px rgba(80,50,20,.3)'
+    };
+    const dotMap = { 1: ['med'], 2: ['low', 'med', 'high'], 4: ['low'], 5: ['high'], 7: ['med', 'low'], 8: ['high'], 11: ['low', 'med'], 12: ['med'], 13: ['high'], 15: ['low', 'med'], 19: ['high'], 21: ['low'], 26: ['med'], 28: ['high'] };
+    const days = [];
+    for (let i = 26; i <= 30; i++) days.push({ n: i, muted: true });
+    for (let i = 1; i <= 31; i++) days.push({ n: i });
+    for (let i = 1; days.length < 42; i++) days.push({ n: i, muted: true });
+    const daysV = days.map(d => {
+      const sel = !d.muted && d.n === 12;
+      return {
+        n: d.n,
+        style: { width: 24, height: 24, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: sel ? 600 : 500, background: sel ? 'var(--accent)' : 'transparent', color: sel ? '#FFFFFF' : d.muted ? 'var(--subtle)' : 'var(--ink)', opacity: d.muted ? 0.45 : 1 },
+        dots: d.muted ? [] : (dotMap[d.n] || []).map(k => ({ width: 4, height: 4, borderRadius: 2, background: `var(--${k})` }))
+      };
+    });
+    const week = [['M', 60], ['T', 85], ['W', 40], ['T', 100], ['F', 70], ['S', 30], ['S', 55]].map(([d, v], i) => ({
+      d, style: { width: '100%', height: v * 0.8 + 'px', borderRadius: 6, background: i === 3 ? 'var(--accent)' : 'var(--accent-soft)' }
+    }));
+    const scroll = (n) => this.track.current && this.track.current.scrollBy({ left: n * 336, behavior: 'smooth' });
+    return {
+      vars, days: daysV, week,
+      sky: this.buildSky(night, motion),
+      isA: dir !== 'Sign-in card', isB: dir === 'Sign-in card',
+      themeIcon: night ? 'ph-sun' : 'ph-moon',
+      toggleTheme: () => this.setState({ theme: night ? 'Dawn' : 'Night' }),
+      track: this.track, prev: () => scroll(-1), next: () => scroll(1)
+    };
+  }
+}
+</script>
+</body>
+</html>

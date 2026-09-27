@@ -82,7 +82,7 @@ export function OAuthButtons({ providers }: { providers: OAuthProvider[] }) {
           <a
             key={provider}
             href={oauthStartUrl(provider)}
-            className={`${className} flex h-11 items-center justify-center gap-3 rounded-control border px-4 text-sm font-semibold transition-colors`}
+            className={`${className} flex h-[50px] items-center justify-center gap-3 rounded-[14px] border px-4 text-[15px] font-semibold transition-colors duration-200`}
           >
             <Logo />
             <span>{label}</span>

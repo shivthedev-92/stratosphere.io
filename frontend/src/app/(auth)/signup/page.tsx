@@ -3,8 +3,7 @@
 import { useState, FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { BackgroundShell } from "@/components/background-shell";
-import { BrandMark } from "@/components/brand-mark";
+import { AUTH_INPUT, AUTH_PRIMARY_BUTTON, AuthShell, OrDivider } from "@/components/auth-shell";
 import { OAuthButtons, useAuthConfig } from "@/components/oauth-buttons";
 import { api } from "@/lib/api";
 
@@ -32,95 +31,87 @@ export default function SignupPage() {
   }
 
   return (
-    <BackgroundShell className="flex min-h-screen items-center justify-center px-4 text-fg" showSwitcher>
-      <div className="relative z-10 w-full max-w-md space-y-6 rounded-card border border-line bg-surface p-6 shadow-2xl shadow-tint backdrop-blur">
-        <div className="text-center">
-          <Link href="/" className="mb-5 inline-flex rounded-chip" aria-label="Stratosphere home">
-            <BrandMark compact size="md" />
-          </Link>
-          <h1 className="text-2xl font-bold text-fg">Create your account</h1>
-          <p className="text-fg-muted text-sm mt-1">Start your journey — guilt-free.</p>
-        </div>
+    <AuthShell
+      title="Start your calmer day."
+      subtitle="Create your account with Google or Microsoft. It takes a few seconds."
+    >
+      {config && config.providers.length > 0 ? <OAuthButtons providers={config.providers} /> : null}
+      {config && config.providers.length === 0 && !config.password_signup ? (
+        <p className="text-center text-sm text-fg-muted">Sign-up is closed right now. Please check back soon.</p>
+      ) : null}
+      {failed ? (
+        <p role="alert" className="text-center text-sm text-danger">
+          We couldn&apos;t load the sign-up options. Refresh the page to try again.
+        </p>
+      ) : null}
 
-        {config && config.providers.length > 0 ? <OAuthButtons providers={config.providers} /> : null}
-        {config && config.providers.length === 0 && !config.password_signup ? (
-          <p className="text-center text-sm text-fg-muted">Sign-up is closed right now. Please check back soon.</p>
-        ) : null}
-        {failed ? (
-          <p role="alert" className="text-center text-sm text-danger">
-            We couldn&apos;t load the sign-up options. Refresh the page to try again.
-          </p>
-        ) : null}
-
-        {/* Password sign-up is off in production: new accounts use Google or Microsoft. */}
-        {config?.password_signup ? (
-          <>
-            <div className="flex items-center gap-3 text-xs text-fg-subtle">
-              <span className="h-px flex-1 bg-line" />
-              or sign up with email
-              <span className="h-px flex-1 bg-line" />
-            </div>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label className="block text-sm text-fg-muted mb-1">What should we call you?</label>
+      {/* Password sign-up is off in production: new accounts use Google or Microsoft. */}
+      {config?.password_signup ? (
+        <>
+          <OrDivider label="or sign up with email" />
+          <form onSubmit={handleSubmit} className="flex flex-col gap-3">
+            <label className="flex flex-col gap-1.5 text-sm font-medium text-fg">
+              What should we call you?
               <input
                 type="text"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 required
+                autoComplete="name"
                 placeholder="Your name"
-                className="w-full px-4 py-2 rounded-control bg-field text-fg border border-line-strong focus:outline-none focus:border-accent"
+                className={AUTH_INPUT}
               />
-            </div>
-            <div>
-              <label className="block text-sm text-fg-muted mb-1">Email</label>
+            </label>
+            <label className="flex flex-col gap-1.5 text-sm font-medium text-fg">
+              Email
               <input
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
+                autoComplete="email"
                 placeholder="you@example.com"
-                className="w-full px-4 py-2 rounded-control bg-field text-fg border border-line-strong focus:outline-none focus:border-accent"
+                className={AUTH_INPUT}
               />
-            </div>
-            <div>
-              <label className="block text-sm text-fg-muted mb-1">Password</label>
+            </label>
+            <label className="flex flex-col gap-1.5 text-sm font-medium text-fg">
+              Password
               <input
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 minLength={8}
+                autoComplete="new-password"
                 placeholder="At least 8 characters"
-                className="w-full px-4 py-2 rounded-control bg-field text-fg border border-line-strong focus:outline-none focus:border-accent"
+                className={AUTH_INPUT}
               />
-            </div>
-
-            {error && <p className="text-danger text-sm">{error}</p>}
-
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full py-3 rounded-control bg-accent hover:bg-accent-hover disabled:opacity-40 disabled:cursor-not-allowed font-semibold text-white transition-colors"
-            >
+            </label>
+            {error && (
+              <p role="alert" className="text-sm text-danger">
+                {error}
+              </p>
+            )}
+            <button type="submit" disabled={loading} className={`mt-1 ${AUTH_PRIMARY_BUTTON}`}>
               {loading ? "Creating account…" : "Create account"}
             </button>
           </form>
-          </>
-        ) : null}
+        </>
+      ) : null}
 
-        <p className="text-center text-xs leading-5 text-fg-subtle">
-          By continuing, you acknowledge the{" "}
-          <Link href="/privacy" className="text-accent-soft hover:underline">privacy notice</Link>.
-        </p>
-
-        <p className="text-center text-sm text-fg-subtle">
-          Already have an account?{" "}
-          <Link href="/login" className="text-accent-soft hover:underline">
-            Sign in
-          </Link>
-        </p>
-      </div>
-    </BackgroundShell>
+      <p className="pt-1 text-center text-xs leading-5 text-fg-subtle">
+        By continuing, you acknowledge the{" "}
+        <Link href="/privacy" className="text-accent-soft hover:underline">
+          privacy notice
+        </Link>
+        .
+      </p>
+      <p className="text-center text-sm text-fg-muted">
+        Already have an account?{" "}
+        <Link href="/login" className="font-semibold text-accent-soft hover:underline">
+          Sign in
+        </Link>
+      </p>
+    </AuthShell>
   );
 }
