@@ -146,8 +146,27 @@ def test_ordinary_text_gets_reminders_only_reply():
     assert reply_for_text(FakeDB(), 1, "this deadline is killing me", NOW) == REMINDERS_ONLY_TEXT
 
 
-def test_reminder_text_is_title_only():
-    assert format_reminder("Read 15 minutes") == "⏰ Time for: Read 15 minutes"
+def test_reminder_is_a_friendly_note_with_first_name_and_title_only():
+    texts = [format_reminder("Read 15 minutes", "Priya Sharma", v) for v in range(3)]
+    for text in texts:
+        assert text.startswith(("Hey Priya", "Hi Priya"))
+        assert '"Read 15 minutes"' in text and text.endswith("— Aster")
+        assert "Sharma" not in text  # first name only
+    assert len(set(texts)) == 3  # a few ways of saying it
+
+
+def test_reminder_variant_is_stable_and_wraps():
+    assert format_reminder("x", "A", 7) == format_reminder("x", "A", 7)
+    assert format_reminder("x", "A", 3) == format_reminder("x", "A", 0)
+
+
+def test_reminder_without_a_name_says_hey_there():
+    assert format_reminder("Walk", "  ", 0).startswith("Hey there!")
+    assert format_reminder("Walk", None, 0).startswith("Hey there!")
+
+
+def test_braces_in_a_title_are_not_template_fields():
+    assert '"Plan {launch}"' in format_reminder("Plan {launch}", "Sam", 0)
 
 
 # --- client: token never leaks ----------------------------------------------
@@ -247,7 +266,7 @@ async def test_dispatch_sends_unlinks_blocked_and_releases_failed(monkeypatch):
     sent = await tg.dispatch_once(client, lambda: _Closable(), NOW)
 
     assert sent == 1
-    assert client.sent == [(1, "⏰ Time for: task 1")]
+    assert client.sent == [(1, format_reminder("task 1", "", ok.notification_id.int))]
     assert unlinked == [2, 5]  # blocked and missing chats; a plain rejection keeps its link
     assert released == [flaky.notification_id]  # rejected (4) keeps its claim
 

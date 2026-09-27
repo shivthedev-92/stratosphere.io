@@ -17,11 +17,11 @@ TEST_ROUTE = ("POST", "/me/telegram/test")
 
 @pytest.fixture
 def setup(monkeypatch):
-    user = SimpleNamespace(id="u1", telegram_chat_id=4242)
+    user = SimpleNamespace(id="u1", telegram_chat_id=4242, name="Priya Sharma")
     sent, unlinked = [], []
 
-    async def fake_send(chat_id):
-        sent.append(chat_id)
+    async def fake_send(chat_id, user_name=None):
+        sent.append((chat_id, user_name))
 
     # The app is shared across tests; keep its rate limit out of these ones.
     monkeypatch.delitem(RateLimitMiddleware.LIMITS, TEST_ROUTE)
@@ -38,7 +38,7 @@ def setup(monkeypatch):
 
 def test_sends_to_the_linked_chat(setup):
     assert setup.http.post("/me/telegram/test").status_code == 204
-    assert setup.sent == [4242]
+    assert setup.sent == [(4242, "Priya Sharma")]
 
 
 def test_needs_a_linked_chat(setup):
@@ -54,7 +54,7 @@ def test_needs_telegram_configured(setup):
 
 
 def test_blocked_bot_unlinks_and_asks_to_reconnect(setup):
-    async def blocked(_chat_id):
+    async def blocked(_chat_id, _user_name=None):
         raise tg.TelegramBlocked("sendMessage: forbidden")
 
     setup.monkeypatch.setattr(me_api, "send_test_message", blocked)
@@ -64,7 +64,7 @@ def test_blocked_bot_unlinks_and_asks_to_reconnect(setup):
 
 
 def test_missing_chat_unlinks_too(setup):
-    async def missing(_chat_id):
+    async def missing(_chat_id, _user_name=None):
         raise tg.TelegramChatMissing("sendMessage: Bad Request: chat not found")
 
     setup.monkeypatch.setattr(me_api, "send_test_message", missing)
@@ -73,7 +73,7 @@ def test_missing_chat_unlinks_too(setup):
 
 
 def test_other_rejections_keep_the_link(setup):
-    async def rejected(_chat_id):
+    async def rejected(_chat_id, _user_name=None):
         raise tg.TelegramRejected("sendMessage: Bad Request: message is too long")
 
     setup.monkeypatch.setattr(me_api, "send_test_message", rejected)
@@ -82,7 +82,7 @@ def test_other_rejections_keep_the_link(setup):
 
 
 def test_temporary_failure_keeps_the_link(setup):
-    async def down(_chat_id):
+    async def down(_chat_id, _user_name=None):
         raise tg.TelegramError("sendMessage: network error")
 
     setup.monkeypatch.setattr(me_api, "send_test_message", down)
@@ -91,10 +91,11 @@ def test_temporary_failure_keeps_the_link(setup):
     assert setup.unlinked == []
 
 
-def test_test_message_carries_no_personal_data():
-    # Same rule as reminders: nothing from the user's notes or reflections.
-    assert "Stratosphere" in tg.TEST_MESSAGE_TEXT
-    assert "{" not in tg.TEST_MESSAGE_TEXT
+def test_test_message_greets_by_first_name_only():
+    # Same rule as reminders: first name at most, nothing from notes or reflections.
+    text = tg.format_test_message("Priya Sharma")
+    assert text.startswith("Hey Priya!") and "Sharma" not in text
+    assert text.endswith("— Aster") and "{" not in text
 
 
 def test_button_is_rate_limited():

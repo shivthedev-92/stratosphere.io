@@ -31,7 +31,7 @@ Stratosphere is a planning tool, not therapy. When the crisis detector flags a c
 <img src="docs/images/safety-card.png" alt="Crisis resources card" width="520">
 
 ### Telegram reminders
-Connect Telegram from **Settings** and get a message when a timed task is due, usually within 30 seconds. Messages contain the task title only, never notes or reflections.
+Connect Telegram from **Settings** and get a message when a timed task is due, usually within 30 seconds. Messages come from Aster in a friendly, conversational tone ("Hey Priya! Just pinging to remind you…") and contain only your first name and the task title, never notes or reflections.
 
 <img src="docs/images/telegram-settings.png" alt="Telegram reminders settings" width="560">
 

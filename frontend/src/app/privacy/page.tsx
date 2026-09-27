@@ -35,7 +35,7 @@ export default function PrivacyPage() {
               </li>
               <li>
                 <span className="font-semibold text-fg">Telegram</span>, only if you connect it in Settings, delivers
-                your reminders. It receives the task title, nothing else. You can disconnect at any time.
+                your reminders. It receives your first name and the task title, nothing else. You can disconnect at any time.
               </li>
               <li>
                 <span className="font-semibold text-fg">Microsoft Azure</span> hosts the app and its database in India.

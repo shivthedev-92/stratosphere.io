@@ -166,7 +166,7 @@ export function TelegramSettings() {
     <div className="mt-6 rounded-card border border-line bg-surface p-4">
       <h3 className="text-base font-bold">Telegram reminders</h3>
       <p className="mt-1 text-sm text-fg-muted">
-        Get a Telegram message when a timed task is due. Messages show the task title only,
+        Get a Telegram message when a timed task is due. Messages show your first name and the task title,
         never your notes or reflections.
       </p>
 

@@ -152,8 +152,9 @@ LINK_INVALID_TEXT = (
 START_WITHOUT_TOKEN_TEXT = (
     "To receive reminders, open Stratosphere, go to Settings and choose Connect Telegram."
 )
-TEST_MESSAGE_TEXT = (
-    "Test from Stratosphere: this is where your task reminders will arrive. Nothing else to do."
+TEST_MESSAGE_TEMPLATE = (
+    "Hey {name}! Aster here, just testing the line. "
+    "Your task reminders will land right here, like this one. Nothing else to do. — Aster"
 )
 STOPPED_TEXT = "Disconnected. You won't get reminders here any more."
 NOT_LINKED_TEXT = "This chat isn't connected to a Stratosphere account."
@@ -171,8 +172,27 @@ def crisis_text() -> str:
     return "\n".join(lines)
 
 
-def format_reminder(task_title: str) -> str:
-    return f"⏰ Time for: {task_title}"
+# Reminders read like a note from Aster, the coach, not a system alert.
+# Only the first name and the task title go into a message: never notes or
+# reflections. The variant comes from the reminder's id, so a retried send
+# repeats the same text.
+REMINDER_TEMPLATES = (
+    'Hey {name}! Just pinging to remind you: "{task}" is up now. Keeping you posted. Bye! — Aster',
+    "Hi {name}, quick nudge from me: it's time for \"{task}\". You've got this. — Aster",
+    'Hey {name}! "{task}" is on your plan for right now. One small step at a time. — Aster',
+)
+
+
+def first_name(full_name: str | None) -> str:
+    """First word of the account name, or "there" ("Hey there!")."""
+    parts = (full_name or "").split()
+    return parts[0][:40] if parts else "there"
+
+
+def format_reminder(task_title: str, user_name: str | None = None, variant: int = 0) -> str:
+    template = REMINDER_TEMPLATES[variant % len(REMINDER_TEMPLATES)]
+    # Values are inserted, never re-parsed, so braces in a title are safe.
+    return template.format(name=first_name(user_name), task=task_title)
 
 
 def reply_for_text(db: Session, chat_id: int, text: str, now: datetime | None = None) -> str:
@@ -254,7 +274,11 @@ class TelegramClient:
         return await self._call("getUpdates", payload, timeout=timeout + 10)
 
 
-async def send_test_message(chat_id: int) -> None:
+def format_test_message(user_name: str | None) -> str:
+    return TEST_MESSAGE_TEMPLATE.format(name=first_name(user_name))
+
+
+async def send_test_message(chat_id: int, user_name: str | None = None) -> None:
     """One-off message for the "Send test message" button in Settings.
 
     Raises the same TelegramError subclasses as reminder delivery, so the
@@ -262,7 +286,7 @@ async def send_test_message(chat_id: int) -> None:
     """
     async with httpx.AsyncClient() as http:
         client = TelegramClient(http, settings.TELEGRAM_BOT_TOKEN or "", settings.TELEGRAM_API_BASE)
-        await client.send_message(chat_id, TEST_MESSAGE_TEXT)
+        await client.send_message(chat_id, format_test_message(user_name))
 
 
 # ==================#
@@ -275,13 +299,14 @@ class ClaimedReminder:
     notification_id: UUID
     chat_id: int
     task_title: str
+    user_name: str = ""
 
 
 def claim_due_reminders(db: Session, now: datetime | None = None) -> list[ClaimedReminder]:
     """Select due reminders for linked users and claim each one atomically."""
     now = now or _utcnow()
     rows = (
-        db.query(Notification.id, User.telegram_chat_id, Notification.body)
+        db.query(Notification.id, User.telegram_chat_id, Notification.body, User.name)
         .join(User, User.id == Notification.user_id)
         .join(Goal, Goal.id == Notification.goal_id)
         .filter(
@@ -298,14 +323,14 @@ def claim_due_reminders(db: Session, now: datetime | None = None) -> list[Claime
         .all()
     )
     claimed: list[ClaimedReminder] = []
-    for notification_id, chat_id, title in rows:
+    for notification_id, chat_id, title, user_name in rows:
         result = db.execute(
             update(Notification)
             .where(Notification.id == notification_id, Notification.telegram_sent_at.is_(None))
             .values(telegram_sent_at=now)
         )
         if result.rowcount == 1:
-            claimed.append(ClaimedReminder(notification_id, chat_id, title))
+            claimed.append(ClaimedReminder(notification_id, chat_id, title, user_name or ""))
     db.commit()
     return claimed
 
@@ -333,7 +358,10 @@ async def dispatch_once(
     sent = 0
     for reminder in claimed:
         try:
-            await client.send_message(reminder.chat_id, format_reminder(reminder.task_title))
+            text = format_reminder(
+                reminder.task_title, reminder.user_name, reminder.notification_id.int
+            )
+            await client.send_message(reminder.chat_id, text)
             sent += 1
         except (TelegramBlocked, TelegramChatMissing):
             logger.info("telegram: chat blocked the bot or no longer exists; unlinking")

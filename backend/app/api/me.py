@@ -128,7 +128,7 @@ async def telegram_test(
     if current_user.telegram_chat_id is None:
         raise HTTPException(status_code=409, detail="Connect Telegram first.")
     try:
-        await send_test_message(current_user.telegram_chat_id)
+        await send_test_message(current_user.telegram_chat_id, current_user.name)
     except (TelegramBlocked, TelegramChatMissing):
         # The chat was deleted or the bot blocked: this link is dead. Any
         # other rejection says nothing about the chat, so the link is kept.
