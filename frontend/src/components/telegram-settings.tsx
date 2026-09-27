@@ -195,7 +195,7 @@ export function TelegramSettings() {
           <button
             type="button"
             onClick={sendTest}
-            disabled={testState === "sending"}
+            disabled={testState === "sending" || busy}
             className="rounded-control border border-line-strong px-4 py-2 text-sm font-semibold hover:border-fg-subtle disabled:opacity-40 disabled:cursor-not-allowed"
           >
             {testState === "sending" ? "Sending…" : "Send test message"}
@@ -203,7 +203,9 @@ export function TelegramSettings() {
           <button
             type="button"
             onClick={disconnect}
-            disabled={busy}
+            // Not while a test is in flight: its result would land on the
+            // disconnected card.
+            disabled={busy || testState === "sending"}
             className="rounded-control border border-line-strong px-4 py-2 text-sm font-semibold hover:border-fg-subtle disabled:opacity-40 disabled:cursor-not-allowed"
           >
             Disconnect
