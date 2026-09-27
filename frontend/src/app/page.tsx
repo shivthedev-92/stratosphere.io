@@ -1,176 +1,90 @@
 import Link from "next/link";
-import { BackgroundShell } from "@/components/background-shell";
-import { BrandMark } from "@/components/brand-mark";
+import { ArrowRight } from "@phosphor-icons/react/dist/ssr";
 import { ContactForm } from "@/components/contact-form";
-import { RhythmIllustration } from "@/components/illustrations";
+import { EarthLimb, HeroSky } from "@/components/hero-sky";
+import { ScreensCarousel } from "@/components/screens-carousel";
+import { SiteNav } from "@/components/site-nav";
 
-const features = [
-  {
-    title: "Plan your day",
-    body: "Create timed or moment-based action items, mark priority, and see what needs attention today.",
-  },
-  {
-    title: "Reflect without pressure",
-    body: "Add journal entries with emotion labels so the app captures context, not just completion.",
-  },
-  {
-    title: "Review your rhythm",
-    body: "Use calendar dots, progress charts, completed items, and chat history to understand patterns over time.",
-  },
-  {
-    title: "Ask the life coach",
-    body: "The AI assistant uses your tasks and reflections to help you decide the next useful step.",
-  },
-];
-
-const appScreenshots = [
-  {
-    src: "/iphone-app-image-1.png",
-    alt: "Stratosphere splash screen on iPhone",
-    label: "Brand launch",
-  },
-  {
-    src: "/iphone-app-image-2.png",
-    alt: "Stratosphere mobile calendar dashboard",
-    label: "Calendar view",
-  },
-  {
-    src: "/iphone-app-image-3.png",
-    alt: "Stratosphere mobile progress and action item list",
-    label: "Progress tracking",
-  },
-];
-
+/**
+ * Public landing page, "Launch hero" direction of design/handoff-landing:
+ * sky hero, the in-app screens carousel, partnerships/contact, footer.
+ */
 export default function Home() {
   return (
-    <BackgroundShell className="min-h-screen overflow-hidden text-fg">
-      <main className="relative z-10">
-        <section className="relative flex min-h-[92vh] items-center px-6 py-20">
-          <RhythmIllustration className="pointer-events-none absolute left-1/2 top-1/2 h-[560px] w-[980px] -translate-x-1/2 -translate-y-1/2 opacity-35" />
-          <div className="relative mx-auto grid w-full max-w-6xl gap-10 lg:grid-cols-[minmax(0,1fr)_360px] lg:items-end">
-            <div className="max-w-3xl">
-              <BrandMark size="md" />
-              <h1 className="mt-5 text-5xl font-black leading-tight sm:text-7xl">
-                A calmer way to choose, reflect, and finish your day.
-              </h1>
-              <p className="mt-6 max-w-2xl text-lg leading-8 text-fg-muted">
-                Stratosphere helps you plan action items, record how they felt, and use those reflections to make
-                better decisions tomorrow.
-              </p>
-              <div className="mt-8 flex flex-wrap gap-4">
-                <Link
-                  href="/signup"
-                  className="rounded-control bg-accent text-white px-6 py-3 font-bold transition-colors hover:bg-accent-hover"
-                >
-                  Get started
-                </Link>
-                <Link
-                  href="/login"
-                  className="rounded-control border border-line-strong px-6 py-3 font-bold transition-colors hover:border-fg-subtle"
-                >
-                  Sign in
-                </Link>
-                <Link
-                  href="/contact"
-                  className="rounded-control border border-line-strong px-6 py-3 font-bold text-fg transition-colors hover:border-fg-subtle"
-                >
-                  Contact us
-                </Link>
-              </div>
-              <div className="mt-6 inline-flex items-center gap-3 rounded-control border border-line bg-surface px-4 py-3 shadow-lg shadow-tint">
-                <img
-                  src="/appstore.png"
-                  alt=""
-                  className="h-11 w-11 rounded-control"
-                />
-                <div>
-                  <p className="text-xs font-semibold uppercase text-fg-muted">Available on</p>
-                  <p className="text-lg font-black leading-tight text-fg">App Store</p>
-                </div>
-              </div>
-            </div>
-
-            <div className="rounded-card border border-line bg-surface p-5 shadow-xl shadow-tint backdrop-blur">
-              <p className="text-sm font-bold text-fg-muted">Today</p>
-              <div className="mt-5 space-y-3">
-                {["Review action items", "Add reflection", "Ask coach for next step"].map((item, index) => (
-                  <div key={item} className="flex items-center gap-3 rounded-control bg-surface p-3">
-                    <span className="grid h-8 w-8 place-items-center rounded-md bg-accent text-white text-sm font-black">
-                      {index + 1}
-                    </span>
-                    <span className="text-sm font-semibold text-fg">{item}</span>
-                  </div>
-                ))}
-              </div>
-              <div className="mt-5 rounded-control border border-low/30 bg-low-bg p-4">
-                <p className="text-sm font-bold text-low">Reflection</p>
-                <p className="mt-2 text-sm text-low">
-                  Calm, hopeful, and ready to close the loop.
-                </p>
-              </div>
-            </div>
+    <div className="min-h-screen bg-canvas text-fg">
+      <section className="hero-sky relative min-h-[760px] overflow-hidden sm:min-h-[960px]">
+        <HeroSky />
+        <EarthLimb />
+        <SiteNav />
+        <div className="relative z-[3] mx-auto flex max-w-[908px] flex-col items-center gap-7 px-6 pt-32 text-center sm:max-w-[min(908px,calc(100vw-232px))] sm:pt-44">
+          {/* The handoff's "Now on the App Store" chip waits for the iPhone app to be published. */}
+          <Link
+            href="/signup"
+            className="inline-flex items-center gap-2.5 rounded-full border border-line bg-surface py-1.5 pl-1.5 pr-3.5 backdrop-blur-md"
+          >
+            <span className="rounded-full bg-accent/20 px-2.5 py-0.5 text-xs font-semibold text-accent-soft">New</span>
+            <span className="whitespace-nowrap text-[13px] font-medium text-fg-muted sm:text-sm">
+              Sign in with Google or Microsoft
+            </span>
+            <ArrowRight size={14} aria-hidden="true" className="text-fg-muted" />
+          </Link>
+          <h1 className="m-0 text-[clamp(40px,5.4vw,76px)] font-semibold leading-[1.02] tracking-[-0.045em] [text-wrap:balance]">
+            A calmer way to choose, reflect, and finish your day.
+          </h1>
+          <p className="m-0 max-w-[600px] text-[17px] leading-[1.55] text-fg-muted sm:text-[19px]">
+            Stratosphere helps you plan action items, record how they felt, and use those reflections to make better
+            decisions tomorrow.
+          </p>
+          <div className="flex flex-wrap justify-center gap-3">
+            <Link
+              href="/signup"
+              className="inline-flex h-[54px] items-center gap-2 rounded-[14px] bg-accent px-6 text-base font-semibold text-white transition-colors duration-200 hover:bg-accent-hover"
+              style={{ boxShadow: "0 10px 30px -10px var(--accent)" }}
+            >
+              Get started
+              <ArrowRight size={18} aria-hidden="true" />
+            </Link>
+            <Link
+              href="/login"
+              className="inline-flex h-[54px] items-center rounded-[14px] border border-line bg-[var(--btn2)] px-6 text-base font-semibold text-fg backdrop-blur-md transition-colors duration-200 hover:border-fg-subtle"
+            >
+              Sign in
+            </Link>
+            {/* TODO(app-store-badge): Apple's official "Download on the App Store" badge SVG, once the iPhone app is published. */}
           </div>
-        </section>
+        </div>
+      </section>
 
-        <section className="mx-auto grid w-full max-w-6xl gap-4 px-6 py-12 sm:grid-cols-2 lg:grid-cols-4">
-          {features.map((feature) => (
-            <article key={feature.title} className="rounded-card border border-line bg-surface p-5">
-              <h2 className="text-lg font-black">{feature.title}</h2>
-              <p className="mt-3 text-sm leading-6 text-fg-muted">{feature.body}</p>
-            </article>
-          ))}
-        </section>
+      <ScreensCarousel />
 
-        <section className="mx-auto w-full max-w-6xl px-6 py-14">
-          <div className="max-w-2xl">
-            <p className="text-sm font-bold uppercase text-accent-soft">Mobile experience</p>
-            <h2 className="mt-3 text-3xl font-black">Your day, reflections, and progress in one iPhone app.</h2>
-            <p className="mt-4 text-fg-muted">
-              Open with a calm brand experience, review scheduled priorities on the calendar, and track completed work
-              alongside the reflections that shaped it.
+      <section id="contact" className="scroll-mt-8 bg-canvas">
+        <div className="mx-auto grid w-full max-w-[1240px] gap-8 px-4 pb-24 sm:px-8 lg:grid-cols-[minmax(0,1fr)_420px]">
+          <div className="flex flex-col gap-4">
+            <div className="text-[13px] font-semibold uppercase tracking-[0.08em] text-accent-soft">Partnerships</div>
+            <h2 className="m-0 text-[34px] font-semibold leading-[1.08] tracking-[-0.035em] [text-wrap:balance]">
+              Looking for business integration or team access?
+            </h2>
+            <p className="m-0 max-w-2xl text-lg leading-[1.55] text-fg-muted">
+              Contact us for sales, workplace pilots, wellbeing programs, or custom productivity workflows. For product
+              support, signed-in users can raise a ticket from Settings.
             </p>
           </div>
-          <div className="mt-10 grid items-end gap-6 md:grid-cols-3">
-            {appScreenshots.map((screenshot, index) => (
-              <figure
-                key={screenshot.src}
-                className={`mx-auto w-full max-w-[280px] ${
-                  index === 1 ? "md:-translate-y-6" : ""
-                }`}
-              >
-                <div className="aspect-[9/19] overflow-hidden rounded-[2rem] border border-line bg-surface-solid shadow-2xl shadow-tint">
-                  <img
-                    src={screenshot.src}
-                    alt={screenshot.alt}
-                    className="h-full w-full object-cover object-top"
-                  />
-                </div>
-                <figcaption className="mt-4 text-center text-sm font-bold text-fg-muted">
-                  {screenshot.label}
-                </figcaption>
-              </figure>
-            ))}
-          </div>
-        </section>
-
-        <section className="mx-auto grid w-full max-w-6xl gap-8 px-6 py-14 lg:grid-cols-[minmax(0,1fr)_420px]">
-          <div>
-            <p className="text-sm font-bold uppercase text-accent-soft">Partnerships</p>
-            <h2 className="mt-3 text-3xl font-black">Looking for business integration or team access?</h2>
-            <p className="mt-4 max-w-2xl text-fg-muted">
-              Contact us for sales, workplace pilots, wellbeing programs, or custom productivity workflows. For
-              product support, signed-in users can raise a ticket from Settings.
-            </p>
-          </div>
-          <div className="rounded-card border border-line bg-surface p-5">
+          <div className="rounded-panel border border-line bg-surface p-6 backdrop-blur-md">
             <ContactForm source="marketing" />
           </div>
-        </section>
-        <footer className="mx-auto flex w-full max-w-6xl items-center justify-between gap-4 px-6 py-8 text-sm text-fg-subtle">
-          <span>Stratosphere recruiter demonstration</span>
-          <Link href="/privacy" className="hover:text-fg-muted">Privacy</Link>
-        </footer>
-      </main>
-    </BackgroundShell>
+        </div>
+      </section>
+
+      <footer className="border-t border-line bg-canvas">
+        <div className="mx-auto flex max-w-[1240px] flex-wrap items-center justify-between gap-4 px-4 py-7 text-sm text-fg-muted sm:px-8">
+          <span>© 2026 Stratosphere</span>
+          <span className="flex gap-5">
+            <Link href="/privacy" className="hover:text-fg">Privacy</Link>
+            {/* No Terms page yet; the handoff's "Terms" link is left out until it exists. */}
+            <Link href="/contact" className="hover:text-fg">Contact</Link>
+          </span>
+        </div>
+      </footer>
+    </div>
   );
 }
