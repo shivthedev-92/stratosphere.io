@@ -164,4 +164,4 @@ Timed tasks can send a Telegram message when they are due. The bot runs inside t
 
 Only one server can poll a bot at a time: while production uses the bot, run local development with `TELEGRAM_BOT_TOKEN` empty (or a separate test bot), otherwise the two fight over updates and Telegram returns "Conflict" errors.
 
-Reminders arrive within about 30 seconds of the task's time. Messages contain the task title only. Treat the token like a password: anyone with it can send messages as the bot.
+Reminders arrive within about 30 seconds of the task's time. Messages contain only the user's first name and the task title. Treat the token like a password: anyone with it can send messages as the bot.

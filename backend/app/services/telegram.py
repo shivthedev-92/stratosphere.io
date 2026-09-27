@@ -1,13 +1,13 @@
 ############################################################################
-#    _____ __             __                   __                     _     
-#   / ___// /__________ _/ /_____  _________  / /_  ___  ________    (_)___ 
+#    _____ __             __                   __                     _
+#   / ___// /__________ _/ /_____  _________  / /_  ___  ________    (_)___
 #   \__ \/ __/ ___/ __ `/ __/ __ \/ ___/ __ \/ __ \/ _ \/ ___/ _ \  / / __ \
 #  ___/ / /_/ /  / /_/ / /_/ /_/ (__  ) /_/ / / / /  __/ /  /  __/ / / /_/ /
-# /____/\__/_/   \__,_/\__/\____/____/ .___/_/ /_/\___/_/   \___(_)_/\____/ 
-#                                   /_/                                     
+# /____/\__/_/   \__,_/\__/\____/____/ .___/_/ /_/\___/_/   \___(_)_/\____/
+#                                   /_/
 ############################################################################
 # Copyright (c) 2024. Sivarajan kakamaniyan. All rights reserved.
-# Statosphere is a product of Sivarajan Kakamaniyan. 
+# Statosphere is a product of Sivarajan Kakamaniyan.
 # Unauthorized copying of this file, via any medium is strictly prohibited.
 # Version 0.1.0 | 2024-06
 ############################################################################
@@ -78,9 +78,10 @@ def _hash(token: str) -> str:
     return hashlib.sha256(token.encode()).hexdigest()
 
 
-#==================#
+# ==================#
 # Account linking  |
-#==================#
+# ==================#
+
 
 def create_link(db: Session, user: User, now: datetime | None = None) -> tuple[str, datetime]:
     """Issue a one-time deep link. Only the hash is stored."""
@@ -136,9 +137,9 @@ def unlink_user(db: Session, user: User) -> None:
     db.commit()
 
 
-#===============#
+# ===============#
 # Bot messages  |
-#===============#
+# ===============#
 
 LINKED_TEXT = (
     "Connected. You'll get your Stratosphere task reminders here.\n\n"
@@ -150,6 +151,10 @@ LINK_INVALID_TEXT = (
 )
 START_WITHOUT_TOKEN_TEXT = (
     "To receive reminders, open Stratosphere, go to Settings and choose Connect Telegram."
+)
+TEST_MESSAGE_TEMPLATE = (
+    "Hey {name}! Aster here, just testing the line. "
+    "Your task reminders will land right here, like this one. Nothing else to do. — Aster"
 )
 STOPPED_TEXT = "Disconnected. You won't get reminders here any more."
 NOT_LINKED_TEXT = "This chat isn't connected to a Stratosphere account."
@@ -167,8 +172,27 @@ def crisis_text() -> str:
     return "\n".join(lines)
 
 
-def format_reminder(task_title: str) -> str:
-    return f"⏰ Time for: {task_title}"
+# Reminders read like a note from Aster, the coach, not a system alert.
+# Only the first name and the task title go into a message: never notes or
+# reflections. The variant comes from the reminder's id, so a retried send
+# repeats the same text.
+REMINDER_TEMPLATES = (
+    'Hey {name}! Just pinging to remind you: "{task}" is up now. Keeping you posted. Bye! — Aster',
+    "Hi {name}, quick nudge from me: it's time for \"{task}\". You've got this. — Aster",
+    'Hey {name}! "{task}" is on your plan for right now. One small step at a time. — Aster',
+)
+
+
+def first_name(full_name: str | None) -> str:
+    """First word of the account name, or "there" ("Hey there!")."""
+    parts = (full_name or "").split()
+    return parts[0][:40] if parts else "there"
+
+
+def format_reminder(task_title: str, user_name: str | None = None, variant: int = 0) -> str:
+    template = REMINDER_TEMPLATES[variant % len(REMINDER_TEMPLATES)]
+    # Values are inserted, never re-parsed, so braces in a title are safe.
+    return template.format(name=first_name(user_name), task=task_title)
 
 
 def reply_for_text(db: Session, chat_id: int, text: str, now: datetime | None = None) -> str:
@@ -187,9 +211,10 @@ def reply_for_text(db: Session, chat_id: int, text: str, now: datetime | None = 
     return REMINDERS_ONLY_TEXT
 
 
-#===========#
+# ===========#
 # API client |
-#===========#
+# ===========#
+
 
 class TelegramError(Exception):
     """A failed call. The message never contains the request URL (token)."""
@@ -202,6 +227,12 @@ class TelegramBlocked(TelegramError):
 class TelegramRejected(TelegramError):
     """A permanent rejection (4xx other than 403/429, e.g. "chat not found").
     Retrying the same request cannot succeed."""
+
+
+class TelegramChatMissing(TelegramRejected):
+    """The chat no longer exists ("chat not found"): the link is dead, the same
+    as a blocked bot. Other rejections (a bad request, a bot misconfiguration)
+    say nothing about the chat and must not unlink it."""
 
 
 class TelegramClient:
@@ -221,8 +252,11 @@ class TelegramClient:
         except ValueError:
             raise TelegramError(f"{method}: HTTP {response.status_code}") from None
         if not data.get("ok"):
-            detail = f"{method}: {data.get('description', 'error')}"
+            description = str(data.get("description", "error"))
+            detail = f"{method}: {description}"
             if 400 <= response.status_code < 500 and response.status_code != 429:
+                if "chat not found" in description.lower():
+                    raise TelegramChatMissing(detail)
                 raise TelegramRejected(detail)
             raise TelegramError(detail)
         return data["result"]
@@ -240,22 +274,39 @@ class TelegramClient:
         return await self._call("getUpdates", payload, timeout=timeout + 10)
 
 
-#==================#
+def format_test_message(user_name: str | None) -> str:
+    return TEST_MESSAGE_TEMPLATE.format(name=first_name(user_name))
+
+
+async def send_test_message(chat_id: int, user_name: str | None = None) -> None:
+    """One-off message for the "Send test message" button in Settings.
+
+    Raises the same TelegramError subclasses as reminder delivery, so the
+    caller can tell a blocked bot from a temporary failure.
+    """
+    async with httpx.AsyncClient() as http:
+        client = TelegramClient(http, settings.TELEGRAM_BOT_TOKEN or "", settings.TELEGRAM_API_BASE)
+        await client.send_message(chat_id, format_test_message(user_name))
+
+
+# ==================#
 # Reminder sender  |
-#==================#
+# ==================#
+
 
 @dataclass(frozen=True)
 class ClaimedReminder:
     notification_id: UUID
     chat_id: int
     task_title: str
+    user_name: str = ""
 
 
 def claim_due_reminders(db: Session, now: datetime | None = None) -> list[ClaimedReminder]:
     """Select due reminders for linked users and claim each one atomically."""
     now = now or _utcnow()
     rows = (
-        db.query(Notification.id, User.telegram_chat_id, Notification.body)
+        db.query(Notification.id, User.telegram_chat_id, Notification.body, User.name)
         .join(User, User.id == Notification.user_id)
         .join(Goal, Goal.id == Notification.goal_id)
         .filter(
@@ -272,14 +323,14 @@ def claim_due_reminders(db: Session, now: datetime | None = None) -> list[Claime
         .all()
     )
     claimed: list[ClaimedReminder] = []
-    for notification_id, chat_id, title in rows:
+    for notification_id, chat_id, title, user_name in rows:
         result = db.execute(
             update(Notification)
             .where(Notification.id == notification_id, Notification.telegram_sent_at.is_(None))
             .values(telegram_sent_at=now)
         )
         if result.rowcount == 1:
-            claimed.append(ClaimedReminder(notification_id, chat_id, title))
+            claimed.append(ClaimedReminder(notification_id, chat_id, title, user_name or ""))
     db.commit()
     return claimed
 
@@ -287,9 +338,7 @@ def claim_due_reminders(db: Session, now: datetime | None = None) -> list[Claime
 def release_claim(db: Session, notification_id: UUID) -> None:
     """Undo a claim after a retryable failure so the next tick tries again."""
     db.execute(
-        update(Notification)
-        .where(Notification.id == notification_id)
-        .values(telegram_sent_at=None)
+        update(Notification).where(Notification.id == notification_id).values(telegram_sent_at=None)
     )
     db.commit()
 
@@ -309,10 +358,13 @@ async def dispatch_once(
     sent = 0
     for reminder in claimed:
         try:
-            await client.send_message(reminder.chat_id, format_reminder(reminder.task_title))
+            text = format_reminder(
+                reminder.task_title, reminder.user_name, reminder.notification_id.int
+            )
+            await client.send_message(reminder.chat_id, text)
             sent += 1
-        except TelegramBlocked:
-            logger.info("telegram: chat blocked the bot; unlinking")
+        except (TelegramBlocked, TelegramChatMissing):
+            logger.info("telegram: chat blocked the bot or no longer exists; unlinking")
             await asyncio.to_thread(_with_session, session_factory, unlink_chat, reminder.chat_id)
         except TelegramRejected as exc:
             # Permanent: keep the claim so it is not resent every tick.
@@ -370,9 +422,10 @@ async def poll_forever(client: TelegramClient, session_factory) -> None:
             await asyncio.sleep(ERROR_BACKOFF_SECONDS)
 
 
-#==========#
+# ==========#
 # Lifespan |
-#==========#
+# ==========#
+
 
 class TelegramWorkers:
     """Started from the FastAPI lifespan; stopped on shutdown."""

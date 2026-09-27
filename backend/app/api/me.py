@@ -1,18 +1,19 @@
 ############################################################################
-#    _____ __             __                   __                     _     
-#   / ___// /__________ _/ /_____  _________  / /_  ___  ________    (_)___ 
+#    _____ __             __                   __                     _
+#   / ___// /__________ _/ /_____  _________  / /_  ___  ________    (_)___
 #   \__ \/ __/ ___/ __ `/ __/ __ \/ ___/ __ \/ __ \/ _ \/ ___/ _ \  / / __ \
 #  ___/ / /_/ /  / /_/ / /_/ /_/ (__  ) /_/ / / / /  __/ /  /  __/ / / /_/ /
-# /____/\__/_/   \__,_/\__/\____/____/ .___/_/ /_/\___/_/   \___(_)_/\____/ 
-#                                   /_/                                     
+# /____/\__/_/   \__,_/\__/\____/____/ .___/_/ /_/\___/_/   \___(_)_/\____/
+#                                   /_/
 ############################################################################
 # Copyright (c) 2024. Sivarajan kakamaniyan. All rights reserved.
-# Statosphere is a product of Sivarajan Kakamaniyan. 
+# Statosphere is a product of Sivarajan Kakamaniyan.
 # Unauthorized copying of this file, via any medium is strictly prohibited.
 # Version 0.1.0 | 2024-06
 ############################################################################
 
 from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.concurrency import run_in_threadpool
 from sqlalchemy.orm import Session
 
 from app.db import get_db
@@ -26,7 +27,15 @@ from app.schemas.auth import (
     UserOut,
     UserUpdate,
 )
-from app.services.telegram import create_link, telegram_configured, unlink_user
+from app.services.telegram import (
+    TelegramBlocked,
+    TelegramChatMissing,
+    TelegramError,
+    create_link,
+    send_test_message,
+    telegram_configured,
+    unlink_user,
+)
 
 router = APIRouter(tags=["users"])
 
@@ -106,3 +115,32 @@ def telegram_unlink(
     db: Session = Depends(get_db),
 ) -> None:
     unlink_user(db, current_user)
+
+
+@router.post("/me/telegram/test", status_code=status.HTTP_204_NO_CONTENT)
+async def telegram_test(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> None:
+    """Send a test message to the linked chat, so users can see it works."""
+    if not telegram_configured():
+        raise HTTPException(status_code=503, detail="Telegram reminders are not set up.")
+    if current_user.telegram_chat_id is None:
+        raise HTTPException(status_code=409, detail="Connect Telegram first.")
+    try:
+        await send_test_message(current_user.telegram_chat_id, current_user.name)
+    except (TelegramBlocked, TelegramChatMissing):
+        # The chat was deleted or the bot blocked: this link is dead. Any
+        # other rejection says nothing about the chat, so the link is kept.
+        await run_in_threadpool(unlink_user, db, current_user)
+        raise HTTPException(
+            status_code=409,
+            detail=(
+                "Telegram says the bot was blocked or the chat was deleted. Connect Telegram again."
+            ),
+        ) from None
+    except TelegramError:
+        raise HTTPException(
+            status_code=502,
+            detail="Telegram didn't take the message. Please try again in a minute.",
+        ) from None

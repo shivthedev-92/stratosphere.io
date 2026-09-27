@@ -14,6 +14,7 @@ from app.services.telegram import (
     START_WITHOUT_TOKEN_TEXT,
     ClaimedReminder,
     TelegramBlocked,
+    TelegramChatMissing,
     TelegramClient,
     TelegramError,
     TelegramRejected,
@@ -27,6 +28,7 @@ TOKEN = "123456:SECRET-BOT-TOKEN"
 
 
 # --- fakes -------------------------------------------------------------------
+
 
 class FakeUser:
     def __init__(self):
@@ -80,6 +82,7 @@ def bot_settings(monkeypatch):
 
 # --- linking -----------------------------------------------------------------
 
+
 def test_link_url_carries_token_but_only_hash_is_stored():
     user, db = FakeUser(), FakeDB()
     url, expires = tg.create_link(db, user, NOW)
@@ -132,6 +135,7 @@ def test_stop_unlinks():
 
 # --- safety ------------------------------------------------------------------
 
+
 def test_crisis_message_to_bot_gets_resources_not_boilerplate():
     reply = reply_for_text(FakeDB(), 1, "honestly I want to kill myself", NOW)
     assert reply == crisis_text()
@@ -142,15 +146,36 @@ def test_ordinary_text_gets_reminders_only_reply():
     assert reply_for_text(FakeDB(), 1, "this deadline is killing me", NOW) == REMINDERS_ONLY_TEXT
 
 
-def test_reminder_text_is_title_only():
-    assert format_reminder("Read 15 minutes") == "⏰ Time for: Read 15 minutes"
+def test_reminder_is_a_friendly_note_with_first_name_and_title_only():
+    texts = [format_reminder("Read 15 minutes", "Priya Sharma", v) for v in range(3)]
+    for text in texts:
+        assert text.startswith(("Hey Priya", "Hi Priya"))
+        assert '"Read 15 minutes"' in text and text.endswith("— Aster")
+        assert "Sharma" not in text  # first name only
+    assert len(set(texts)) == 3  # a few ways of saying it
+
+
+def test_reminder_variant_is_stable_and_wraps():
+    assert format_reminder("x", "A", 7) == format_reminder("x", "A", 7)
+    assert format_reminder("x", "A", 3) == format_reminder("x", "A", 0)
+
+
+def test_reminder_without_a_name_says_hey_there():
+    assert format_reminder("Walk", "  ", 0).startswith("Hey there!")
+    assert format_reminder("Walk", None, 0).startswith("Hey there!")
+
+
+def test_braces_in_a_title_are_not_template_fields():
+    assert '"Plan {launch}"' in format_reminder("Plan {launch}", "Sam", 0)
 
 
 # --- client: token never leaks ----------------------------------------------
 
+
 def _client(handler):
-    return TelegramClient(httpx.AsyncClient(transport=httpx.MockTransport(handler)), TOKEN,
-                          "https://api.telegram.org")
+    return TelegramClient(
+        httpx.AsyncClient(transport=httpx.MockTransport(handler)), TOKEN, "https://api.telegram.org"
+    )
 
 
 @pytest.mark.asyncio
@@ -173,9 +198,20 @@ async def test_403_is_blocked():
 
 @pytest.mark.asyncio
 async def test_permanent_4xx_is_rejected_not_retryable():
-    resp = {"ok": False, "description": "Bad Request: chat not found"}
-    with pytest.raises(TelegramRejected, match="chat not found"):
+    resp = {"ok": False, "description": "Bad Request: message text is empty"}
+    with pytest.raises(TelegramRejected, match="message text is empty") as exc:
         await _client(lambda r: httpx.Response(400, json=resp)).send_message(1, "hi")
+    # Says nothing about the chat, so it must not be treated as a dead link.
+    assert not isinstance(exc.value, TelegramChatMissing)
+
+
+@pytest.mark.asyncio
+async def test_chat_not_found_is_a_missing_chat():
+    resp = {"ok": False, "description": "Bad Request: chat not found"}
+    with pytest.raises(TelegramChatMissing, match="chat not found") as exc:
+        await _client(lambda r: httpx.Response(400, json=resp)).send_message(1, "hi")
+    # Still a permanent rejection: never retried.
+    assert isinstance(exc.value, TelegramRejected)
 
 
 @pytest.mark.asyncio
@@ -195,6 +231,7 @@ async def test_not_ok_is_error():
 
 # --- dispatch ----------------------------------------------------------------
 
+
 class FakeClient:
     def __init__(self, fail=None):
         self.sent, self.fail = [], fail or {}
@@ -207,11 +244,11 @@ class FakeClient:
 
 @pytest.mark.asyncio
 async def test_dispatch_sends_unlinks_blocked_and_releases_failed(monkeypatch):
-    ok, blocked, flaky, rejected = (
-        ClaimedReminder(uuid4(), c, f"task {c}") for c in (1, 2, 3, 4)
+    ok, blocked, flaky, rejected, missing = (
+        ClaimedReminder(uuid4(), c, f"task {c}") for c in (1, 2, 3, 4, 5)
     )
     monkeypatch.setattr(
-        tg, "claim_due_reminders", lambda db, now=None: [ok, blocked, flaky, rejected]
+        tg, "claim_due_reminders", lambda db, now=None: [ok, blocked, flaky, rejected, missing]
     )
     unlinked, released = [], []
     monkeypatch.setattr(tg, "unlink_chat", lambda db, chat_id: unlinked.append(chat_id))
@@ -219,13 +256,18 @@ async def test_dispatch_sends_unlinks_blocked_and_releases_failed(monkeypatch):
     monkeypatch.setattr(tg.asyncio, "sleep", _no_sleep)
 
     client = FakeClient(
-        fail={2: TelegramBlocked("x"), 3: TelegramError("x"), 4: TelegramRejected("x")}
+        fail={
+            2: TelegramBlocked("x"),
+            3: TelegramError("x"),
+            4: TelegramRejected("x"),
+            5: TelegramChatMissing("x"),
+        }
     )
     sent = await tg.dispatch_once(client, lambda: _Closable(), NOW)
 
     assert sent == 1
-    assert client.sent == [(1, "⏰ Time for: task 1")]
-    assert unlinked == [2]
+    assert client.sent == [(1, format_reminder("task 1", "", ok.notification_id.int))]
+    assert unlinked == [2, 5]  # blocked and missing chats; a plain rejection keeps its link
     assert released == [flaky.notification_id]  # rejected (4) keeps its claim
 
 

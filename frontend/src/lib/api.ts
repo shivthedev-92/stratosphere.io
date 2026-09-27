@@ -297,6 +297,7 @@ export const api = {
   telegramStatus: () => request<TelegramStatusOut>("/me/telegram"),
   telegramLink: () => request<TelegramLinkOut>("/me/telegram/link", { method: "POST" }),
   telegramUnlink: () => request<void>("/me/telegram", { method: "DELETE" }),
+  telegramTest: () => request<void>("/me/telegram/test", { method: "POST" }),
   signup: (email: string, password: string, name: string) =>
     request<TokenOut>("/auth/signup", {
       method: "POST",
