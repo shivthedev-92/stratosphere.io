@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=Newsreader:ital,opsz,wght@1,6..72,400&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css">
+<link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/fill/style.css">
+<style>
+body{margin:0;font-family:'Instrument Sans',system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+a{color:inherit;text-decoration:none}a:hover{opacity:.85}
+input,textarea,button{font-family:inherit}
+</style>
+</helmet>
+<div style="{{ vars }}">
+<div style="min-height:100vh;background:var(--canvas,#15141D);color:var(--ink,#F3F2F8);padding:64px 64px 120px;display:flex;flex-direction:column;gap:72px">
+
+<header style="display:flex;flex-direction:column;gap:12px;max-width:900px">
+<div style="font:500 12px 'JetBrains Mono',monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--muted,#A6A3B8)">Stratosphere iOS · Night &amp; Dawn · 390 × 844</div>
+<h1 style="margin:0;font-size:48px;font-weight:600;letter-spacing:-0.035em;line-height:1.05">Mobile app screens</h1>
+<p style="margin:0;font-size:17px;line-height:1.55;color:var(--muted,#A6A3B8);text-wrap:pretty">Every screen in <span style="font-family:'JetBrains Mono',monospace;font-size:14px">mobile/App.tsx</span>, rebuilt on the design system. Navigation moves from one long dashboard to four tabs: Today, Calendar, Aster, Progress. Settings opens from the avatar, notifications from the bell. Switch Night or Dawn with the theme tweak.</p>
+</header>
+
+<section data-screen-label="Onboarding" style="display:flex;flex-direction:column;gap:28px">
+<h2 style="margin:0;font-size:22px;font-weight:600">Onboarding</h2>
+<div style="display:flex;flex-wrap:wrap;gap:56px;align-items:flex-start">
+
+<figure style="margin:0;display:flex;flex-direction:column;gap:14px;width:390px">
+<figcaption style="display:flex;flex-direction:column;gap:4px"><span style="font:500 12px 'JetBrains Mono',monospace;color:var(--muted,#A6A3B8)">01 · LAUNCH</span><span style="font-size:14px;line-height:1.45;color:var(--muted,#A6A3B8)">Replaces the blue splash and "Starting Stratosphere..." loader.</span></figcaption>
+<div data-screen-label="01 Launch" style="position:relative;width:390px;height:844px;border-radius:48px;overflow:hidden;background:var(--launch,linear-gradient(180deg,#15123A 0%,#0B0A14 70%));color:var(--ink,#F3F2F8);box-shadow:var(--shadow,0 40px 80px -40px rgba(0,0,0,.9)), 0 0 0 1px var(--frame,#2A2840)">
+<div style="position:absolute;top:11px;left:50%;transform:translateX(-50%);width:124px;height:36px;border-radius:20px;background:#000;z-index:4"></div>
+<div style="height:54px;padding:0 32px;display:flex;align-items:center;justify-content:space-between;font-size:16px;font-weight:600"><span>9:41</span><span style="display:flex;gap:6px"><i class="ph-fill ph-cell-signal-full"></i><i class="ph-fill ph-wifi-high"></i><i class="ph-fill ph-battery-full"></i></span></div>
+<div style="position:absolute;left:-50%;right:-50%;bottom:-560px;height:760px;border-radius:50%;background:var(--bg,#0B0A14);box-shadow:0 -30px 110px -10px var(--atmo,#6B5CFF), inset 0 1px 0 var(--limb,rgba(167,155,255,.55))"></div>
+<div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:22px;padding-bottom:60px">
+<svg viewBox="0 0 64 64" width="96" height="96" style="color:var(--mark,#A79BFF)"><defs><mask id="mm-launch"><rect width="64" height="64" fill="black"></rect><circle cx="32" cy="32" r="27" fill="white"></circle><rect x="0" y="18" width="64" height="2.2" fill="black"></rect><rect x="0" y="28.5" width="64" height="2.8" fill="black"></rect><rect x="0" y="40" width="64" height="3.4" fill="black"></rect></mask></defs><rect width="64" height="64" fill="currentColor" mask="url(#mm-launch)"></rect></svg>
+<div style="display:flex;flex-direction:column;align-items:center;gap:8px"><span style="font-size:32px;font-weight:600;letter-spacing:-0.03em">Stratosphere</span><span style="font-family:'Newsreader',Georgia,serif;font-style:italic;font-size:19px;color:var(--muted,#A6A3B8)">your habits in your control</span></div>
+</div>
+<div style="position:absolute;bottom:8px;left:50%;transform:translateX(-50%);width:134px;height:5px;border-radius:3px;background:var(--ink,#F3F2F8)"></div>
+</div>
+</figure>
+
+<figure style="margin:0;display:flex;flex-direction:column;gap:14px;width:390px">
+<figcaption style="display:flex;flex-direction:column;gap:4px"><span style="font:500 12px 'JetBrains Mono',monospace;color:var(--muted,#A6A3B8)">02 · SIGN IN</span><span style="font-size:14px;line-height:1.45;color:var(--muted,#A6A3B8)">"Phase 2" and the backend check move to a dev-only build. Apple and Google sign-in added.</span></figcaption>
+<div data-screen-label="02 Sign in" style="position:relative;width:390px;height:844px;border-radius:48px;overflow:hidden;background:var(--sky,linear-gradient(180deg,#05040C 0%,#0B0A1A 45%,#1A1450 100%));color:var(--ink,#F3F2F8);box-shadow:var(--shadow,0 40px 80px -40px rgba(0,0,0,.9)), 0 0 0 1px var(--frame,#2A2840)">
+<div style="position:absolute;top:11px;left:50%;transform:translateX(-50%);width:124px;height:36px;border-radius:20px;background:#000;z-index:4"></div>
+<div style="height:54px;padding:0 32px;display:flex;align-items:center;justify-content:space-between;font-size:16px;font-weight:600"><span>9:41</span><span style="display:flex;gap:6px"><i class="ph-fill ph-cell-signal-full"></i><i class="ph-fill ph-wifi-high"></i><i class="ph-fill ph-battery-full"></i></span></div>
+<div style="position:absolute;left:-60%;right:-60%;top:250px;height:1000px;border-radius:50%;background:var(--bg,#0B0A14);box-shadow:0 -30px 110px -10px var(--atmo,#6B5CFF), inset 0 1px 0 var(--limb,rgba(167,155,255,.55))"></div>
+<img src="assets/aster-happy.svg" alt="" style="position:absolute;top:120px;left:50%;transform:translateX(-50%);width:96px;height:96px;border-radius:50%;box-shadow:0 20px 50px -10px var(--atmo,#6B5CFF)">
+<div style="position:absolute;left:0;right:0;top:300px;padding:0 24px;display:flex;flex-direction:column;gap:12px">
+<div style="display:flex;flex-direction:column;gap:6px;text-align:center;margin-bottom:12px"><span style="font-size:30px;font-weight:600;letter-spacing:-0.03em">Welcome back</span><span style="font-size:16px;color:var(--muted,#A6A3B8)">Sign in to pick up where you left off.</span></div>
+<div style="height:52px;border-radius:14px;background:var(--apple-bg,#FFFFFF);color:var(--apple-ink,#000000);font-size:17px;font-weight:600;display:flex;align-items:center;justify-content:center;gap:8px"><i class="ph-fill ph-apple-logo" style="font-size:20px"></i>Continue with Apple</div>
+<div style="height:52px;border-radius:14px;border:1px solid var(--line,#2A2840);background:var(--raised,#1C1A2B);font-size:17px;font-weight:600;display:flex;align-items:center;justify-content:center;gap:8px"><i class="ph ph-google-logo" style="font-size:20px"></i>Continue with Google</div>
+<div style="display:flex;align-items:center;gap:12px;font-size:13px;color:var(--subtle,#8A879E);margin:4px 0"><span style="flex:1;height:1px;background:var(--line,#2A2840)"></span>or with email<span style="flex:1;height:1px;background:var(--line,#2A2840)"></span></div>
+<div style="height:52px;box-sizing:border-box;padding:0 16px;border-radius:14px;border:1px solid var(--line,#2A2840);background:var(--raised,#1C1A2B);display:flex;align-items:center;font-size:17px;color:var(--subtle,#8A879E)">Email</div>
+<div style="height:52px;box-sizing:border-box;padding:0 16px;border-radius:14px;border:1.5px solid var(--accent,#5B4CF0);box-shadow:0 0 0 3px var(--accent-soft,rgba(107,92,255,.18));background:var(--raised,#1C1A2B);display:flex;align-items:center;justify-content:space-between;font-size:17px"><span style="letter-spacing:.2em">••••••••</span><i class="ph ph-eye" style="color:var(--subtle,#8A879E);font-size:20px"></i></div>
+<a href="#" style="align-self:flex-end;font-size:15px;font-weight:500;color:var(--accent-text,#A79BFF)">Forgot password?</a>
+<div style="height:52px;border-radius:14px;background:var(--accent,#5B4CF0);color:#FFFFFF;font-size:17px;font-weight:600;display:flex;align-items:center;justify-content:center">Sign in</div>
+</div>
+<div style="position:absolute;bottom:40px;left:0;right:0;text-align:center;font-size:15px;color:var(--muted,#A6A3B8)">New to Stratosphere? <span style="color:var(--accent-text,#A79BFF);font-weight:600">Create an account</span></div>
+<div style="position:absolute;bottom:8px;left:50%;transform:translateX(-50%);width:134px;height:5px;border-radius:3px;background:var(--ink,#F3F2F8)"></div>
+</div>
+</figure>
+
+</div>
+</section>
+
+<section data-screen-label="Today and tasks" style="display:flex;flex-direction:column;gap:28px">
+<h2 style="margin:0;font-size:22px;font-weight:600">Today &amp; action items</h2>
+<div style="display:flex;flex-wrap:wrap;gap:56px;align-items:flex-start">
+
+<figure style="margin:0;display:flex;flex-direction:column;gap:14px;width:390px">
+<figcaption style="display:flex;flex-direction:column;gap:4px"><span style="font:500 12px 'JetBrains Mono',monospace;color:var(--muted,#A6A3B8)">03 · TODAY</span><span style="font-size:14px;line-height:1.45;color:var(--muted,#A6A3B8)">Home tab. Stats, filter and action items. The add form becomes a button that opens a sheet.</span></figcaption>
+<div data-screen-label="03 Today" style="position:relative;width:390px;height:844px;border-radius:48px;overflow:hidden;background:var(--bg,#0B0A14);color:var(--ink,#F3F2F8);box-shadow:var(--shadow,0 40px 80px -40px rgba(0,0,0,.9)), 0 0 0 1px var(--frame,#2A2840)">
+<div style="position:absolute;top:11px;left:50%;transform:translateX(-50%);width:124px;height:36px;border-radius:20px;background:#000;z-index:4"></div>
+<div style="height:54px;padding:0 32px;display:flex;align-items:center;justify-content:space-between;font-size:16px;font-weight:600"><span>9:41</span><span style="display:flex;gap:6px"><i class="ph-fill ph-cell-signal-full"></i><i class="ph-fill ph-wifi-high"></i><i class="ph-fill ph-battery-full"></i></span></div>
+<div style="padding:12px 20px 0;display:flex;flex-direction:column;gap:18px">
+<div style="display:flex;justify-content:space-between;align-items:center;gap:12px">
+<div style="display:flex;flex-direction:column;gap:2px;min-width:0"><span style="font-size:13px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--subtle,#8A879E)">Sunday, 27 Sep</span><span style="font-size:30px;font-weight:600;letter-spacing:-0.03em;white-space:nowrap">Hello, Alex</span></div>
+<div style="display:flex;gap:8px">
+<span style="position:relative;width:44px;height:44px;border-radius:14px;background:var(--raised,#1C1A2B);display:flex;align-items:center;justify-content:center;font-size:22px"><i class="ph ph-bell"></i><span style="position:absolute;top:8px;right:9px;width:9px;height:9px;border-radius:50%;background:var(--high,#F2B24C);box-shadow:0 0 0 2px var(--raised,#1C1A2B)"></span></span>
+<img src="assets/crew-indigo.svg" alt="" style="width:44px;height:44px;border-radius:50%">
+</div>
+</div>
+<div style="padding:16px;border-radius:18px;background:var(--raised,#1C1A2B);display:flex;flex-direction:column;gap:12px">
+<div style="display:flex;justify-content:space-between;align-items:baseline"><span style="font-size:17px;font-weight:600">3 of 5 done today</span><span style="font-size:14px;color:var(--muted,#A6A3B8)">20 in total</span></div>
+<div style="height:8px;border-radius:8px;background:var(--line,#2A2840);overflow:hidden"><div style="width:60%;height:100%;border-radius:8px;background:var(--accent,#5B4CF0)"></div></div>
+<span style="font-family:'Newsreader',Georgia,serif;font-style:italic;font-size:17px;line-height:1.4;color:var(--muted,#A6A3B8)">"One difficult day does not erase what you have built."</span>
+</div>
+<div style="display:grid;grid-template-columns:repeat(3,1fr);padding:3px;border-radius:13px;background:var(--raised,#1C1A2B);font-size:14px;font-weight:600;text-align:center">
+<span style="padding:9px 0;border-radius:10px;background:var(--seg,#2A2840)">Today</span><span style="padding:9px 0;color:var(--muted,#A6A3B8)">All (20)</span><span style="padding:9px 0;color:var(--muted,#A6A3B8)">Completed (15)</span>
+</div>
+<div style="display:flex;flex-direction:column;gap:10px">
+<div style="padding:14px;border-radius:18px;background:var(--raised,#1C1A2B);display:flex;flex-direction:column;gap:12px">
+<div style="display:flex;gap:12px;align-items:flex-start"><span style="width:40px;height:40px;flex:none;border-radius:12px;background:var(--high-bg,rgba(242,178,76,.14));color:var(--high,#F2B24C);display:flex;align-items:center;justify-content:center;font-size:20px"><i class="ph ph-airplane-tilt"></i></span>
+<div style="flex:1;display:flex;flex-direction:column;gap:5px;min-width:0"><span style="font-size:16px;font-weight:600">Book flight to San Francisco</span><span style="display:flex;gap:8px;align-items:center;font-size:13px;color:var(--muted,#A6A3B8)"><span style="display:flex;align-items:center;gap:3px;color:var(--high,#F2B24C);font-weight:600"><i class="ph ph-flame"></i>High</span>· 09:00</span></div>
+<i class="ph ph-circle-dashed" style="font-size:26px;color:var(--nd,#8A879E)"></i></div>
+<div style="padding:10px 12px;border-radius:12px;background:var(--sunken,#13121F);display:flex;flex-direction:column;gap:4px"><span style="font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--subtle,#8A879E)">Latest reflection · Hopeful</span><span style="font-family:'Newsreader',Georgia,serif;font-style:italic;font-size:15px;line-height:1.4">Compared Delta and United. Booking tonight.</span></div>
+<div style="display:flex;gap:8px"><span style="flex:1;height:40px;border-radius:12px;background:var(--accent-soft,rgba(107,92,255,.18));color:var(--accent-text,#A79BFF);font-size:15px;font-weight:600;display:flex;align-items:center;justify-content:center;gap:6px"><i class="ph ph-pencil-simple-line"></i>Reflect</span><span style="flex:1;height:40px;border-radius:12px;border:1px solid var(--line,#2A2840);font-size:15px;font-weight:600;display:flex;align-items:center;justify-content:center">View</span></div>
+</div>
+<div style="padding:14px;border-radius:18px;background:var(--raised,#1C1A2B);display:flex;gap:12px;align-items:center"><span style="width:40px;height:40px;flex:none;border-radius:12px;background:var(--med-bg,rgba(108,192,245,.14));color:var(--med,#6CC0F5);display:flex;align-items:center;justify-content:center;font-size:20px"><i class="ph ph-briefcase"></i></span><div style="flex:1;display:flex;flex-direction:column;gap:5px"><span style="font-size:16px;font-weight:600">Draft Q4 plan</span><span style="display:flex;gap:8px;font-size:13px;color:var(--muted,#A6A3B8)"><span style="display:flex;align-items:center;gap:3px;color:var(--med,#6CC0F5);font-weight:600"><i class="ph ph-lightning"></i>Medium</span>· 10:00</span></div><i class="ph ph-circle-dashed" style="font-size:26px;color:var(--nd,#8A879E)"></i></div>
+<div style="padding:14px;border-radius:18px;background:var(--raised,#1C1A2B);display:flex;gap:12px;align-items:center;opacity:.7"><span style="width:40px;height:40px;flex:none;border-radius:12px;background:var(--low-bg,rgba(60,207,180,.14));color:var(--low,#3CCFB4);display:flex;align-items:center;justify-content:center;font-size:20px"><i class="ph ph-sneaker-move"></i></span><div style="flex:1;display:flex;flex-direction:column;gap:5px"><span style="font-size:16px;font-weight:600;text-decoration:line-through">30 min walk</span><span style="display:flex;gap:8px;font-size:13px;color:var(--muted,#A6A3B8)"><span style="display:flex;align-items:center;gap:3px;color:var(--low,#3CCFB4);font-weight:600"><i class="ph ph-plant"></i>Low</span>· Done</span></div><i class="ph-fill ph-check-circle" style="font-size:26px;color:var(--accent-text,#A79BFF)"></i></div>
+</div>
+</div>
+<span style="position:absolute;right:20px;bottom:104px;width:58px;height:58px;border-radius:20px;background:var(--accent,#5B4CF0);color:#FFFFFF;display:flex;align-items:center;justify-content:center;font-size:26px;box-shadow:0 14px 30px -10px var(--accent,#5B4CF0)"><i class="ph ph-plus"></i></span>
+<div style="position:absolute;left:0;right:0;bottom:0;height:88px;border-top:1px solid var(--line,#2A2840);background:var(--bar,rgba(11,10,20,.92));display:grid;grid-template-columns:repeat(4,1fr);padding-top:8px;font-size:11px;font-weight:500;text-align:center;color:var(--subtle,#8A879E)">
+<span style="display:flex;flex-direction:column;align-items:center;gap:3px;color:var(--accent-text,#A79BFF)"><i class="ph-fill ph-sun-horizon" style="font-size:25px"></i>Today</span>
+<span style="display:flex;flex-direction:column;align-items:center;gap:3px"><i class="ph ph-calendar-blank" style="font-size:25px"></i>Calendar</span>
+<span style="display:flex;flex-direction:column;align-items:center;gap:3px"><i class="ph ph-chat-circle-dots" style="font-size:25px"></i>Aster</span>
+<span style="display:flex;flex-direction:column;align-items:center;gap:3px"><i class="ph ph-chart-bar" style="font-size:25px"></i>Progress</span>
+</div>
+<div style="position:absolute;bottom:8px;left:50%;transform:translateX(-50%);width:134px;height:5px;border-radius:3px;background:var(--ink,#F3F2F8)"></div>
+</div>
+</figure>
+
+<figure style="margin:0;display:flex;flex-direction:column;gap:14px;width:390px">
+<figcaption style="display:flex;flex-direction:column;gap:4px"><span style="font:500 12px 'JetBrains Mono',monospace;color:var(--muted,#A6A3B8)">04 · ADD ACTION ITEM (SHEET)</span><span style="font-size:14px;line-height:1.45;color:var(--muted,#A6A3B8)">Opens from + on Today and from a calendar day. The emoji field becomes an icon picker. Date and time use the native iOS pickers.</span></figcaption>
+<div data-screen-label="04 Add action item" style="position:relative;width:390px;height:844px;border-radius:48px;overflow:hidden;background:var(--bg,#0B0A14);color:var(--ink,#F3F2F8);box-shadow:var(--shadow,0 40px 80px -40px rgba(0,0,0,.9)), 0 0 0 1px var(--frame,#2A2840)">
+<div style="position:absolute;top:11px;left:50%;transform:translateX(-50%);width:124px;height:36px;border-radius:20px;background:#000;z-index:4"></div>
+<div style="height:54px;padding:0 32px;display:flex;align-items:center;justify-content:space-between;font-size:16px;font-weight:600"><span>9:41</span><span style="display:flex;gap:6px"><i class="ph-fill ph-cell-signal-full"></i><i class="ph-fill ph-wifi-high"></i><i class="ph-fill ph-battery-full"></i></span></div>
+<div style="position:absolute;inset:0;background:var(--scrim,rgba(3,2,10,.6))"></div>
+<div style="position:absolute;left:0;right:0;bottom:0;top:96px;border-radius:28px 28px 0 0;background:var(--sheet,#13121F);padding:10px 20px 0;display:flex;flex-direction:column;gap:16px">
+<span style="align-self:center;width:40px;height:5px;border-radius:3px;background:var(--line,#2A2840)"></span>
+<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px"><div style="display:flex;flex-direction:column;gap:4px"><span style="font-size:22px;font-weight:600;letter-spacing:-0.02em">Add Action Item</span><span style="font-size:15px;color:var(--muted,#A6A3B8)">Capture a task or moment you want to revisit.</span></div><span style="width:36px;height:36px;flex:none;border-radius:50%;background:var(--raised,#1C1A2B);display:flex;align-items:center;justify-content:center;font-size:18px"><i class="ph ph-x"></i></span></div>
+<div style="height:52px;box-sizing:border-box;padding:0 16px;border-radius:14px;border:1.5px solid var(--accent,#5B4CF0);background:var(--raised,#1C1A2B);display:flex;align-items:center;font-size:17px">Book flight to San Francisco</div>
+<div style="display:flex;flex-direction:column;gap:8px"><span style="font-size:15px;font-weight:500">Icon</span>
+<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:6px">
+<span style="height:44px;border-radius:12px;background:var(--raised,#1C1A2B);display:flex;align-items:center;justify-content:center;font-size:21px;color:var(--muted,#A6A3B8)"><i class="ph ph-sparkle"></i></span>
+<span style="height:44px;border-radius:12px;background:var(--accent-soft,rgba(107,92,255,.18));box-shadow:inset 0 0 0 1.5px var(--accent,#5B4CF0);display:flex;align-items:center;justify-content:center;font-size:21px;color:var(--accent-text,#A79BFF)"><i class="ph ph-airplane-tilt"></i></span>
+<span style="height:44px;border-radius:12px;background:var(--raised,#1C1A2B);display:flex;align-items:center;justify-content:center;font-size:21px;color:var(--muted,#A6A3B8)"><i class="ph ph-briefcase"></i></span>
+<span style="height:44px;border-radius:12px;background:var(--raised,#1C1A2B);display:flex;align-items:center;justify-content:center;font-size:21px;color:var(--muted,#A6A3B8)"><i class="ph ph-heart"></i></span>
+<span style="height:44px;border-radius:12px;background:var(--raised,#1C1A2B);display:flex;align-items:center;justify-content:center;font-size:21px;color:var(--muted,#A6A3B8)"><i class="ph ph-book-open"></i></span>
+<span style="height:44px;border-radius:12px;background:var(--raised,#1C1A2B);display:flex;align-items:center;justify-content:center;font-size:21px;color:var(--muted,#A6A3B8)"><i class="ph ph-barbell"></i></span>
+<span style="height:44px;border-radius:12px;background:var(--raised,#1C1A2B);display:flex;align-items:center;justify-content:center;font-size:21px;color:var(--muted,#A6A3B8)"><i class="ph ph-dots-three"></i></span>
+</div></div>
+<div style="min-height:92px;box-sizing:border-box;padding:14px 16px;border-radius:14px;border:1px solid var(--line,#2A2840);background:var(--raised,#1C1A2B);font-size:16px;line-height:1.45;color:var(--subtle,#8A879E)">Specific notes</div>
+<div style="display:flex;flex-direction:column;gap:8px"><span style="font-size:15px;font-weight:500">Priority</span>
+<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px">
+<span style="height:46px;border-radius:12px;border:1px solid var(--line,#2A2840);display:flex;align-items:center;justify-content:center;gap:6px;font-size:15px;font-weight:600;color:var(--muted,#A6A3B8)"><i class="ph ph-plant"></i>Low</span>
+<span style="height:46px;border-radius:12px;border:1px solid var(--line,#2A2840);display:flex;align-items:center;justify-content:center;gap:6px;font-size:15px;font-weight:600;color:var(--muted,#A6A3B8)"><i class="ph ph-lightning"></i>Medium</span>
+<span style="height:46px;border-radius:12px;background:var(--high-bg,rgba(242,178,76,.14));box-shadow:inset 0 0 0 1.5px var(--high,#F2B24C);display:flex;align-items:center;justify-content:center;gap:6px;font-size:15px;font-weight:600;color:var(--high,#F2B24C)"><i class="ph ph-flame"></i>High</span>
+</div></div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+<div style="display:flex;flex-direction:column;gap:8px"><span style="font-size:15px;font-weight:500">Calendar date</span><span style="height:48px;padding:0 14px;border-radius:12px;background:var(--raised,#1C1A2B);display:flex;align-items:center;gap:8px;font-size:16px"><i class="ph ph-calendar-blank" style="color:var(--accent-text,#A79BFF)"></i>Tue, 29 Sep</span></div>
+<div style="display:flex;flex-direction:column;gap:8px"><span style="font-size:15px;font-weight:500">Reminder time</span><span style="height:48px;padding:0 14px;border-radius:12px;background:var(--raised,#1C1A2B);display:flex;align-items:center;gap:8px;font-size:16px"><i class="ph ph-alarm" style="color:var(--accent-text,#A79BFF)"></i>09:00</span></div>
+</div>
+<div style="height:54px;border-radius:14px;background:var(--accent,#5B4CF0);color:#FFFFFF;font-size:17px;font-weight:600;display:flex;align-items:center;justify-content:center;margin-top:4px">Add action item</div>
+</div>
+<div style="position:absolute;bottom:8px;left:50%;transform:translateX(-50%);width:134px;height:5px;border-radius:3px;background:var(--ink,#F3F2F8)"></div>
+</div>
+</figure>
+
+<figure style="margin:0;display:flex;flex-direction:column;gap:14px;width:390px">
+<figcaption style="display:flex;flex-direction:column;gap:4px"><span style="font:500 12px 'JetBrains Mono',monospace;color:var(--muted,#A6A3B8)">05 · TASK JOURNAL</span><span style="font-size:14px;line-height:1.45;color:var(--muted,#A6A3B8)">Opens from View. Edit and delete move into the pencil menu. Status is one tap.</span></figcaption>
+<div data-screen-label="05 Task journal" style="position:relative;width:390px;height:844px;border-radius:48px;overflow:hidden;background:var(--bg,#0B0A14);color:var(--ink,#F3F2F8);box-shadow:var(--shadow,0 40px 80px -40px rgba(0,0,0,.9)), 0 0 0 1px var(--frame,#2A2840)">
+<div style="position:absolute;top:11px;left:50%;transform:translateX(-50%);width:124px;height:36px;border-radius:20px;background:#000;z-index:4"></div>
+<div style="height:54px;padding:0 32px;display:flex;align-items:center;justify-content:space-between;font-size:16px;font-weight:600"><span>9:41</span><span style="display:flex;gap:6px"><i class="ph-fill ph-cell-signal-full"></i><i class="ph-fill ph-wifi-high"></i><i class="ph-fill ph-battery-full"></i></span></div>
+<div style="height:48px;padding:0 12px;display:flex;align-items:center;justify-content:space-between"><span style="height:44px;padding:0 8px;display:flex;align-items:center;gap:2px;font-size:17px;color:var(--accent-text,#A79BFF)"><i class="ph ph-caret-left" style="font-size:22px"></i>Today</span><span style="width:44px;height:44px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:22px"><i class="ph ph-pencil-simple"></i></span></div>
+<div style="padding:4px 20px 0;display:flex;flex-direction:column;gap:16px">
+<div style="display:flex;flex-direction:column;gap:8px"><span style="font-size:13px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--subtle,#8A879E)">Task journal</span><span style="font-size:28px;font-weight:600;letter-spacing:-0.03em;line-height:1.12">Book flight to San Francisco</span>
+<div style="display:flex;gap:8px;flex-wrap:wrap;font-size:13px;font-weight:600"><span style="padding:5px 10px;border-radius:999px;background:var(--high-bg,rgba(242,178,76,.14));color:var(--high,#F2B24C);display:flex;align-items:center;gap:4px"><i class="ph ph-flame"></i>High</span><span style="padding:5px 10px;border-radius:999px;background:var(--raised,#1C1A2B);color:var(--muted,#A6A3B8);display:flex;align-items:center;gap:4px"><i class="ph ph-calendar-blank"></i>Tue 29 Sep · 09:00</span></div></div>
+<div style="padding:14px 16px;border-radius:16px;background:var(--raised,#1C1A2B);display:flex;flex-direction:column;gap:6px"><span style="font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--subtle,#8A879E)">Task context</span><span style="font-size:16px;line-height:1.45">Compare Delta and United before Friday. Aisle seat.</span></div>
+<div style="padding:14px 16px;border-radius:16px;background:var(--raised,#1C1A2B);display:flex;flex-direction:column;gap:12px"><div style="display:flex;flex-direction:column;gap:3px"><span style="font-size:16px;font-weight:600">Task status</span><span style="font-size:14px;line-height:1.4;color:var(--muted,#A6A3B8)">Mark the task complete only when the task itself is finished.</span></div>
+<div style="display:grid;grid-template-columns:1fr 1fr;padding:3px;border-radius:12px;background:var(--sunken,#13121F);font-size:15px;font-weight:600;text-align:center"><span style="padding:10px 0;border-radius:10px;background:var(--seg,#2A2840)">Open</span><span style="padding:10px 0;color:var(--muted,#A6A3B8)">Completed</span></div></div>
+<div style="display:flex;flex-direction:column;gap:12px"><div style="display:flex;justify-content:space-between;align-items:baseline"><span style="font-size:17px;font-weight:600">Journal timeline</span><span style="font-size:13px;color:var(--subtle,#8A879E)">Latest entries first.</span></div>
+<div style="display:flex;gap:12px"><span style="display:flex;flex-direction:column;align-items:center;gap:4px;padding-top:4px"><span style="width:10px;height:10px;border-radius:50%;background:var(--accent,#5B4CF0)"></span><span style="flex:1;width:2px;background:var(--line,#2A2840)"></span></span>
+<div style="flex:1;display:flex;flex-direction:column;gap:6px;padding-bottom:6px"><span style="display:flex;gap:8px;align-items:center;font-size:13px;color:var(--subtle,#8A879E)">Today, 08:40<span style="padding:2px 8px;border-radius:999px;background:var(--accent-soft,rgba(107,92,255,.18));color:var(--accent-text,#A79BFF);font-weight:600">Hopeful</span>Meaningful</span><span style="font-family:'Newsreader',Georgia,serif;font-style:italic;font-size:17px;line-height:1.4">Compared Delta and United. Booking tonight.</span></div></div>
+<div style="display:flex;gap:12px"><span style="display:flex;flex-direction:column;align-items:center;padding-top:4px"><span style="width:10px;height:10px;border-radius:50%;background:var(--nd,#8A879E)"></span></span>
+<div style="flex:1;display:flex;flex-direction:column;gap:6px"><span style="display:flex;gap:8px;align-items:center;font-size:13px;color:var(--subtle,#8A879E)">Fri, 25 Sep<span style="padding:2px 8px;border-radius:999px;background:var(--raised,#1C1A2B);color:var(--muted,#A6A3B8);font-weight:600">Anxious</span>Meaningful</span><span style="font-family:'Newsreader',Georgia,serif;font-style:italic;font-size:17px;line-height:1.4">Prices keep moving. Putting it off.</span></div></div>
+</div>
+</div>
+<div style="position:absolute;left:0;right:0;bottom:0;padding:14px 20px 34px;border-top:1px solid var(--line,#2A2840);background:var(--bg,#0B0A14);display:grid;grid-template-columns:1fr auto;gap:10px">
+<span style="height:52px;border-radius:14px;background:var(--accent,#5B4CF0);color:#FFFFFF;font-size:17px;font-weight:600;display:flex;align-items:center;justify-content:center;gap:8px"><i class="ph ph-pencil-simple-line"></i>Add journal entry</span>
+<span style="height:52px;padding:0 16px;border-radius:14px;border:1px solid var(--line,#2A2840);font-size:16px;font-weight:600;display:flex;align-items:center;gap:8px"><img src="assets/aster-happy.svg" alt="" style="width:26px;height:26px;border-radius:50%">Ask Aster</span>
+</div>
+<div style="position:absolute;bottom:8px;left:50%;transform:translateX(-50%);width:134px;height:5px;border-radius:3px;background:var(--ink,#F3F2F8)"></div>
+</div>
+</figure>
+
+<figure style="margin:0;display:flex;flex-direction:column;gap:14px;width:390px">
+<figcaption style="display:flex;flex-direction:column;gap:4px"><span style="font:500 12px 'JetBrains Mono',monospace;color:var(--muted,#A6A3B8)">06 · ADD JOURNAL ENTRY (SHEET)</span><span style="font-size:14px;line-height:1.45;color:var(--muted,#A6A3B8)">Used for both Reflect and Add journal entry. Emotions and the meaningful toggle keep the existing API values.</span></figcaption>
+<div data-screen-label="06 Add journal entry" style="position:relative;width:390px;height:844px;border-radius:48px;overflow:hidden;background:var(--bg,#0B0A14);color:var(--ink,#F3F2F8);box-shadow:var(--shadow,0 40px 80px -40px rgba(0,0,0,.9)), 0 0 0 1px var(--frame,#2A2840)">
+<div style="position:absolute;top:11px;left:50%;transform:translateX(-50%);width:124px;height:36px;border-radius:20px;background:#000;z-index:4"></div>
+<div style="height:54px;padding:0 32px;display:flex;align-items:center;justify-content:space-between;font-size:16px;font-weight:600"><span>9:41</span><span style="display:flex;gap:6px"><i class="ph-fill ph-cell-signal-full"></i><i class="ph-fill ph-wifi-high"></i><i class="ph-fill ph-battery-full"></i></span></div>
+<div style="position:absolute;inset:0;background:var(--scrim,rgba(3,2,10,.6))"></div>
+<div style="position:absolute;left:0;right:0;bottom:0;top:70px;border-radius:28px 28px 0 0;background:var(--sheet,#13121F);padding:10px 20px 0;display:flex;flex-direction:column;gap:16px">
+<span style="align-self:center;width:40px;height:5px;border-radius:3px;background:var(--line,#2A2840)"></span>
+<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px"><div style="display:flex;flex-direction:column;gap:4px"><span style="font-size:22px;font-weight:600;letter-spacing:-0.02em">Add journal entry</span><span style="font-size:14px;color:var(--muted,#A6A3B8)">Book flight to San Francisco</span></div><span style="width:36px;height:36px;flex:none;border-radius:50%;background:var(--raised,#1C1A2B);display:flex;align-items:center;justify-content:center;font-size:18px"><i class="ph ph-x"></i></span></div>
+<div style="min-height:120px;box-sizing:border-box;padding:14px 16px;border-radius:14px;border:1.5px solid var(--accent,#5B4CF0);background:var(--raised,#1C1A2B);font-family:'Newsreader',Georgia,serif;font-style:italic;font-size:18px;line-height:1.45">Booked it. Aisle seat on Thursday morning. Felt lighter as soon as I paid.</div>
+<div style="display:flex;flex-direction:column;gap:10px"><span style="font-size:15px;font-weight:500">How did this feel?</span>
+<div style="display:flex;flex-wrap:wrap;gap:8px">
+<sc-for list="{{ emotions }}" as="e" hint-placeholder-count="10"><span style="{{ e.style }}">{{ e.label }}</span></sc-for>
+</div></div>
+<div style="display:flex;flex-direction:column;gap:10px"><span style="font-size:15px;font-weight:500">Does this still feel meaningful?</span>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><span style="height:46px;border-radius:12px;background:var(--accent-soft,rgba(107,92,255,.18));box-shadow:inset 0 0 0 1.5px var(--accent,#5B4CF0);color:var(--accent-text,#A79BFF);display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:600">Yes</span><span style="height:46px;border-radius:12px;border:1px solid var(--line,#2A2840);color:var(--muted,#A6A3B8);display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:600">No</span></div></div>
+<div style="padding:12px 14px;border-radius:14px;background:var(--raised,#1C1A2B);display:flex;align-items:center;justify-content:space-between"><span style="display:flex;flex-direction:column;gap:2px"><span style="font-size:16px;font-weight:500">Mark task complete</span><span style="font-size:13px;color:var(--muted,#A6A3B8)">Only if the task itself is finished</span></span><span style="width:51px;height:31px;border-radius:16px;background:var(--low,#3CCFB4);position:relative"><span style="position:absolute;right:2px;top:2px;width:27px;height:27px;border-radius:50%;background:#FFFFFF;box-shadow:0 2px 4px rgba(0,0,0,.25)"></span></span></div>
+<div style="height:54px;border-radius:14px;background:var(--accent,#5B4CF0);color:#FFFFFF;font-size:17px;font-weight:600;display:flex;align-items:center;justify-content:center">Save entry</div>
+</div>
+<div style="position:absolute;bottom:8px;left:50%;transform:translateX(-50%);width:134px;height:5px;border-radius:3px;background:var(--ink,#F3F2F8)"></div>
+</div>
+</figure>
+
+</div>
+</section>
+
+<section data-screen-label="Calendar" style="display:flex;flex-direction:column;gap:28px">
+<h2 style="margin:0;font-size:22px;font-weight:600">Calendar</h2>
+<div style="display:flex;flex-wrap:wrap;gap:56px;align-items:flex-start">
+
+<figure style="margin:0;display:flex;flex-direction:column;gap:14px;width:390px">
+<figcaption style="display:flex;flex-direction:column;gap:4px"><span style="font:500 12px 'JetBrains Mono',monospace;color:var(--muted,#A6A3B8)">07 · CALENDAR</span><span style="font-size:14px;line-height:1.45;color:var(--muted,#A6A3B8)">Now its own tab. Tapping a day previews its items below the month. "See day" opens 08.</span></figcaption>
+<div data-screen-label="07 Calendar" style="position:relative;width:390px;height:844px;border-radius:48px;overflow:hidden;background:var(--bg,#0B0A14);color:var(--ink,#F3F2F8);box-shadow:var(--shadow,0 40px 80px -40px rgba(0,0,0,.9)), 0 0 0 1px var(--frame,#2A2840)">
+<div style="position:absolute;top:11px;left:50%;transform:translateX(-50%);width:124px;height:36px;border-radius:20px;background:#000;z-index:4"></div>
+<div style="height:54px;padding:0 32px;display:flex;align-items:center;justify-content:space-between;font-size:16px;font-weight:600"><span>9:41</span><span style="display:flex;gap:6px"><i class="ph-fill ph-cell-signal-full"></i><i class="ph-fill ph-wifi-high"></i><i class="ph-fill ph-battery-full"></i></span></div>
+<div style="padding:12px 20px 0;display:flex;flex-direction:column;gap:16px">
+<div style="display:flex;justify-content:space-between;align-items:center"><div style="display:flex;flex-direction:column;gap:2px"><span style="font-size:30px;font-weight:600;letter-spacing:-0.03em">Calendar</span><span style="font-size:14px;color:var(--muted,#A6A3B8)">Priority dots mark scheduled task dates.</span></div></div>
+<div style="padding:14px 10px 10px;border-radius:20px;background:var(--raised,#1C1A2B);display:flex;flex-direction:column;gap:10px">
+<div style="display:flex;justify-content:space-between;align-items:center;padding:0 6px"><span style="font-size:18px;font-weight:600">September 2026</span><span style="display:flex;gap:4px"><span style="width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px"><i class="ph ph-caret-left"></i></span><span style="width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px"><i class="ph ph-caret-right"></i></span></span></div>
+<div style="display:grid;grid-template-columns:repeat(7,1fr);text-align:center;font-size:12px;font-weight:600;color:var(--subtle,#8A879E)"><span>S</span><span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span></div>
+<div style="display:grid;grid-template-columns:repeat(7,1fr);row-gap:2px">
+<sc-for list="{{ days }}" as="d" hint-placeholder-count="35"><div style="height:44px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px"><span style="{{ d.style }}">{{ d.n }}</span><span style="display:flex;gap:3px;height:5px"><sc-for list="{{ d.dots }}" as="c" hint-placeholder-count="0"><span style="{{ c }}"></span></sc-for></span></div></sc-for>
+</div>
+<div style="display:flex;gap:14px;justify-content:center;font-size:12px;color:var(--muted,#A6A3B8);padding-top:2px"><span style="display:flex;align-items:center;gap:5px"><span style="width:6px;height:6px;border-radius:3px;background:var(--low,#3CCFB4)"></span>Low</span><span style="display:flex;align-items:center;gap:5px"><span style="width:6px;height:6px;border-radius:3px;background:var(--med,#6CC0F5)"></span>Medium</span><span style="display:flex;align-items:center;gap:5px"><span style="width:6px;height:6px;border-radius:3px;background:var(--high,#F2B24C)"></span>High</span></div>
+</div>
+<div style="display:flex;flex-direction:column;gap:10px">
+<div style="display:flex;justify-content:space-between;align-items:baseline"><span style="font-size:17px;font-weight:600">Tuesday, 29 Sep</span><span style="font-size:15px;font-weight:600;color:var(--accent-text,#A79BFF)">See day</span></div>
+<div style="padding:12px 14px;border-radius:16px;background:var(--raised,#1C1A2B);display:flex;align-items:center;gap:12px"><span style="width:4px;height:36px;border-radius:4px;background:var(--high,#F2B24C)"></span><span style="flex:1;display:flex;flex-direction:column;gap:2px"><span style="font-size:16px;font-weight:600">Book flight to San Francisco</span><span style="font-size:13px;color:var(--muted,#A6A3B8)">09:00 · High</span></span></div>
+</div>
+</div>
+<div style="position:absolute;left:0;right:0;bottom:0;height:88px;border-top:1px solid var(--line,#2A2840);background:var(--bar,rgba(11,10,20,.92));display:grid;grid-template-columns:repeat(4,1fr);padding-top:8px;font-size:11px;font-weight:500;text-align:center;color:var(--subtle,#8A879E)">
+<span style="display:flex;flex-direction:column;align-items:center;gap:3px"><i class="ph ph-sun-horizon" style="font-size:25px"></i>Today</span>
+<span style="display:flex;flex-direction:column;align-items:center;gap:3px;color:var(--accent-text,#A79BFF)"><i class="ph-fill ph-calendar-blank" style="font-size:25px"></i>Calendar</span>
+<span style="display:flex;flex-direction:column;align-items:center;gap:3px"><i class="ph ph-chat-circle-dots" style="font-size:25px"></i>Aster</span>
+<span style="display:flex;flex-direction:column;align-items:center;gap:3px"><i class="ph ph-chart-bar" style="font-size:25px"></i>Progress</span>
+</div>
+<div style="position:absolute;bottom:8px;left:50%;transform:translateX(-50%);width:134px;height:5px;border-radius:3px;background:var(--ink,#F3F2F8)"></div>
+</div>
+</figure>
+
+<figure style="margin:0;display:flex;flex-direction:column;gap:14px;width:390px">
+<figcaption style="display:flex;flex-direction:column;gap:4px"><span style="font:500 12px 'JetBrains Mono',monospace;color:var(--muted,#A6A3B8)">08 · CALENDAR DAY</span><span style="font-size:14px;line-height:1.45;color:var(--muted,#A6A3B8)">Swipe a row left for Edit or Delete. Tap to open the task journal. Add opens sheet 04 with the date filled in.</span></figcaption>
+<div data-screen-label="08 Calendar day" style="position:relative;width:390px;height:844px;border-radius:48px;overflow:hidden;background:var(--bg,#0B0A14);color:var(--ink,#F3F2F8);box-shadow:var(--shadow,0 40px 80px -40px rgba(0,0,0,.9)), 0 0 0 1px var(--frame,#2A2840)">
+<div style="position:absolute;top:11px;left:50%;transform:translateX(-50%);width:124px;height:36px;border-radius:20px;background:#000;z-index:4"></div>
+<div style="height:54px;padding:0 32px;display:flex;align-items:center;justify-content:space-between;font-size:16px;font-weight:600"><span>9:41</span><span style="display:flex;gap:6px"><i class="ph-fill ph-cell-signal-full"></i><i class="ph-fill ph-wifi-high"></i><i class="ph-fill ph-battery-full"></i></span></div>
+<div style="height:48px;padding:0 12px;display:flex;align-items:center"><span style="height:44px;padding:0 8px;display:flex;align-items:center;gap:2px;font-size:17px;color:var(--accent-text,#A79BFF)"><i class="ph ph-caret-left" style="font-size:22px"></i>Calendar</span></div>
+<div style="padding:4px 20px 0;display:flex;flex-direction:column;gap:18px">
+<div style="display:flex;flex-direction:column;gap:4px"><span style="font-size:13px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--subtle,#8A879E)">Calendar day</span><span style="font-size:30px;font-weight:600;letter-spacing:-0.03em">Tuesday, 29 Sep</span></div>
+<div style="display:flex;flex-direction:column;gap:3px"><span style="font-size:17px;font-weight:600">Action Items</span><span style="font-size:14px;color:var(--muted,#A6A3B8)">Edit, delete, or reflect on this day.</span></div>
+<div style="display:flex;flex-direction:column;gap:10px">
+<div style="padding:14px;border-radius:18px;background:var(--raised,#1C1A2B);display:flex;gap:12px;align-items:center"><span style="width:40px;height:40px;flex:none;border-radius:12px;background:var(--high-bg,rgba(242,178,76,.14));color:var(--high,#F2B24C);display:flex;align-items:center;justify-content:center;font-size:20px"><i class="ph ph-airplane-tilt"></i></span><div style="flex:1;display:flex;flex-direction:column;gap:4px"><span style="font-size:16px;font-weight:600">Book flight to San Francisco</span><span style="font-size:13px;color:var(--muted,#A6A3B8)">09:00 · High · 2 entries</span></div><i class="ph ph-caret-right" style="color:var(--subtle,#8A879E)"></i></div>
+<div style="position:relative;border-radius:18px;overflow:hidden;background:var(--danger,#F0707A)">
+<div style="position:absolute;right:0;top:0;bottom:0;width:150px;display:grid;grid-template-columns:1fr 1fr"><span style="background:var(--med,#6CC0F5);color:var(--on-low,#0B0A14);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font-size:12px;font-weight:600"><i class="ph ph-pencil-simple" style="font-size:20px"></i>Edit</span><span style="color:#FFFFFF;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font-size:12px;font-weight:600"><i class="ph ph-trash" style="font-size:20px"></i>Delete</span></div>
+<div style="position:relative;transform:translateX(-150px);padding:14px;background:var(--raised,#1C1A2B);display:flex;gap:12px;align-items:center"><span style="width:40px;height:40px;flex:none;border-radius:12px;background:var(--med-bg,rgba(108,192,245,.14));color:var(--med,#6CC0F5);display:flex;align-items:center;justify-content:center;font-size:20px"><i class="ph ph-phone"></i></span><div style="flex:1;display:flex;flex-direction:column;gap:4px;min-width:0"><span style="font-size:16px;font-weight:600;white-space:nowrap">Call Mom</span><span style="font-size:13px;color:var(--muted,#A6A3B8)">18:30 · Medium</span></div></div>
+</div>
+<div style="padding:14px;border-radius:18px;background:var(--raised,#1C1A2B);display:flex;gap:12px;align-items:center;opacity:.7"><span style="width:40px;height:40px;flex:none;border-radius:12px;background:var(--low-bg,rgba(60,207,180,.14));color:var(--low,#3CCFB4);display:flex;align-items:center;justify-content:center;font-size:20px"><i class="ph ph-book-open"></i></span><div style="flex:1;display:flex;flex-direction:column;gap:4px"><span style="font-size:16px;font-weight:600;text-decoration:line-through">Read 20 pages</span><span style="font-size:13px;color:var(--muted,#A6A3B8)">Done · Low</span></div><i class="ph-fill ph-check-circle" style="font-size:24px;color:var(--accent-text,#A79BFF)"></i></div>
+</div>
+<div style="height:52px;border-radius:14px;border:1.5px dashed var(--line-strong,#3A3857);color:var(--accent-text,#A79BFF);font-size:16px;font-weight:600;display:flex;align-items:center;justify-content:center;gap:8px"><i class="ph ph-plus"></i>Add to this day</div>
+</div>
+<div style="position:absolute;bottom:8px;left:50%;transform:translateX(-50%);width:134px;height:5px;border-radius:3px;background:var(--ink,#F3F2F8)"></div>
+</div>
+</figure>
+
+</div>
+</section>
+
+<section data-screen-label="Aster" style="display:flex;flex-direction:column;gap:28px">
+<h2 style="margin:0;font-size:22px;font-weight:600">Aster, the life coach</h2>
+<div style="display:flex;flex-wrap:wrap;gap:56px;align-items:flex-start">
+
+<figure style="margin:0;display:flex;flex-direction:column;gap:14px;width:390px">
+<figcaption style="display:flex;flex-direction:column;gap:4px"><span style="font:500 12px 'JetBrains Mono',monospace;color:var(--muted,#A6A3B8)">09 · ASTER CHAT</span><span style="font-size:14px;line-height:1.45;color:var(--muted,#A6A3B8)">Replaces "AI Assistant". The "Context sent" card becomes a chip showing the attached task. Suggestions come from the empty-state copy.</span></figcaption>
+<div data-screen-label="09 Aster chat" style="position:relative;width:390px;height:844px;border-radius:48px;overflow:hidden;background:var(--bg,#0B0A14);color:var(--ink,#F3F2F8);box-shadow:var(--shadow,0 40px 80px -40px rgba(0,0,0,.9)), 0 0 0 1px var(--frame,#2A2840)">
+<div style="position:absolute;top:11px;left:50%;transform:translateX(-50%);width:124px;height:36px;border-radius:20px;background:#000;z-index:4"></div>
+<div style="height:54px;padding:0 32px;display:flex;align-items:center;justify-content:space-between;font-size:16px;font-weight:600"><span>9:41</span><span style="display:flex;gap:6px"><i class="ph-fill ph-cell-signal-full"></i><i class="ph-fill ph-wifi-high"></i><i class="ph-fill ph-battery-full"></i></span></div>
+<div style="padding:8px 16px 12px 20px;display:flex;align-items:center;gap:12px;border-bottom:1px solid var(--line,#2A2840)"><img src="assets/aster-happy.svg" alt="" style="width:44px;height:44px;border-radius:50%"><span style="flex:1;display:flex;flex-direction:column;gap:1px"><span style="font-size:18px;font-weight:600">Aster</span><span style="font-size:13px;color:var(--muted,#A6A3B8)">Your life coach</span></span><span style="width:44px;height:44px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:22px"><i class="ph ph-clock-counter-clockwise"></i></span><span style="width:44px;height:44px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:22px"><i class="ph ph-note-pencil"></i></span></div>
+<div style="padding:14px 16px;display:flex;flex-direction:column;gap:12px;font-size:16px;line-height:1.45">
+<span style="align-self:center;padding:6px 12px;border-radius:999px;background:var(--raised,#1C1A2B);font-size:13px;color:var(--muted,#A6A3B8);display:flex;align-items:center;gap:6px"><i class="ph ph-paperclip"></i>Context: Book flight to San Francisco</span>
+<div style="align-self:flex-start;max-width:80%;padding:11px 14px;border-radius:18px 18px 18px 6px;background:var(--raised,#1C1A2B)">You finished 3 of 5 today. Which one felt heaviest?</div>
+<div style="align-self:flex-end;max-width:80%;padding:11px 14px;border-radius:18px 18px 6px 18px;background:var(--accent,#5B4CF0);color:#FFFFFF">The flight booking, honestly. I kept putting it off.</div>
+<div style="align-self:flex-start;max-width:80%;padding:11px 14px;border-radius:18px 18px 18px 6px;background:var(--raised,#1C1A2B)">Your last entry said you felt anxious about prices. Want to set a price limit, then book the first fare under it?</div>
+<div style="align-self:flex-start;display:flex;align-items:center;gap:8px;font-size:13px;color:var(--subtle,#8A879E)"><img src="assets/aster-happy.svg" alt="" style="width:22px;height:22px;border-radius:50%">Thinking…</div>
+</div>
+<div style="position:absolute;left:0;right:0;bottom:88px;padding:0 16px 12px;display:flex;flex-direction:column;gap:10px">
+<div style="display:flex;gap:8px;overflow:hidden"><span style="flex:none;padding:8px 12px;border-radius:999px;border:1px solid var(--line,#2A2840);font-size:14px;font-weight:500;white-space:nowrap">What should I focus on?</span><span style="flex:none;padding:8px 12px;border-radius:999px;border:1px solid var(--line,#2A2840);font-size:14px;font-weight:500;white-space:nowrap">Help me restart</span><span style="flex:none;padding:8px 12px;border-radius:999px;border:1px solid var(--line,#2A2840);font-size:14px;font-weight:500;white-space:nowrap">What do my reflections show?</span></div>
+<div style="min-height:50px;box-sizing:border-box;border-radius:25px;border:1px solid var(--line,#2A2840);background:var(--raised,#1C1A2B);display:flex;align-items:center;justify-content:space-between;gap:8px;padding:0 6px 0 16px;font-size:15px;color:var(--subtle,#8A879E)"><span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Ask about your tasks, blockers, or next step...</span><span style="width:38px;height:38px;flex:none;border-radius:50%;background:var(--accent,#5B4CF0);color:#FFFFFF;display:flex;align-items:center;justify-content:center;font-size:18px"><i class="ph ph-arrow-up"></i></span></div>
+</div>
+<div style="position:absolute;left:0;right:0;bottom:0;height:88px;border-top:1px solid var(--line,#2A2840);background:var(--bar,rgba(11,10,20,.92));display:grid;grid-template-columns:repeat(4,1fr);padding-top:8px;font-size:11px;font-weight:500;text-align:center;color:var(--subtle,#8A879E)">
+<span style="display:flex;flex-direction:column;align-items:center;gap:3px"><i class="ph ph-sun-horizon" style="font-size:25px"></i>Today</span>
+<span style="display:flex;flex-direction:column;align-items:center;gap:3px"><i class="ph ph-calendar-blank" style="font-size:25px"></i>Calendar</span>
+<span style="display:flex;flex-direction:column;align-items:center;gap:3px;color:var(--accent-text,#A79BFF)"><i class="ph-fill ph-chat-circle-dots" style="font-size:25px"></i>Aster</span>
+<span style="display:flex;flex-direction:column;align-items:center;gap:3px"><i class="ph ph-chart-bar" style="font-size:25px"></i>Progress</span>
+</div>
+<div style="position:absolute;bottom:8px;left:50%;transform:translateX(-50%);width:134px;height:5px;border-radius:3px;background:var(--ink,#F3F2F8)"></div>
+</div>
+</figure>
+
+<figure style="margin:0;display:flex;flex-direction:column;gap:14px;width:390px">
+<figcaption style="display:flex;flex-direction:column;gap:4px"><span style="font:500 12px 'JetBrains Mono',monospace;color:var(--muted,#A6A3B8)">10 · CHAT HISTORY (SHEET)</span><span style="font-size:14px;line-height:1.45;color:var(--muted,#A6A3B8)">Opens from the clock icon. Recent reflections stay available as an Aster tab section.</span></figcaption>
+<div data-screen-label="10 Chat history" style="position:relative;width:390px;height:844px;border-radius:48px;overflow:hidden;background:var(--bg,#0B0A14);color:var(--ink,#F3F2F8);box-shadow:var(--shadow,0 40px 80px -40px rgba(0,0,0,.9)), 0 0 0 1px var(--frame,#2A2840)">
+<div style="position:absolute;top:11px;left:50%;transform:translateX(-50%);width:124px;height:36px;border-radius:20px;background:#000;z-index:4"></div>
+<div style="height:54px;padding:0 32px;display:flex;align-items:center;justify-content:space-between;font-size:16px;font-weight:600"><span>9:41</span><span style="display:flex;gap:6px"><i class="ph-fill ph-cell-signal-full"></i><i class="ph-fill ph-wifi-high"></i><i class="ph-fill ph-battery-full"></i></span></div>
+<div style="position:absolute;inset:0;background:var(--scrim,rgba(3,2,10,.6))"></div>
+<div style="position:absolute;left:0;right:0;bottom:0;top:250px;border-radius:28px 28px 0 0;background:var(--sheet,#13121F);padding:10px 20px 0;display:flex;flex-direction:column;gap:16px">
+<span style="align-self:center;width:40px;height:5px;border-radius:3px;background:var(--line,#2A2840)"></span>
+<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px"><div style="display:flex;flex-direction:column;gap:4px"><span style="font-size:22px;font-weight:600;letter-spacing:-0.02em">Chat history</span><span style="font-size:14px;color:var(--muted,#A6A3B8)">Resume a previous conversation or start fresh.</span></div><span style="height:36px;padding:0 14px;flex:none;border-radius:999px;background:var(--accent,#5B4CF0);color:#FFFFFF;display:flex;align-items:center;gap:6px;font-size:15px;font-weight:600"><i class="ph ph-plus"></i>New</span></div>
+<div style="display:flex;flex-direction:column">
+<div style="padding:14px 0;border-bottom:1px solid var(--line,#2A2840);display:flex;flex-direction:column;gap:4px"><span style="display:flex;justify-content:space-between;font-size:16px;font-weight:600">Booking the flight<span style="font-size:13px;font-weight:500;color:var(--subtle,#8A879E)">Today</span></span><span style="font-size:14px;color:var(--muted,#A6A3B8);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Want to set a price limit, then book the first fare under it?</span></div>
+<div style="padding:14px 0;border-bottom:1px solid var(--line,#2A2840);display:flex;flex-direction:column;gap:4px"><span style="display:flex;justify-content:space-between;font-size:16px;font-weight:600">Restarting after a slow week<span style="font-size:13px;font-weight:500;color:var(--subtle,#8A879E)">Wed</span></span><span style="font-size:14px;color:var(--muted,#A6A3B8);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Pick one small item for tomorrow morning and protect it.</span></div>
+<div style="padding:14px 0;display:flex;flex-direction:column;gap:4px"><span style="display:flex;justify-content:space-between;font-size:16px;font-weight:600">Q4 planning<span style="font-size:13px;font-weight:500;color:var(--subtle,#8A879E)">14 Sep</span></span><span style="font-size:14px;color:var(--muted,#A6A3B8);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Your reflections show mornings go better for deep work.</span></div>
+</div>
+</div>
+<div style="position:absolute;bottom:8px;left:50%;transform:translateX(-50%);width:134px;height:5px;border-radius:3px;background:var(--ink,#F3F2F8)"></div>
+</div>
+</figure>
+
+</div>
+</section>
+
+<section data-screen-label="Progress and account" style="display:flex;flex-direction:column;gap:28px">
+<h2 style="margin:0;font-size:22px;font-weight:600">Progress &amp; account</h2>
+<div style="display:flex;flex-wrap:wrap;gap:56px;align-items:flex-start">
+
+<figure style="margin:0;display:flex;flex-direction:column;gap:14px;width:390px">
+<figcaption style="display:flex;flex-direction:column;gap:4px"><span style="font:500 12px 'JetBrains Mono',monospace;color:var(--muted,#A6A3B8)">11 · PROGRESS</span><span style="font-size:14px;line-height:1.45;color:var(--muted,#A6A3B8)">Keeps the Progress / Reflections tabs. Adds the activity heatmap from the web app and a breakdown of emotions.</span></figcaption>
+<div data-screen-label="11 Progress" style="position:relative;width:390px;height:844px;border-radius:48px;overflow:hidden;background:var(--bg,#0B0A14);color:var(--ink,#F3F2F8);box-shadow:var(--shadow,0 40px 80px -40px rgba(0,0,0,.9)), 0 0 0 1px var(--frame,#2A2840)">
+<div style="position:absolute;top:11px;left:50%;transform:translateX(-50%);width:124px;height:36px;border-radius:20px;background:#000;z-index:4"></div>
+<div style="height:54px;padding:0 32px;display:flex;align-items:center;justify-content:space-between;font-size:16px;font-weight:600"><span>9:41</span><span style="display:flex;gap:6px"><i class="ph-fill ph-cell-signal-full"></i><i class="ph-fill ph-wifi-high"></i><i class="ph-fill ph-battery-full"></i></span></div>
+<div style="padding:12px 20px 0;display:flex;flex-direction:column;gap:16px">
+<div style="display:flex;flex-direction:column;gap:2px"><span style="font-size:30px;font-weight:600;letter-spacing:-0.03em">Progress</span><span style="font-size:14px;color:var(--muted,#A6A3B8)">Track completed tasks and reflection activity.</span></div>
+<div style="display:grid;grid-template-columns:1fr 1fr;padding:3px;border-radius:13px;background:var(--raised,#1C1A2B);font-size:15px;font-weight:600;text-align:center"><span style="padding:9px 0;border-radius:10px;background:var(--seg,#2A2840)">Progress</span><span style="padding:9px 0;color:var(--muted,#A6A3B8)">Reflections</span></div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+<div style="padding:14px;border-radius:16px;background:var(--raised,#1C1A2B);display:flex;flex-direction:column;gap:4px"><span style="font-size:30px;font-weight:600;letter-spacing:-0.02em">15</span><span style="font-size:14px;color:var(--muted,#A6A3B8);display:flex;align-items:center;gap:5px"><i class="ph-fill ph-check-circle" style="color:var(--low,#3CCFB4)"></i>Completed</span></div>
+<div style="padding:14px;border-radius:16px;background:var(--raised,#1C1A2B);display:flex;flex-direction:column;gap:4px"><span style="font-size:30px;font-weight:600;letter-spacing:-0.02em">5</span><span style="font-size:14px;color:var(--muted,#A6A3B8);display:flex;align-items:center;gap:5px"><i class="ph ph-circle-dashed" style="color:var(--nd,#8A879E)"></i>Open</span></div>
+</div>
+<div style="padding:14px;border-radius:16px;background:var(--raised,#1C1A2B);display:flex;flex-direction:column;gap:12px">
+<div style="display:flex;justify-content:space-between;align-items:baseline"><span style="font-size:16px;font-weight:600">Activity</span><span style="font-size:13px;color:var(--subtle,#8A879E)">Last 16 weeks</span></div>
+<div style="display:grid;grid-template-columns:repeat(16,1fr);grid-auto-flow:column;grid-template-rows:repeat(7,1fr);gap:4px">
+<sc-for list="{{ heat }}" as="h" hint-placeholder-count="112"><span style="{{ h }}"></span></sc-for>
+</div>
+<div style="display:flex;justify-content:flex-end;align-items:center;gap:4px;font-size:11px;color:var(--subtle,#8A879E)">Less<span style="width:10px;height:10px;border-radius:3px;background:var(--line,#2A2840)"></span><span style="width:10px;height:10px;border-radius:3px;background:var(--heat1,#2B2275)"></span><span style="width:10px;height:10px;border-radius:3px;background:var(--heat2,#4A3CE0)"></span><span style="width:10px;height:10px;border-radius:3px;background:var(--heat3,#8676FF)"></span>More</div>
+</div>
+<div style="padding:14px;border-radius:16px;background:var(--raised,#1C1A2B);display:flex;flex-direction:column;gap:12px"><span style="font-size:16px;font-weight:600">Most felt this month</span>
+<div style="display:grid;grid-template-columns:90px 1fr 28px;gap:10px;align-items:center;font-size:14px"><span>Calm</span><span style="height:8px;border-radius:8px;background:var(--line,#2A2840)"><span style="display:block;width:80%;height:100%;border-radius:8px;background:var(--accent,#5B4CF0)"></span></span><span style="text-align:right;color:var(--muted,#A6A3B8)">12</span>
+<span>Hopeful</span><span style="height:8px;border-radius:8px;background:var(--line,#2A2840)"><span style="display:block;width:60%;height:100%;border-radius:8px;background:var(--accent,#5B4CF0)"></span></span><span style="text-align:right;color:var(--muted,#A6A3B8)">9</span>
+<span>Tired</span><span style="height:8px;border-radius:8px;background:var(--line,#2A2840)"><span style="display:block;width:33%;height:100%;border-radius:8px;background:var(--nd,#8A879E)"></span></span><span style="text-align:right;color:var(--muted,#A6A3B8)">5</span></div>
+</div>
+</div>
+<div style="position:absolute;left:0;right:0;bottom:0;height:88px;border-top:1px solid var(--line,#2A2840);background:var(--bar,rgba(11,10,20,.92));display:grid;grid-template-columns:repeat(4,1fr);padding-top:8px;font-size:11px;font-weight:500;text-align:center;color:var(--subtle,#8A879E)">
+<span style="display:flex;flex-direction:column;align-items:center;gap:3px"><i class="ph ph-sun-horizon" style="font-size:25px"></i>Today</span>
+<span style="display:flex;flex-direction:column;align-items:center;gap:3px"><i class="ph ph-calendar-blank" style="font-size:25px"></i>Calendar</span>
+<span style="display:flex;flex-direction:column;align-items:center;gap:3px"><i class="ph ph-chat-circle-dots" style="font-size:25px"></i>Aster</span>
+<span style="display:flex;flex-direction:column;align-items:center;gap:3px;color:var(--accent-text,#A79BFF)"><i class="ph-fill ph-chart-bar" style="font-size:25px"></i>Progress</span>
+</div>
+<div style="position:absolute;bottom:8px;left:50%;transform:translateX(-50%);width:134px;height:5px;border-radius:3px;background:var(--ink,#F3F2F8)"></div>
+</div>
+</figure>
+
+<figure style="margin:0;display:flex;flex-direction:column;gap:14px;width:390px">
+<figcaption style="display:flex;flex-direction:column;gap:4px"><span style="font:500 12px 'JetBrains Mono',monospace;color:var(--muted,#A6A3B8)">12 · NOTIFICATIONS (SHEET)</span><span style="font-size:14px;line-height:1.45;color:var(--muted,#A6A3B8)">Opens from the bell. Completion check-ins can be answered inline. "Not yet" is neutral.</span></figcaption>
+<div data-screen-label="12 Notifications" style="position:relative;width:390px;height:844px;border-radius:48px;overflow:hidden;background:var(--bg,#0B0A14);color:var(--ink,#F3F2F8);box-shadow:var(--shadow,0 40px 80px -40px rgba(0,0,0,.9)), 0 0 0 1px var(--frame,#2A2840)">
+<div style="position:absolute;top:11px;left:50%;transform:translateX(-50%);width:124px;height:36px;border-radius:20px;background:#000;z-index:4"></div>
+<div style="height:54px;padding:0 32px;display:flex;align-items:center;justify-content:space-between;font-size:16px;font-weight:600"><span>9:41</span><span style="display:flex;gap:6px"><i class="ph-fill ph-cell-signal-full"></i><i class="ph-fill ph-wifi-high"></i><i class="ph-fill ph-battery-full"></i></span></div>
+<div style="position:absolute;inset:0;background:var(--scrim,rgba(3,2,10,.6))"></div>
+<div style="position:absolute;left:0;right:0;bottom:0;top:130px;border-radius:28px 28px 0 0;background:var(--sheet,#13121F);padding:10px 20px 0;display:flex;flex-direction:column;gap:14px">
+<span style="align-self:center;width:40px;height:5px;border-radius:3px;background:var(--line,#2A2840)"></span>
+<div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:22px;font-weight:600;letter-spacing:-0.02em">Notifications</span><span style="font-size:15px;font-weight:600;color:var(--accent-text,#A79BFF)">Read all</span></div>
+<div style="padding:14px;border-radius:16px;background:var(--raised,#1C1A2B);display:flex;flex-direction:column;gap:12px">
+<div style="display:flex;gap:12px"><span style="width:36px;height:36px;flex:none;border-radius:50%;background:var(--accent-soft,rgba(107,92,255,.18));color:var(--accent-text,#A79BFF);display:flex;align-items:center;justify-content:center;font-size:18px"><i class="ph ph-check-square"></i></span><span style="flex:1;display:flex;flex-direction:column;gap:3px"><span style="font-size:15px;font-weight:600;line-height:1.35">Did you finish "Book flight to San Francisco"?</span><span style="font-size:13px;color:var(--subtle,#8A879E)">5 min ago</span></span><span style="width:8px;height:8px;border-radius:50%;background:var(--accent,#5B4CF0);margin-top:6px"></span></div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><span style="height:42px;border-radius:12px;background:var(--accent,#5B4CF0);color:#FFFFFF;font-size:15px;font-weight:600;display:flex;align-items:center;justify-content:center">Yes</span><span style="height:42px;border-radius:12px;border:1px solid var(--line,#2A2840);font-size:15px;font-weight:600;display:flex;align-items:center;justify-content:center">Not yet</span></div>
+</div>
+<div style="padding:14px;border-radius:16px;background:var(--raised,#1C1A2B);display:flex;gap:12px"><span style="width:36px;height:36px;flex:none;border-radius:50%;background:var(--med-bg,rgba(108,192,245,.14));color:var(--med,#6CC0F5);display:flex;align-items:center;justify-content:center;font-size:18px"><i class="ph ph-alarm"></i></span><span style="flex:1;display:flex;flex-direction:column;gap:3px"><span style="font-size:15px;font-weight:600;line-height:1.35">Reminder: Draft Q4 plan at 10:00</span><span style="font-size:13px;color:var(--subtle,#8A879E)">1 h ago</span></span><span style="width:8px;height:8px;border-radius:50%;background:var(--accent,#5B4CF0);margin-top:6px"></span></div>
+<span style="font-size:13px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--subtle,#8A879E);margin-top:4px">Earlier</span>
+<div style="padding:4px 2px;display:flex;gap:12px;opacity:.7"><span style="width:36px;height:36px;flex:none;border-radius:50%;background:var(--raised,#1C1A2B);display:flex;align-items:center;justify-content:center;font-size:18px"><img src="assets/aster-happy.svg" alt="" style="width:36px;height:36px;border-radius:50%"></span><span style="flex:1;display:flex;flex-direction:column;gap:3px"><span style="font-size:15px;font-weight:500;line-height:1.35">Aster: you've reflected 5 days in a row.</span><span style="font-size:13px;color:var(--subtle,#8A879E)">Yesterday</span></span></div>
+</div>
+<div style="position:absolute;bottom:8px;left:50%;transform:translateX(-50%);width:134px;height:5px;border-radius:3px;background:var(--ink,#F3F2F8)"></div>
+</div>
+</figure>
+
+<figure style="margin:0;display:flex;flex-direction:column;gap:14px;width:390px">
+<figcaption style="display:flex;flex-direction:column;gap:4px"><span style="font:500 12px 'JetBrains Mono',monospace;color:var(--muted,#A6A3B8)">13 · SETTINGS</span><span style="font-size:14px;line-height:1.45;color:var(--muted,#A6A3B8)">Opens from the avatar. The Dusk / Dark / Blue themes become Night / Dawn / System. Profile edits open a sheet with the existing fields.</span></figcaption>
+<div data-screen-label="13 Settings" style="position:relative;width:390px;height:844px;border-radius:48px;overflow:hidden;background:var(--bg,#0B0A14);color:var(--ink,#F3F2F8);box-shadow:var(--shadow,0 40px 80px -40px rgba(0,0,0,.9)), 0 0 0 1px var(--frame,#2A2840)">
+<div style="position:absolute;top:11px;left:50%;transform:translateX(-50%);width:124px;height:36px;border-radius:20px;background:#000;z-index:4"></div>
+<div style="height:54px;padding:0 32px;display:flex;align-items:center;justify-content:space-between;font-size:16px;font-weight:600"><span>9:41</span><span style="display:flex;gap:6px"><i class="ph-fill ph-cell-signal-full"></i><i class="ph-fill ph-wifi-high"></i><i class="ph-fill ph-battery-full"></i></span></div>
+<div style="height:48px;padding:0 12px;display:flex;align-items:center"><span style="height:44px;padding:0 8px;display:flex;align-items:center;gap:2px;font-size:17px;color:var(--accent-text,#A79BFF)"><i class="ph ph-caret-left" style="font-size:22px"></i>Today</span></div>
+<div style="padding:0 20px;display:flex;flex-direction:column;gap:18px">
+<div style="display:flex;flex-direction:column;gap:2px"><span style="font-size:13px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--subtle,#8A879E)">Account</span><span style="font-size:30px;font-weight:600;letter-spacing:-0.03em">Settings</span></div>
+<div style="padding:14px;border-radius:18px;background:var(--raised,#1C1A2B);display:flex;align-items:center;gap:14px"><img src="assets/crew-indigo.svg" alt="" style="width:56px;height:56px;border-radius:50%"><span style="flex:1;display:flex;flex-direction:column;gap:2px;min-width:0"><span style="font-size:18px;font-weight:600">Alex Morgan</span><span style="font-size:14px;color:var(--muted,#A6A3B8)">alex@example.com</span></span><span style="height:36px;padding:0 14px;border-radius:999px;border:1px solid var(--line,#2A2840);display:flex;align-items:center;font-size:14px;font-weight:600">Edit</span></div>
+<div style="border-radius:18px;background:var(--raised,#1C1A2B);display:flex;flex-direction:column;font-size:16px">
+<div style="height:52px;padding:0 16px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--line,#2A2840)"><span>Phone</span><span style="color:var(--muted,#A6A3B8)">+1 415 555 0142</span></div>
+<div style="height:52px;padding:0 16px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--line,#2A2840)"><span>Date of birth</span><span style="color:var(--muted,#A6A3B8)">12 Mar 1994</span></div>
+<div style="height:52px;padding:0 16px;display:flex;align-items:center;justify-content:space-between"><span>In-app notifications</span><span style="width:51px;height:31px;border-radius:16px;background:var(--low,#3CCFB4);position:relative"><span style="position:absolute;right:2px;top:2px;width:27px;height:27px;border-radius:50%;background:#FFFFFF;box-shadow:0 2px 4px rgba(0,0,0,.25)"></span></span></div>
+</div>
+<div style="display:flex;flex-direction:column;gap:8px"><span style="font-size:13px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--subtle,#8A879E);padding-left:4px">Appearance</span>
+<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px">
+<sc-for list="{{ themes }}" as="t" hint-placeholder-count="3"><span style="{{ t.box }}"><span style="{{ t.swatch }}"></span><span style="font-size:14px;font-weight:600">{{ t.label }}</span></span></sc-for>
+</div></div>
+<div style="border-radius:18px;background:var(--raised,#1C1A2B);display:flex;flex-direction:column;font-size:16px">
+<div style="height:52px;padding:0 16px;display:flex;align-items:center;gap:12px;border-bottom:1px solid var(--line,#2A2840)"><i class="ph ph-paper-plane-tilt" style="font-size:20px;color:var(--accent-text,#A79BFF)"></i><span style="flex:1">Telegram reminders</span><i class="ph ph-caret-right" style="color:var(--subtle,#8A879E)"></i></div>
+<div style="height:52px;padding:0 16px;display:flex;align-items:center;gap:12px;border-bottom:1px solid var(--line,#2A2840)"><i class="ph ph-lifebuoy" style="font-size:20px;color:var(--accent-text,#A79BFF)"></i><span style="flex:1">Contact us</span><i class="ph ph-caret-right" style="color:var(--subtle,#8A879E)"></i></div>
+<div style="height:52px;padding:0 16px;display:flex;align-items:center;gap:12px"><i class="ph ph-shield-check" style="font-size:20px;color:var(--accent-text,#A79BFF)"></i><span style="flex:1">Privacy</span><i class="ph ph-caret-right" style="color:var(--subtle,#8A879E)"></i></div>
+</div>
+<div style="height:52px;border-radius:18px;background:var(--raised,#1C1A2B);display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:600;color:var(--danger,#F0707A)">Sign out</div>
+</div>
+<div style="position:absolute;bottom:8px;left:50%;transform:translateX(-50%);width:134px;height:5px;border-radius:3px;background:var(--ink,#F3F2F8)"></div>
+</div>
+</figure>
+
+</div>
+</section>
+
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;theme&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;Night&quot;,&quot;Dawn&quot;],&quot;default&quot;:&quot;Night&quot;,&quot;tsType&quot;:&quot;string&quot;}}">
+class Component extends DCLogic {
+  renderVals() {
+    const night = (this.props.theme ?? 'Night') !== 'Dawn';
+    const vars = night ? {
+      '--canvas': '#15141D', '--frame': '#2A2840', '--shadow': '0 40px 80px -40px rgba(0,0,0,.9)',
+      '--bg': '#0B0A14', '--sunken': '#13121F', '--sheet': '#13121F', '--raised': '#1C1A2B', '--seg': '#2A2840', '--bar': 'rgba(11,10,20,.92)', '--scrim': 'rgba(3,2,10,.6)',
+      '--ink': '#F3F2F8', '--muted': '#A6A3B8', '--subtle': '#8A879E', '--line': '#2A2840', '--line-strong': '#3A3857',
+      '--accent': '#5B4CF0', '--accent-soft': 'rgba(107,92,255,.18)', '--accent-text': '#A79BFF', '--mark': '#A79BFF',
+      '--low': '#3CCFB4', '--med': '#6CC0F5', '--high': '#F2B24C', '--nd': '#8A879E', '--danger': '#F0707A', '--on-low': '#0B0A14',
+      '--low-bg': 'rgba(60,207,180,.14)', '--med-bg': 'rgba(108,192,245,.14)', '--high-bg': 'rgba(242,178,76,.14)',
+      '--heat1': '#2B2275', '--heat2': '#4A3CE0', '--heat3': '#8676FF',
+      '--sky': 'linear-gradient(180deg,#05040C 0%,#0B0A1A 45%,#1A1450 100%)', '--launch': 'linear-gradient(180deg,#15123A 0%,#0B0A14 70%)',
+      '--atmo': '#6B5CFF', '--limb': 'rgba(167,155,255,.55)', '--apple-bg': '#FFFFFF', '--apple-ink': '#000000'
+    } : {
+      '--canvas': '#E9E6E0', '--frame': '#DDD8CF', '--shadow': '0 40px 80px -40px rgba(80,50,20,.4)',
+      '--bg': '#F7F5F1', '--sunken': '#F3F0EA', '--sheet': '#F7F5F1', '--raised': '#FFFFFF', '--seg': '#FFFFFF', '--bar': 'rgba(247,245,241,.94)', '--scrim': 'rgba(22,21,31,.35)',
+      '--ink': '#16151F', '--muted': '#56536A', '--subtle': '#6E6B7E', '--line': '#E6E2DA', '--line-strong': '#CFC9BE',
+      '--accent': '#4A3CE0', '--accent-soft': 'rgba(74,60,224,.10)', '--accent-text': '#4A3CE0', '--mark': '#4A3CE0',
+      '--low': '#0E8A76', '--med': '#1C73B0', '--high': '#9A5F08', '--nd': '#6E6B7E', '--danger': '#C0323F', '--on-low': '#FFFFFF',
+      '--low-bg': 'rgba(14,138,118,.10)', '--med-bg': 'rgba(28,115,176,.10)', '--high-bg': 'rgba(154,95,8,.10)',
+      '--heat1': '#E2DEFF', '--heat2': '#A79BFF', '--heat3': '#4A3CE0',
+      '--sky': 'linear-gradient(180deg,#EEEBF7 0%,#F7F3EE 42%,#FBE2CF 100%)', '--launch': 'linear-gradient(180deg,#EEEBF7 0%,#FBE2CF 70%)',
+      '--atmo': '#F2A76B', '--limb': 'rgba(242,167,107,.7)', '--apple-bg': '#000000', '--apple-ink': '#FFFFFF'
+    };
+    const dotMap = { 2: ['med'], 4: ['low', 'high'], 8: ['med'], 10: ['low'], 11: ['high', 'med'], 15: ['low'], 17: ['med', 'low', 'high'], 18: ['high'], 22: ['low'], 24: ['med'], 25: ['low', 'med'], 27: ['low', 'med', 'high'], 29: ['high', 'med', 'low'], 30: ['med'] };
+    const days = [{ n: 30, m: 1 }, { n: 31, m: 1 }];
+    for (let i = 1; i <= 30; i++) days.push({ n: i });
+    for (let i = 1; days.length < 35; i++) days.push({ n: i, m: 1 });
+    const daysV = days.map(d => {
+      const sel = !d.m && d.n === 29, today = !d.m && d.n === 27;
+      return {
+        n: d.n,
+        style: { width: 32, height: 32, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15, fontWeight: sel || today ? 600 : 500,
+          background: sel ? 'var(--accent)' : 'transparent', color: sel ? '#FFFFFF' : today ? 'var(--accent-text)' : d.m ? 'var(--subtle)' : 'var(--ink)',
+          boxShadow: today ? 'inset 0 0 0 1.5px var(--accent)' : 'none', opacity: d.m ? 0.4 : 1 },
+        dots: d.m ? [] : (dotMap[d.n] || []).map(k => ({ width: 5, height: 5, borderRadius: 3, background: `var(--${k})` }))
+      };
+    });
+    const emo = ['Happy', 'Sad', 'Excited', 'Calm', 'Anxious', 'Overwhelmed', 'Hopeful', 'Tired', 'Unable to describe', 'Other'];
+    const emotions = emo.map(label => {
+      const on = label === 'Calm';
+      return { label, style: { height: 38, padding: '0 14px', borderRadius: 999, display: 'flex', alignItems: 'center', fontSize: 14, fontWeight: 600,
+        background: on ? 'var(--accent-soft)' : 'transparent', color: on ? 'var(--accent-text)' : 'var(--muted)',
+        boxShadow: on ? 'inset 0 0 0 1.5px var(--accent)' : 'inset 0 0 0 1px var(--line)' } };
+    });
+    let seed = 11;
+    const rnd = () => { seed = (seed * 9301 + 49297) % 233280; return seed / 233280; };
+    const heat = [];
+    for (let i = 0; i < 112; i++) {
+      const r = rnd() * (0.5 + i / 160), lvl = r < 0.25 ? 0 : r < 0.5 ? 1 : r < 0.75 ? 2 : 3;
+      heat.push({ aspectRatio: '1', borderRadius: 3, background: ['var(--line)', 'var(--heat1)', 'var(--heat2)', 'var(--heat3)'][lvl] });
+    }
+    const themes = [
+      ['Night', 'linear-gradient(180deg,#05040C,#1A1450)'],
+      ['Dawn', 'linear-gradient(180deg,#EEEBF7,#FBE2CF)'],
+      ['System', 'linear-gradient(135deg,#0B0A14 50%,#F7F5F1 50%)']
+    ].map(([label, g]) => {
+      const on = label === (night ? 'Night' : 'Dawn');
+      return { label,
+        box: { padding: 8, borderRadius: 14, background: 'var(--raised)', display: 'flex', flexDirection: 'column', gap: 8, alignItems: 'center', boxShadow: on ? 'inset 0 0 0 2px var(--accent)' : 'inset 0 0 0 1px var(--line)' },
+        swatch: { width: '100%', height: 48, borderRadius: 9, background: g, boxShadow: 'inset 0 0 0 1px rgba(128,128,128,.25)' } };
+    });
+    return { vars, days: daysV, emotions, heat, themes };
+  }
+}
+</script>
+</body>
+</html>
