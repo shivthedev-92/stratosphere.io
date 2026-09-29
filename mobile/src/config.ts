@@ -14,3 +14,5 @@ if (!configured) {
 }
 
 export const API_BASE_URL = configured ?? "http://localhost:8000";
+
+export const WEB_URL = process.env.EXPO_PUBLIC_WEB_URL ?? null;

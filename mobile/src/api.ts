@@ -12,6 +12,7 @@ export type UserOut = {
   phone_number: string | null;
   date_of_birth: string | null;
   in_app_notifications_enabled: boolean;
+  avatar_id: string | null;
   created_at: string;
 };
 
@@ -135,6 +136,24 @@ export type SupportTicketOut = SupportTicketCreate & {
   created_at: string;
 };
 
+export type ProgressDailyOut = {
+  timezone: string;
+  start: string;
+  end: string;
+  days: { date: string; done: number; not_done: number; meaningful: number }[];
+};
+
+export type TelegramStatusOut = {
+  available: boolean;
+  linked: boolean;
+  linked_at: string | null;
+};
+
+export type TelegramLinkOut = {
+  url: string;
+  expires_at: string;
+};
+
 async function request<T>(path: string, token?: string, init: RequestInit = {}): Promise<T> {
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
@@ -179,6 +198,22 @@ export const api = {
       method: "PATCH",
       body: JSON.stringify(data),
     }),
+
+  updateAvatar: (token: string, avatarId: string | null) =>
+    request<UserOut>("/me/avatar", token, {
+      method: "PUT",
+      body: JSON.stringify({ avatar_id: avatarId }),
+    }),
+
+  progressDaily: (token: string, timeZone: string, days = 112) =>
+    request<ProgressDailyOut>(`/progress/daily?tz=${encodeURIComponent(timeZone)}&days=${days}`, token),
+
+  telegramStatus: (token: string) => request<TelegramStatusOut>("/me/telegram", token),
+
+  telegramLink: (token: string) =>
+    request<TelegramLinkOut>("/me/telegram/link", token, { method: "POST" }),
+
+  telegramUnlink: (token: string) => request<void>("/me/telegram", token, { method: "DELETE" }),
 
   notifications: (token: string) => request<NotificationOut[]>("/notifications", token),
 
