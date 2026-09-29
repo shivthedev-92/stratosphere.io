@@ -1,5 +1,6 @@
 import type { GoalLogOut, GoalOut, Priority } from "@/lib/api";
 import { ActivityHeatmap } from "@/components/activity-heatmap";
+import { CheckCircle, Circle, Sparkle, type Icon as PhosphorIcon } from "@phosphor-icons/react";
 
 const priorityLabels: Record<Priority, string> = {
   low: "Low",
@@ -38,9 +39,9 @@ export function ProgressSystem({ goals, logs }: { goals: GoalOut[]; logs: GoalLo
 
       <div className="mt-5 grid gap-4 lg:grid-cols-[1fr_1fr]">
         <div className="grid grid-cols-3 gap-3">
-          <Stat label="Done" value={doneLogs} />
-          <Stat label="Not done" value={notDoneLogs} />
-          <Stat label="Felt meaningful" value={meaningfulLogs} />
+          <Stat label="Done" value={doneLogs} icon={CheckCircle} tone="text-low" />
+          <Stat label="Not done" value={notDoneLogs} icon={Circle} tone="text-fg-muted" />
+          <Stat label="Felt meaningful" value={meaningfulLogs} icon={Sparkle} tone="text-accent-soft" />
         </div>
 
         <div className="rounded-card border border-line bg-surface p-4">
@@ -67,11 +68,26 @@ export function ProgressSystem({ goals, logs }: { goals: GoalOut[]; logs: GoalLo
   );
 }
 
-function Stat({ label, value }: { label: string; value: number }) {
+function Stat({
+  label,
+  value,
+  icon: Icon,
+  tone,
+}: {
+  label: string;
+  value: number;
+  icon: PhosphorIcon;
+  tone: string;
+}) {
   return (
-    <div className="rounded-control border border-line bg-surface p-3">
-      <p className="text-xs text-fg-subtle">{label}</p>
-      <p className="mt-1 text-xl font-bold text-fg tabular-nums">{value}</p>
+    <div className="flex min-h-28 flex-col justify-between gap-4 rounded-control border border-line bg-surface p-4">
+      <div className={`flex items-start justify-between gap-2 ${tone}`}>
+        <p className="text-xs font-semibold leading-tight text-fg-subtle">{label}</p>
+        <Icon size={18} weight="duotone" aria-hidden="true" className="shrink-0" />
+      </div>
+      <p className={`text-4xl font-semibold leading-none tracking-tight tabular-nums sm:text-5xl ${tone}`}>
+        {value}
+      </p>
     </div>
   );
 }
