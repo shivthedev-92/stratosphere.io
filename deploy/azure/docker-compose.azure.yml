@@ -22,6 +22,8 @@ services:
     logging: *default-logging
 
   api:
+    # GitHub Actions pulls these tags; deploy.sh builds them locally as ":local".
+    image: ${IMAGE_PREFIX:-ghcr.io/shivthedev-92/stratosphere}-api:${IMAGE_TAG:-local}
     build: ../../backend
     restart: unless-stopped
     environment:
@@ -71,6 +73,7 @@ services:
     logging: *default-logging
 
   web:
+    image: ${IMAGE_PREFIX:-ghcr.io/shivthedev-92/stratosphere}-web:${IMAGE_TAG:-local}
     build:
       context: ../../frontend
       args:
