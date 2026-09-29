@@ -922,7 +922,9 @@ export default function DashboardPage() {
                                     {goal.notes}
                                   </p>
                                 )}
-                                <p className="mt-3 inline-flex items-center gap-1.5 text-xs text-fg-subtle">
+                              </button>
+                              <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-fg-subtle">
+                                <p className="inline-flex items-center gap-1.5">
                                   {goal.is_timed && goal.scheduled_for ? (
                                     <>
                                       <Alarm size={14} aria-hidden="true" />
@@ -935,9 +937,7 @@ export default function DashboardPage() {
                                     </>
                                   )}
                                 </p>
-                              </button>
-                              {latestLog && (
-                                <>
+                                {latestLog && (
                                   <button
                                     type="button"
                                     onClick={() =>
@@ -950,7 +950,7 @@ export default function DashboardPage() {
                                     }
                                     aria-expanded={reflectionExpanded}
                                     aria-controls={`reflection-${goal.id}`}
-                                    className="mt-3 inline-flex items-center gap-1.5 rounded-control text-xs font-semibold text-fg-subtle transition-colors hover:text-fg"
+                                    className="inline-flex items-center gap-1.5 rounded-control font-semibold transition-colors hover:text-fg"
                                   >
                                     <ChatCircleText size={14} aria-hidden="true" />
                                     {reflectionExpanded ? "Hide" : "Show"} latest reflection
@@ -963,17 +963,17 @@ export default function DashboardPage() {
                                       className={`transition-transform ${reflectionExpanded ? "rotate-180" : ""}`}
                                     />
                                   </button>
-                                  {reflectionExpanded && (
-                                    <div
-                                      id={`reflection-${goal.id}`}
-                                      className="mt-2 rounded-control border border-line bg-surface px-3 py-2"
-                                    >
-                                      <p className="line-clamp-4 whitespace-pre-wrap break-words font-serif text-[15px] italic text-fg-muted">
-                                        {latestLog.reflection}
-                                      </p>
-                                    </div>
-                                  )}
-                                </>
+                                )}
+                              </div>
+                              {latestLog && reflectionExpanded && (
+                                <div
+                                  id={`reflection-${goal.id}`}
+                                  className="mt-2 rounded-control border border-line bg-surface px-3 py-2"
+                                >
+                                  <p className="line-clamp-4 whitespace-pre-wrap break-words font-serif text-[15px] italic text-fg-muted">
+                                    {latestLog.reflection}
+                                  </p>
+                                </div>
                               )}
                               </div>
                               <div
