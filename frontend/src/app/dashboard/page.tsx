@@ -34,7 +34,7 @@ import { ContactForm } from "@/components/contact-form";
 import { CompletedReflectionsTable } from "@/components/completed-reflections-table";
 import { EmptyGoalsIllustration } from "@/components/illustrations";
 import { MonthPriorityCalendar } from "@/components/month-priority-calendar";
-import { Alarm, Bell, Compass, PencilSimple, Trash } from "@phosphor-icons/react";
+import { Alarm, Bell, CaretDown, ChatCircleText, Compass, PencilSimple, Trash } from "@phosphor-icons/react";
 import { DayIcon, PriorityIcon } from "@/components/icons";
 import { MotivationalBanner } from "@/components/motivational-banner";
 import { TelegramSettings } from "@/components/telegram-settings";
@@ -180,6 +180,7 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [actionItemView, setActionItemView] = useState<ActionItemView>("list");
+  const [expandedReflections, setExpandedReflections] = useState<Set<string>>(() => new Set());
   const [actionFilter, setActionFilter] = useState<ActionFilter>("today");
   const [selectedCalendarDate, setSelectedCalendarDate] = useState<string | null>(null);
   const addCardRef = useRef<HTMLElement>(null);
@@ -881,6 +882,7 @@ export default function DashboardPage() {
                           const isAddressed = addressedGoalIds.has(goal.id);
                           const latestLog = latestLogByGoalId[goal.id];
                           const logCount = logCountByGoalId[goal.id] ?? 0;
+                          const reflectionExpanded = expandedReflections.has(goal.id);
                           return (
                           <article
                             key={goal.id}
@@ -897,10 +899,11 @@ export default function DashboardPage() {
                                   : ""
                               }`}
                             >
+                              <div className="min-w-0">
                               <button
                                 type="button"
                                 onClick={() => router.push(`/tasks/${goal.id}`)}
-                                className="min-w-0 text-left"
+                                className="block min-w-0 text-left"
                               >
                                 <div className="flex flex-wrap items-center gap-2">
                                   <h3 className="break-words font-semibold text-fg">{goal.title}</h3>
@@ -919,7 +922,9 @@ export default function DashboardPage() {
                                     {goal.notes}
                                   </p>
                                 )}
-                                <p className="mt-3 inline-flex items-center gap-1.5 text-xs text-fg-subtle">
+                              </button>
+                              <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-fg-subtle">
+                                <p className="inline-flex items-center gap-1.5">
                                   {goal.is_timed && goal.scheduled_for ? (
                                     <>
                                       <Alarm size={14} aria-hidden="true" />
@@ -933,21 +938,47 @@ export default function DashboardPage() {
                                   )}
                                 </p>
                                 {latestLog && (
-                                  <div className="mt-3 rounded-control border border-line bg-surface px-3 py-2">
-                                    <div className="flex flex-wrap items-center justify-between gap-2">
-                                      <p className="text-xs font-semibold uppercase tracking-wide text-fg-subtle">
-                                        Latest reflection
-                                      </p>
-                                      <span className="text-xs text-fg-subtle">
-                                        {logCount} {logCount === 1 ? "entry" : "entries"}
-                                      </span>
-                                    </div>
-                                    <p className="mt-1 line-clamp-2 whitespace-pre-wrap break-words text-fg-muted font-serif italic text-[15px]">
-                                      {latestLog.reflection}
-                                    </p>
-                                  </div>
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      setExpandedReflections((prev) => {
+                                        const next = new Set(prev);
+                                        if (next.has(goal.id)) next.delete(goal.id);
+                                        else next.add(goal.id);
+                                        return next;
+                                      })
+                                    }
+                                    aria-expanded={reflectionExpanded}
+                                    aria-controls={`reflection-${goal.id}`}
+                                    className="inline-flex items-center gap-1.5 rounded-control font-semibold transition-colors hover:text-fg"
+                                  >
+                                    <ChatCircleText size={14} aria-hidden="true" />
+                                    {reflectionExpanded ? "Hide" : "Show"} latest reflection
+                                    <span className="font-normal">
+                                      · {logCount} {logCount === 1 ? "entry" : "entries"}
+                                    </span>
+                                    <CaretDown
+                                      size={12}
+                                      aria-hidden="true"
+                                      className={`transition-transform ${reflectionExpanded ? "rotate-180" : ""}`}
+                                    />
+                                  </button>
                                 )}
-                              </button>
+                              </div>
+                              {latestLog && (
+                                // Stays in the DOM while collapsed so the toggle's
+                                // aria-controls always points at a real element.
+                                <div
+                                  id={`reflection-${goal.id}`}
+                                  hidden={!reflectionExpanded}
+                                  className="mt-2 rounded-control border border-line bg-surface px-3 py-2"
+                                >
+                                  <p className="line-clamp-4 whitespace-pre-wrap break-words font-serif text-[15px] italic text-fg-muted">
+                                    {latestLog.reflection}
+                                  </p>
+                                </div>
+                              )}
+                              </div>
                               <div
                                 className={`flex shrink-0 gap-2 ${
                                   actionItemView === "cards" ? "w-full flex-col" : "sm:flex-col"
