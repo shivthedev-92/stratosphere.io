@@ -1037,9 +1037,12 @@ export default function DashboardPage() {
                                   </button>
                                 )}
                               </div>
-                              {latestLog && reflectionExpanded && (
+                              {latestLog && (
+                                // Stays in the DOM while collapsed so the toggle's
+                                // aria-controls always points at a real element.
                                 <div
                                   id={`reflection-${goal.id}`}
+                                  hidden={!reflectionExpanded}
                                   className="mt-2 rounded-control border border-line bg-surface px-3 py-2"
                                 >
                                   <p className="line-clamp-4 whitespace-pre-wrap break-words font-serif text-[15px] italic text-fg-muted">
