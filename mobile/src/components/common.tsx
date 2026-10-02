@@ -124,11 +124,14 @@ export function GoalCard({
   latestLog,
   onReflect,
   onView,
+  note,
 }: {
   goal: GoalOut;
   latestLog?: GoalLogOut;
   onReflect: () => void;
   onView: () => void;
+  /** Optional second meta line, e.g. "Open since Tue · 3 days". */
+  note?: string;
 }) {
   const { colors } = useTheme();
   const meta = PRIORITY_META[goal.priority];
@@ -153,6 +156,11 @@ export function GoalCard({
           <AppText variant="meta" numberOfLines={1}>
             {meta.label} · {formatGoalTime(goal)}
           </AppText>
+          {note ? (
+            <AppText variant="meta" numberOfLines={1} color={colors.muted}>
+              {note}
+            </AppText>
+          ) : null}
         </View>
         <StatusIcon completed={goal.completed} />
       </Pressable>

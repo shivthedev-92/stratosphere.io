@@ -5,7 +5,14 @@ import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import type { GoalOut } from "../api";
 import { GoalCard, Screen } from "../components/common";
 import { AppText, Card, EmptyText, ErrorText, IconButton, Segmented, UserAvatar } from "../components/ui";
-import { formatTodayEyebrow, getDateKey, getGoalDate } from "../lib/format";
+import {
+  carriedOverLabel,
+  getGoalEffectiveDate,
+  isCarriedOver,
+  isDatedToday,
+  isDoneToday,
+} from "../lib/carry-over";
+import { formatTodayEyebrow } from "../lib/format";
 import { motivationalMessages } from "../lib/motivational-messages";
 import type { TabScreenProps } from "../navigation";
 import { useAppState } from "../state/AppState";
@@ -32,14 +39,22 @@ export function TodayScreen({ navigation }: TabScreenProps<"Today">) {
     return () => clearInterval(timer);
   }, []);
 
-  const todayGoals = useMemo(() => {
-    const todayKey = getDateKey(null);
-    return goals.filter((goal) => getDateKey(getGoalDate(goal)) === todayKey);
-  }, [goals]);
+  // Today = today's items, then unfinished ones from earlier days (oldest
+  // first). They stay until marked complete; a "Done" reflection alone
+  // does not take them off.
+  const now = new Date();
+  const datedToday = goals.filter((goal) => isDatedToday(goal, now));
+  const stillOpen = goals
+    .filter((goal) => isCarriedOver(goal, now))
+    .sort((a, b) => getGoalEffectiveDate(a).getTime() - getGoalEffectiveDate(b).getTime());
   const completedGoals = useMemo(() => goals.filter((goal) => goal.completed), [goals]);
-  const visibleGoals = filter === "today" ? todayGoals : filter === "completed" ? completedGoals : goals;
-  const todayDone = todayGoals.filter((goal) => goal.completed).length;
-  const progress = todayGoals.length ? todayDone / todayGoals.length : 0;
+  // Counted by completion day, so finishing a carried task moves the bar
+  // even though the task leaves the list.
+  const todayDone = goals.filter((goal) => isDoneToday(goal, now)).length;
+  const todayOpen = datedToday.filter((goal) => !goal.completed).length + stillOpen.length;
+  const todayTotal = todayDone + todayOpen;
+  const progress = todayTotal ? todayDone / todayTotal : 0;
+  const visibleGoals = filter === "today" ? datedToday : filter === "completed" ? completedGoals : goals;
 
   if (!user) return null;
 
@@ -72,14 +87,14 @@ export function TodayScreen({ navigation }: TabScreenProps<"Today">) {
         <Card style={styles.summary}>
           <View style={styles.summaryRow}>
             <AppText variant="cardTitle">
-              {todayDone} of {todayGoals.length} done today
+              {todayDone} of {todayTotal} done today
             </AppText>
             <AppText variant="meta">{goals.length} in total</AppText>
           </View>
           <View
             style={[styles.track, { backgroundColor: colors.sunken }]}
             accessibilityRole="progressbar"
-            accessibilityValue={{ min: 0, max: todayGoals.length, now: todayDone }}
+            accessibilityValue={{ min: 0, max: todayTotal, now: todayDone }}
           >
             <View style={[styles.fill, { backgroundColor: colors.accent, width: `${progress * 100}%` }]} />
           </View>
@@ -100,7 +115,7 @@ export function TodayScreen({ navigation }: TabScreenProps<"Today">) {
         />
 
         <ErrorText>{error}</ErrorText>
-        {visibleGoals.length === 0 ? (
+        {visibleGoals.length === 0 && (filter !== "today" || stillOpen.length === 0) ? (
           <EmptyText>
             {filter === "today"
               ? "No action items for today."
@@ -119,6 +134,23 @@ export function TodayScreen({ navigation }: TabScreenProps<"Today">) {
             />
           ))
         )}
+        {filter === "today" && stillOpen.length > 0 ? (
+          <>
+            <AppText variant="eyebrow" style={styles.groupLabel}>
+              Still open ({stillOpen.length})
+            </AppText>
+            {stillOpen.map((goal) => (
+              <GoalCard
+                key={goal.id}
+                goal={goal}
+                latestLog={latestLogByGoalId[goal.id]}
+                note={carriedOverLabel(goal, now)}
+                onReflect={() => setReflectGoal(goal)}
+                onView={() => navigation.navigate("TaskJournal", { goalId: goal.id })}
+              />
+            ))}
+          </>
+        ) : null}
       </Screen>
 
       <Pressable
@@ -155,6 +187,7 @@ const styles = StyleSheet.create({
   fill: { height: 8, borderRadius: 4 },
   quote: { fontSize: 16, lineHeight: 22 },
   segmented: { marginVertical: 16 },
+  groupLabel: { marginTop: 8, marginBottom: 10 },
   fab: {
     position: "absolute",
     right: 20,
