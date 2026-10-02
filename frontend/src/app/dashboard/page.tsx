@@ -34,7 +34,18 @@ import { ContactForm } from "@/components/contact-form";
 import { CompletedReflectionsTable } from "@/components/completed-reflections-table";
 import { EmptyGoalsIllustration } from "@/components/illustrations";
 import { MonthPriorityCalendar } from "@/components/month-priority-calendar";
-import { Alarm, Bell, CaretDown, ChatCircleText, Compass, PencilSimple, Trash } from "@phosphor-icons/react";
+import {
+  Alarm,
+  Bell,
+  CaretDown,
+  ChatCircleText,
+  CheckCircle,
+  ClockCounterClockwise,
+  Compass,
+  PencilSimple,
+  Trash,
+} from "@phosphor-icons/react";
+import { carriedOverLabel, getGoalEffectiveDate, isCarriedOver } from "@/lib/carry-over";
 import { DayIcon, PriorityIcon } from "@/components/icons";
 import { MotivationalBanner } from "@/components/motivational-banner";
 import { TelegramSettings } from "@/components/telegram-settings";
@@ -85,10 +96,6 @@ function getSubmitLabel(isSaving: boolean, isTimed: boolean, scheduledFor: strin
   })}`;
 }
 
-function getGoalEffectiveDate(goal: GoalOut) {
-  return new Date(goal.scheduled_for ?? goal.created_at);
-}
-
 function getDateKey(date: Date) {
   return `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
 }
@@ -136,6 +143,24 @@ function groupGoalsByDate(goals: GoalOut[]) {
   );
 }
 
+/** Today view: today's items first, then unfinished ones from earlier days (oldest first). */
+function groupTodayView(goals: GoalOut[]) {
+  const now = new Date();
+  const carried = goals.filter((goal) => isCarriedOver(goal, now));
+  const today = goals.filter((goal) => !isCarriedOver(goal, now));
+  const groups = groupGoalsByDate(today);
+  if (carried.length > 0) {
+    groups.push({
+      key: "still-open",
+      label: "Still open",
+      goals: [...carried].sort(
+        (a, b) => getGoalEffectiveDate(a).getTime() - getGoalEffectiveDate(b).getTime(),
+      ),
+    });
+  }
+  return groups;
+}
+
 function filterGoals(goals: GoalOut[], filter: ActionFilter, selectedDateKey: string | null) {
   const today = new Date();
   const todayKey = getDateKey(today);
@@ -144,7 +169,9 @@ function filterGoals(goals: GoalOut[], filter: ActionFilter, selectedDateKey: st
     const goalDate = getGoalEffectiveDate(goal);
     const goalKey = getDateKey(goalDate);
     if (selectedDateKey) return goalKey === selectedDateKey;
-    if (filter === "today") return goalKey === todayKey;
+    // Today also keeps every unfinished task from earlier days, until it is
+    // marked complete. A "Done" reflection alone does not take it off.
+    if (filter === "today") return goalKey === todayKey || isCarriedOver(goal, today);
     if (filter === "upcoming") return goalDate > today && goalKey !== todayKey;
     return true;
   });
@@ -412,9 +439,32 @@ export default function DashboardPage() {
     setError("");
     setSaving(true);
     try {
-      const updated = await api.updateGoal(detailGoal.id, goal);
+      // PATCH replaces every field, so send the icon back or the edit clears it.
+      const updated = await api.updateGoal(detailGoal.id, { ...goal, emoji: detailGoal.emoji });
       setGoals((current) => current.map((item) => (item.id === updated.id ? updated : item)));
       setDetailGoal(null);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Could not update action item");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleSetGoalCompleted(goal: GoalOut, completed: boolean) {
+    setError("");
+    setSaving(true);
+    try {
+      // PATCH replaces every field, so resend the goal as-is with the new status.
+      const updated = await api.updateGoal(goal.id, {
+        title: goal.title,
+        emoji: goal.emoji,
+        notes: goal.notes,
+        is_timed: goal.is_timed,
+        scheduled_for: goal.scheduled_for,
+        priority: goal.priority,
+        completed,
+      });
+      setGoals((current) => current.map((item) => (item.id === updated.id ? updated : item)));
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Could not update action item");
     } finally {
@@ -456,7 +506,11 @@ export default function DashboardPage() {
   if (!user) return null;
 
   const visibleGoals = filterGoals(goals, actionFilter, selectedCalendarDate);
-  const groupedGoals = groupGoalsByDate(visibleGoals);
+  const groupedGoals =
+    actionFilter === "today" && !selectedCalendarDate
+      ? groupTodayView(visibleGoals)
+      : groupGoalsByDate(visibleGoals);
+  const now = new Date();
   const addressedGoalIds = new Set(
     goalLogs
       .filter((log) => log.completed)
@@ -906,8 +960,20 @@ export default function DashboardPage() {
                                 className="block min-w-0 text-left"
                               >
                                 <div className="flex flex-wrap items-center gap-2">
-                                  <h3 className="break-words font-semibold text-fg">{goal.title}</h3>
-                                  {isAddressed && (
+                                  <h3
+                                    className={`break-words font-semibold ${
+                                      goal.completed ? "text-fg-muted line-through" : "text-fg"
+                                    }`}
+                                  >
+                                    {goal.title}
+                                  </h3>
+                                  {goal.completed && (
+                                    <span className="inline-flex items-center gap-1 rounded border border-accent/30 bg-accent/10 px-2 py-0.5 text-xs font-semibold text-accent-soft">
+                                      <CheckCircle size={14} weight="fill" aria-hidden="true" />
+                                      Completed
+                                    </span>
+                                  )}
+                                  {!goal.completed && isAddressed && (
                                     <span className="rounded border border-low/30 bg-low-bg px-2 py-0.5 text-xs font-semibold text-low">
                                       Addressed
                                     </span>
@@ -937,6 +1003,12 @@ export default function DashboardPage() {
                                     </>
                                   )}
                                 </p>
+                                {isCarriedOver(goal, now) && (
+                                  <p className="inline-flex items-center gap-1.5 font-medium text-fg-muted">
+                                    <ClockCounterClockwise size={14} aria-hidden="true" />
+                                    {carriedOverLabel(goal, now)}
+                                  </p>
+                                )}
                                 {latestLog && (
                                   <button
                                     type="button"
@@ -992,6 +1064,26 @@ export default function DashboardPage() {
                                   }`}
                               >
                                 {isAddressed ? "Re-work" : "Reflect"}
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleSetGoalCompleted(goal, !goal.completed)}
+                                disabled={saving}
+                                aria-pressed={goal.completed}
+                                className={`inline-flex items-center justify-center gap-1.5 rounded-control border px-4 py-2 text-sm font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${
+                                  goal.completed
+                                    ? "border-line-strong text-fg-muted hover:bg-raised"
+                                    : "border-accent/50 text-accent-soft hover:bg-accent/10"
+                                } ${actionItemView === "cards" ? "w-full" : ""}`}
+                              >
+                                {goal.completed ? (
+                                  "Reopen"
+                                ) : (
+                                  <>
+                                    <CheckCircle size={16} aria-hidden="true" />
+                                    Mark complete
+                                  </>
+                                )}
                               </button>
                               <div
                                 className={`flex gap-2 ${
