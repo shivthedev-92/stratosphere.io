@@ -159,6 +159,29 @@ export type GoalLogCreate = {
   emotion_label?: EmotionLabel | null;
 };
 
+export type ChecklistItemOut = {
+  id: string;
+  checklist_id: string;
+  text: string;
+  position: number;
+  /** Null while open; when ticked, the moment it was ticked. */
+  completed_at: string | null;
+  created_at: string;
+};
+
+export type ChecklistOut = {
+  id: string;
+  goal_id: string;
+  title: string | null;
+  created_at: string;
+  items: ChecklistItemOut[];
+};
+
+export type ChecklistCreate = {
+  title?: string | null;
+  items: string[];
+};
+
 export type TelegramStatusOut = {
   available: boolean;
   linked: boolean;
@@ -392,6 +415,32 @@ export const api = {
       method: "POST",
       body: JSON.stringify(log),
     }),
+
+  checklistsForGoal: (goalId: string) => request<ChecklistOut[]>(`/goals/${goalId}/checklists`),
+
+  createChecklist: (goalId: string, checklist: ChecklistCreate) =>
+    request<ChecklistOut>(`/goals/${goalId}/checklists`, {
+      method: "POST",
+      body: JSON.stringify(checklist),
+    }),
+
+  deleteChecklist: (checklistId: string) =>
+    request<void>(`/checklists/${checklistId}`, { method: "DELETE" }),
+
+  addChecklistItem: (checklistId: string, text: string) =>
+    request<ChecklistItemOut>(`/checklists/${checklistId}/items`, {
+      method: "POST",
+      body: JSON.stringify({ text }),
+    }),
+
+  updateChecklistItem: (itemId: string, update: { text?: string; completed?: boolean }) =>
+    request<ChecklistItemOut>(`/checklists/items/${itemId}`, {
+      method: "PATCH",
+      body: JSON.stringify(update),
+    }),
+
+  deleteChecklistItem: (itemId: string) =>
+    request<void>(`/checklists/items/${itemId}`, { method: "DELETE" }),
 
   chatSessions: () => request<ChatSessionOut[]>("/chat/sessions"),
 

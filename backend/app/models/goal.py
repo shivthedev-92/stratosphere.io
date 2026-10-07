@@ -14,7 +14,7 @@
 
 import uuid
 
-from sqlalchemy import Boolean, Column, DateTime, ForeignKey, String, Text, func
+from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String, Text, func
 from sqlalchemy.dialects.postgresql import UUID
 
 from app.db import Base
@@ -46,4 +46,40 @@ class GoalLog(Base):
     reflection = Column(Text, nullable=False)
     soulful = Column(Boolean, nullable=True)
     emotion_label = Column(String, nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+
+
+class GoalChecklist(Base):
+    """A list of action items written into a task's journal timeline."""
+
+    __tablename__ = "goal_checklists"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    goal_id = Column(
+        UUID(as_uuid=True), ForeignKey("goals.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    title = Column(String(200), nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+
+
+class ChecklistItem(Base):
+    """One item on a checklist. completed_at set means ticked, and when."""
+
+    __tablename__ = "checklist_items"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    # Denormalised from the checklist so ownership is one indexed filter.
+    user_id = Column(
+        UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    checklist_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey("goal_checklists.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    text = Column(String(500), nullable=False)
+    position = Column(Integer, nullable=False)
+    completed_at = Column(DateTime(timezone=True), nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)

@@ -3,13 +3,39 @@
 import { CrisisOverlay } from "@/components/crisis-notice";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, KeyboardEvent, useEffect, useRef, useState } from "react";
 import { BackgroundShell } from "@/components/background-shell";
-import { Alarm, CheckCircle, Compass } from "@phosphor-icons/react";
+import {
+  Alarm,
+  ArrowCounterClockwise,
+  CheckCircle,
+  Compass,
+  ListChecks,
+  NotePencil,
+} from "@phosphor-icons/react";
+import { ChecklistCard } from "@/components/checklist-card";
+import { ChecklistForm } from "@/components/checklist-form";
 import { PriorityIcon } from "@/components/icons";
-import { api, type GoalLogOut, type GoalOut, type Priority,
+import { TaskActionButton } from "@/components/task-action-button";
+import {
+  api,
+  type ChecklistCreate,
+  type ChecklistOut,
+  type GoalLogOut,
+  type GoalOut,
+  type Priority,
   type SafetyNoticeOut,
 } from "@/lib/api";
+
+const ENTRY_TABS = [
+  { id: "journal", label: "Journal entry", icon: NotePencil },
+  { id: "checklist", label: "Checklist", icon: ListChecks },
+] as const;
+type EntryTab = (typeof ENTRY_TABS)[number]["id"];
+
+type TimelineEntry =
+  | { kind: "log"; createdAt: string; log: GoalLogOut }
+  | { kind: "checklist"; createdAt: string; checklist: ChecklistOut };
 
 const priorityMeta: Record<Priority, { label: string; chip: string; selected: string }> = {
   low: {
@@ -56,6 +82,12 @@ export default function TaskJournalPage() {
   const goalId = params.goalId;
   const [goal, setGoal] = useState<GoalOut | null>(null);
   const [logs, setLogs] = useState<GoalLogOut[]>([]);
+  const [checklists, setChecklists] = useState<ChecklistOut[]>([]);
+  const [entryTab, setEntryTab] = useState<EntryTab>("journal");
+  // Set after Mark complete here, to invite a reflection; cleared once one is saved.
+  const [justCompleted, setJustCompleted] = useState(false);
+  const journalRef = useRef<HTMLTextAreaElement>(null);
+  const tabRefs = useRef<Record<EntryTab, HTMLButtonElement | null>>({ journal: null, checklist: null });
   const [reflection, setReflection] = useState("");
   const [soulful, setSoulful] = useState<boolean | null>(true);
   const [loading, setLoading] = useState(true);
@@ -63,10 +95,11 @@ export default function TaskJournalPage() {
   const [error, setError] = useState("");
 
   useEffect(() => {
-    Promise.all([api.goal(goalId), api.goalLogsForGoal(goalId)])
-      .then(([goalData, logData]) => {
+    Promise.all([api.goal(goalId), api.goalLogsForGoal(goalId), api.checklistsForGoal(goalId)])
+      .then(([goalData, logData, checklistData]) => {
         setGoal(goalData);
         setLogs(logData);
+        setChecklists(checklistData);
       })
       .catch((err: unknown) => {
         if (err instanceof Error && err.message.includes("401")) {
@@ -96,11 +129,64 @@ export default function TaskJournalPage() {
       if (log.safety) setSafetyNotice(log.safety);
       setReflection("");
       setSoulful(true);
+      setJustCompleted(false);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Could not save journal entry");
     } finally {
       setSaving(false);
     }
+  }
+
+  async function handleCreateChecklist(data: ChecklistCreate) {
+    setSaving(true);
+    setError("");
+    try {
+      const checklist = await api.createChecklist(goalId, data);
+      setChecklists((current) => [checklist, ...current]);
+      return true;
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Could not save checklist");
+      return false;
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleSetCompleted(completed: boolean) {
+    if (!goal) return;
+    setSaving(true);
+    setError("");
+    try {
+      // PATCH replaces every field, so resend the goal as-is with the new status.
+      const updated = await api.updateGoal(goal.id, {
+        title: goal.title,
+        emoji: goal.emoji,
+        notes: goal.notes,
+        is_timed: goal.is_timed,
+        scheduled_for: goal.scheduled_for,
+        priority: goal.priority,
+        completed,
+      });
+      setGoal(updated);
+      setJustCompleted(completed);
+      if (completed) {
+        // Finishing is the natural moment to reflect; the journal is right here.
+        setEntryTab("journal");
+        requestAnimationFrame(() => journalRef.current?.focus());
+      }
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Could not update task");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  function handleTabKeyDown(e: KeyboardEvent<HTMLButtonElement>) {
+    if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return;
+    e.preventDefault();
+    const next = entryTab === "journal" ? "checklist" : "journal";
+    setEntryTab(next);
+    tabRefs.current[next]?.focus();
   }
 
   if (loading) return <p className="p-8 text-fg-subtle">Loading...</p>;
@@ -120,9 +206,14 @@ export default function TaskJournalPage() {
     );
   }
 
-  const sortedLogs = [...logs].sort(
-    (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
-  );
+  const timeline: TimelineEntry[] = [
+    ...logs.map((log) => ({ kind: "log" as const, createdAt: log.created_at, log })),
+    ...checklists.map((checklist) => ({
+      kind: "checklist" as const,
+      createdAt: checklist.created_at,
+      checklist,
+    })),
+  ].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
   return (
     <>
@@ -162,10 +253,17 @@ export default function TaskJournalPage() {
                 )}
               </span>
               <span className="rounded border border-line bg-surface px-2 py-0.5 text-xs text-fg-muted">
-                {sortedLogs.length} {sortedLogs.length === 1 ? "entry" : "entries"}
+                {timeline.length} {timeline.length === 1 ? "entry" : "entries"}
               </span>
             </div>
           </div>
+          <TaskActionButton
+            icon={goal.completed ? ArrowCounterClockwise : CheckCircle}
+            label={goal.completed ? "Reopen task" : "Mark task complete"}
+            tone={goal.completed ? "neutral" : "accent"}
+            disabled={saving}
+            onClick={() => handleSetCompleted(!goal.completed)}
+          />
         </header>
 
         {goal.notes && (
@@ -186,106 +284,176 @@ export default function TaskJournalPage() {
         )}
 
         <section className="grid gap-6 lg:grid-cols-[340px_minmax(0,1fr)]">
-          <form
-            onSubmit={handleAddEntry}
-            className="rounded-card border border-line bg-surface p-5 shadow-lg shadow-tint backdrop-blur"
-          >
-            <h2 className="text-base font-semibold">Add journal entry</h2>
-            <p className="mt-1 text-sm text-fg-subtle">
-              Add another reflection as the task evolves.
-            </p>
-
-            <textarea
-              value={reflection}
-              onChange={(e) => setReflection(e.target.value)}
-              required
-              rows={7}
-              maxLength={2000}
-              className="mt-5 w-full resize-none rounded-control border border-line-strong bg-field px-3 py-2 text-sm outline-none focus:border-accent"
-              placeholder="Add the latest detail, obstacle, decision, or reflection..."
-            />
-
-            <div className="mt-4">
-              <span className="mb-2 block text-sm text-fg-muted">
-                Does this still feel meaningful?
-              </span>
-              <div className="grid grid-cols-3 gap-2">
-                {[
-                  { label: "Yes", value: true },
-                  { label: "Unsure", value: null },
-                  { label: "No", value: false },
-                ].map((item) => (
+          <div className="rounded-card border border-line bg-surface p-5 shadow-lg shadow-tint backdrop-blur">
+            <h2 className="sr-only">Add to the journal</h2>
+            <div role="tablist" aria-label="Add to the journal" className="grid grid-cols-2 gap-1 rounded-control bg-raised p-1">
+              {ENTRY_TABS.map(({ id, label, icon: Icon }) => {
+                const selected = entryTab === id;
+                return (
                   <button
-                    key={item.label}
+                    key={id}
+                    ref={(el) => {
+                      tabRefs.current[id] = el;
+                    }}
                     type="button"
-                    onClick={() => setSoulful(item.value)}
-                    className={`rounded-control border px-3 py-2 text-sm ${
-                      soulful === item.value
-                        ? "border-accent bg-accent text-white"
-                        : "border-line-strong bg-raised text-fg-muted"
+                    role="tab"
+                    id={`entry-tab-${id}`}
+                    aria-selected={selected}
+                    aria-controls={`entry-panel-${id}`}
+                    tabIndex={selected ? 0 : -1}
+                    onClick={() => setEntryTab(id)}
+                    onKeyDown={handleTabKeyDown}
+                    className={`inline-flex items-center justify-center gap-1.5 rounded-control px-3 py-2 text-sm font-semibold transition-colors ${
+                      selected ? "bg-surface-solid text-fg shadow-sm" : "text-fg-muted hover:text-fg"
                     }`}
                   >
-                    {item.label}
+                    <Icon size={16} aria-hidden="true" />
+                    {label}
                   </button>
-                ))}
-              </div>
+                );
+              })}
             </div>
 
-            <button
-              type="submit"
-              disabled={saving || !reflection.trim()}
-              className="mt-5 w-full rounded-control bg-accent text-white px-4 py-3 text-sm font-semibold transition-colors hover:bg-accent-hover disabled:opacity-40 disabled:cursor-not-allowed"
+            <div
+              role="tabpanel"
+              id="entry-panel-journal"
+              aria-labelledby="entry-tab-journal"
+              hidden={entryTab !== "journal"}
             >
-              {saving ? "Saving..." : "Add entry"}
-            </button>
-          </form>
+            <form onSubmit={handleAddEntry}>
+              {justCompleted ? (
+                <p className="mt-4 inline-flex items-center gap-1.5 text-sm font-semibold text-low">
+                  <CheckCircle size={16} weight="fill" aria-hidden="true" />
+                  Marked complete. Want to reflect on it?
+                </p>
+              ) : (
+                <p className="mt-4 text-sm text-fg-subtle">Add another reflection as the task evolves.</p>
+              )}
+  
+              <textarea
+                ref={journalRef}
+                aria-label="Journal entry"
+                value={reflection}
+                onChange={(e) => setReflection(e.target.value)}
+                required
+                rows={7}
+                maxLength={2000}
+                className="mt-5 w-full resize-none rounded-control border border-line-strong bg-field px-3 py-2 text-sm outline-none focus:border-accent"
+                placeholder="Add the latest detail, obstacle, decision, or reflection..."
+              />
+  
+              <div className="mt-4">
+                <span className="mb-2 block text-sm text-fg-muted">
+                  Does this still feel meaningful?
+                </span>
+                <div className="grid grid-cols-3 gap-2">
+                  {[
+                    { label: "Yes", value: true },
+                    { label: "Unsure", value: null },
+                    { label: "No", value: false },
+                  ].map((item) => (
+                    <button
+                      key={item.label}
+                      type="button"
+                      onClick={() => setSoulful(item.value)}
+                      className={`rounded-control border px-3 py-2 text-sm ${
+                        soulful === item.value
+                          ? "border-accent bg-accent text-white"
+                          : "border-line-strong bg-raised text-fg-muted"
+                      }`}
+                    >
+                      {item.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+  
+              <button
+                type="submit"
+                disabled={saving || !reflection.trim()}
+                className="mt-5 w-full rounded-control bg-accent text-white px-4 py-3 text-sm font-semibold transition-colors hover:bg-accent-hover disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                {saving ? "Saving..." : "Add entry"}
+              </button>
+            </form>
+            </div>
+
+            <div
+              role="tabpanel"
+              id="entry-panel-checklist"
+              aria-labelledby="entry-tab-checklist"
+              hidden={entryTab !== "checklist"}
+            >
+              <p className="mt-4 text-sm text-fg-subtle">
+                List what this needs. Tick items off in the timeline as you go.
+              </p>
+              <ChecklistForm saving={saving} onSubmit={handleCreateChecklist} />
+            </div>
+          </div>
 
           <section className="rounded-card border border-line bg-surface p-5 shadow-lg shadow-tint backdrop-blur">
             <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
               <div>
                 <h2 className="text-base font-semibold">Journal timeline</h2>
                 <p className="mt-1 text-sm text-fg-subtle">
-                  Every user entry is kept here, with the latest entry shown first.
+                  Reflections and checklists, with the latest shown first.
                 </p>
               </div>
               <span className="rounded-control border border-line bg-surface px-3 py-1.5 text-sm text-fg-muted">
-                {sortedLogs.length} total
+                {timeline.length} total
               </span>
             </div>
 
-            {sortedLogs.length === 0 ? (
+            {timeline.length === 0 ? (
               <div className="mt-6 rounded-control border border-dashed border-line-strong bg-surface p-6 text-sm text-fg-muted">
-                No journal entries yet. Add the first reflection to start the timeline.
+                Nothing here yet. Add a reflection or a checklist to start the timeline.
               </div>
             ) : (
               <ol className="relative mt-6 space-y-5 border-l border-line-strong pl-6">
-                {sortedLogs.map((log) => (
-                  <li key={log.id} className="relative">
+                {timeline.map((entry) => (
+                  <li key={entry.kind === "log" ? entry.log.id : entry.checklist.id} className="relative">
                     <span
                       aria-hidden="true"
                       className="absolute -left-[31px] top-1.5 h-3.5 w-3.5 rounded-full border-2 border-accent-soft bg-accent"
                     />
-                    <article className="rounded-card border border-line bg-surface p-4">
-                      <div className="flex flex-wrap items-center justify-between gap-2">
-                        <div className="flex flex-wrap gap-2">
-                          <span className="rounded-chip border border-line bg-raised px-2 py-0.5 text-xs font-semibold text-accent-soft">
-                            User log
-                          </span>
-                          <span className="rounded border border-line px-2 py-0.5 text-xs text-fg-muted">
-                            {getLogStatus(log)}
-                          </span>
-                          <span className="rounded border border-line px-2 py-0.5 text-xs text-fg-muted">
-                            {getSoulfulStatus(log)}
-                          </span>
+                    {entry.kind === "checklist" ? (
+                      <ChecklistCard
+                        checklist={entry.checklist}
+                        taskCompleted={goal.completed}
+                        onChange={(update) =>
+                          setChecklists((current) =>
+                            current.map((c) => (c.id === entry.checklist.id ? update(c) : c)),
+                          )
+                        }
+                        onDelete={() =>
+                          setChecklists((current) => current.filter((c) => c.id !== entry.checklist.id))
+                        }
+                        onCompleteTask={() => handleSetCompleted(true)}
+                        onError={setError}
+                      />
+                    ) : (
+                      <article className="rounded-card border border-line bg-surface p-4">
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                          <div className="flex flex-wrap gap-2">
+                            <span className="rounded-chip border border-line bg-raised px-2 py-0.5 text-xs font-semibold text-accent-soft">
+                              Reflection
+                            </span>
+                            <span className="rounded border border-line px-2 py-0.5 text-xs text-fg-muted">
+                              {getLogStatus(entry.log)}
+                            </span>
+                            <span className="rounded border border-line px-2 py-0.5 text-xs text-fg-muted">
+                              {getSoulfulStatus(entry.log)}
+                            </span>
+                          </div>
+                          <time className="text-xs text-fg-subtle" dateTime={entry.log.created_at}>
+                            {formatDateTime(entry.log.created_at)}
+                          </time>
                         </div>
-                        <time className="text-xs text-fg-subtle" dateTime={log.created_at}>
-                          {formatDateTime(log.created_at)}
-                        </time>
-                      </div>
-                      <p className="mt-3 whitespace-pre-wrap break-words leading-6 text-fg font-serif italic text-[15px]">
-                        {log.reflection}
-                      </p>
-                    </article>
+                        <p className="mt-3 whitespace-pre-wrap break-words leading-6 text-fg font-serif italic text-[15px]">
+                          {entry.log.reflection}
+                        </p>
+                      </article>
+                    )}
                   </li>
                 ))}
               </ol>
