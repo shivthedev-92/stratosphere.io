@@ -83,6 +83,32 @@ export AZURE_ADMIN_USER="azureuser"
 
 The final URL is `https://SITE_ADDRESS`. A successful readiness response includes `"ok": true` and confirms the database connection.
 
+## 5. Deploy from GitHub Actions
+
+After the first manual deploy, every merge to `main` that touches `backend/`, `frontend/`, `deploy/` or the workflows deploys through [`.github/workflows/deploy.yml`](../../.github/workflows/deploy.yml):
+
+1. **CI** ([`ci.yml`](../../.github/workflows/ci.yml), which also runs on every pull request): backend unit tests, web type-check and build, and the mobile type-check.
+2. **Build**: the `api` and `web` images are built on GitHub's runners and pushed to GHCR as `ghcr.io/OWNER/stratosphere-{api,web}:<commit>`. The 1 GiB VM no longer builds anything.
+3. **Approve**: the `production` environment waits for you to approve the run under **Actions**.
+4. **Release**: the job signs in to Azure with OIDC and starts [`release-on-vm.sh`](../../deploy/azure/release-on-vm.sh) on the VM with Azure Run Command, so SSH stays limited to your IP. The script pulls the images, starts the stack and waits for every health check. It moves `/opt/stratosphere/current` only if the release is healthy; otherwise it restarts the previous release.
+5. **Check**: the runner calls the public `/api/health/ready`.
+
+Run the one-time setup from the repository root, logged in to both `az` and `gh`:
+
+```bash
+SITE_ADDRESS="your-site.sslip.io" ./deploy/azure/setup-github-actions.sh
+```
+
+It creates an Entra app registration with a federated credential that only jobs in the `production` environment can use. It grants that app **Virtual Machine Contributor on the VM only**, creates the environment with you as the required reviewer (deploys from `main` only), and stores the IDs as environment secrets and variables. Override `AZURE_RESOURCE_GROUP` or `AZURE_VM_NAME` if you changed them when provisioning.
+
+**Secrets stay on the VM.** CI deploys read `/opt/stratosphere/shared/.env.azure`. The first CI deploy copies it from the live release, and every `deploy.sh` run overwrites it with your local `deploy/azure/.env.azure`. To change a secret, either edit that file on the VM and re-run the workflow (**Actions > Deploy > Run workflow**), or run `deploy.sh`.
+
+**Automatic rollback:** a release becomes `current` only after Compose reports it healthy *and* `/api/health/ready` answers through Caddy on the VM. If either fails, the VM restarts the previous release and the workflow fails.
+
+**Rolling back by hand:** within 30 days, open an earlier successful Deploy run and choose **Re-run all jobs**. GitHub only allows re-runs for 30 days after the original run; this re-runs CI and rebuilds that commit's images. For older releases, check out the commit and run `deploy.sh`, or on the VM start one of the last five kept releases with `docker compose ... up -d --no-build` from its directory, as long as its images haven't been pruned (images older than 10 days are removed).
+
+`deploy.sh` still works as a manual fallback. It builds on the VM and tags the images `:local`.
+
 ## Operations
 
 Run Compose commands from the active release:

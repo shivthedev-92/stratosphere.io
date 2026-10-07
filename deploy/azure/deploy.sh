@@ -105,6 +105,8 @@ readonly env_file="$3"
 mkdir -p "$release_dir"
 tar -xzf "$archive" -C "$release_dir"
 install -m 600 "$env_file" "$release_dir/.env.azure"
+# GitHub Actions deploys read secrets from here, so keep it in step with manual deploys.
+install -D -m 600 "$env_file" /opt/stratosphere/shared/.env.azure
 rm -f -- "$archive" "$env_file"
 
 cd "$release_dir"
