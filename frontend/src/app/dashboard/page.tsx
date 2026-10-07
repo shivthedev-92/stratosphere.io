@@ -227,6 +227,11 @@ export default function DashboardPage() {
     ])
       .then(([userData, goalData, logData, notificationData, notificationSummary, dueNotificationData]) => {
         setUser(userData);
+        // Telegram works out "today" and "tomorrow 6pm" in this zone.
+        const browserZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+        if (browserZone && browserZone !== userData.timezone) {
+          api.updateTimezone(browserZone).catch(() => undefined); // best effort; retried next visit
+        }
         avatarWanted.current = userData.avatar_id;
         avatarConfirmed.current = userData.avatar_id;
         setGoals(goalData);

@@ -23,6 +23,7 @@ from sqlalchemy import (
     ForeignKey,
     Integer,
     String,
+    Text,
     UniqueConstraint,
     func,
 )
@@ -62,6 +63,15 @@ class User(Base):
     telegram_linked_at = Column(DateTime(timezone=True), nullable=True)
     telegram_link_token_hash = Column(String, nullable=True)
     telegram_link_expires_at = Column(DateTime(timezone=True), nullable=True)
+    # What the bot expects next from this chat, e.g. "reflect:<goal id>" after
+    # the Reflect button, with any text it is holding (a thought awaiting
+    # "which task?"). Short-lived: ignored after telegram_pending_expires_at.
+    telegram_pending = Column(String(80), nullable=True)
+    telegram_pending_text = Column(Text, nullable=True)
+    telegram_pending_expires_at = Column(DateTime(timezone=True), nullable=True)
+    # IANA zone reported by the user's browser; "today" and times in bot
+    # messages use it. None until the web app has reported one.
+    timezone = Column(String(64), nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
     @property

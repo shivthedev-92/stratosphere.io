@@ -80,6 +80,8 @@ class Settings(BaseSettings):
     # off for any extra process that must not also send (e.g. a one-off
     # script), so reminders are not delivered twice.
     TELEGRAM_WORKER_ENABLED: bool = True
+    # Used for "today" and bot times until a user's browser reports a zone.
+    DEFAULT_TIMEZONE: str = "Asia/Kolkata"
 
     # Number of proxies that append to X-Forwarded-For in front of this app.
     # 1 = Caddy only (the single-VM deployment). Raise to 2 behind Azure

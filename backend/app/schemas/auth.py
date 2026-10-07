@@ -14,6 +14,7 @@
 
 from datetime import date, datetime
 from uuid import UUID
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from pydantic import BaseModel, EmailStr, Field, field_validator
 
@@ -99,6 +100,7 @@ class UserOut(BaseModel):
     date_of_birth: date | None
     in_app_notifications_enabled: bool
     avatar_id: str | None = None
+    timezone: str | None = None
     created_at: datetime
 
     model_config = {"from_attributes": True}
@@ -128,6 +130,19 @@ class AvatarUpdate(BaseModel):
     def known_avatar(cls, value: str | None) -> str | None:
         if value is not None and value not in AVATAR_IDS:
             raise ValueError("Unknown avatar")
+        return value
+
+
+class TimezoneUpdate(BaseModel):
+    timezone: str = Field(min_length=1, max_length=64)
+
+    @field_validator("timezone", mode="after")
+    @classmethod
+    def known_zone(cls, value: str) -> str:
+        try:
+            ZoneInfo(value)
+        except (ZoneInfoNotFoundError, ValueError) as exc:
+            raise ValueError("Unknown time zone") from exc
         return value
 
 

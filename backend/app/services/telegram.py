@@ -169,12 +169,6 @@ STOPPED_TEXT = (
     "You can reconnect any time from <b>Settings</b> in Stratosphere."
 )
 NOT_LINKED_TEXT = "🤔 This chat isn't connected to a Stratosphere account."
-REMINDERS_ONLY_TEXT = (
-    "💬 I only send reminders here. To talk things through, open Aster, your coach, "
-    "in the Stratosphere app."
-)
-
-
 def crisis_text() -> str:
     """The fixed crisis copy with the verified lines. Deliberately no emoji."""
     lines = [escape(CRISIS_MESSAGE), ""]
@@ -234,7 +228,8 @@ def reply_for_text(db: Session, chat_id: int, text: str, now: datetime | None = 
         return LINKED_TEXT if link_chat(db, arg.strip(), chat_id, now) else LINK_INVALID_TEXT
     if command == "/stop":
         return STOPPED_TEXT if unlink_chat(db, chat_id) else NOT_LINKED_TEXT
-    return REMINDERS_ONLY_TEXT
+    # Linked chats are handled in telegram_bot; this is an unlinked chat.
+    return START_WITHOUT_TOKEN_TEXT
 
 
 # ===========#
@@ -287,20 +282,58 @@ class TelegramClient:
             raise TelegramError(detail)
         return data["result"]
 
-    async def send_message(self, chat_id: int, text: str, button: dict | None = None) -> None:
-        """Send Telegram HTML; `text` must already be escaped where needed."""
+    async def send_message(
+        self,
+        chat_id: int,
+        text: str,
+        keyboard: list[list[dict]] | None = None,
+        force_reply: bool = False,
+        placeholder: str | None = None,
+    ) -> dict:
+        """Send Telegram HTML; `text` must already be escaped where needed.
+        Returns the sent message (its message_id links replies back to it)."""
         payload: dict = {
             "chat_id": chat_id,
             "text": text,
             "parse_mode": "HTML",
             "disable_web_page_preview": True,
         }
-        if button:
-            payload["reply_markup"] = {"inline_keyboard": [[button]]}
-        await self._call("sendMessage", payload)
+        if keyboard:
+            payload["reply_markup"] = {"inline_keyboard": keyboard}
+        elif force_reply:
+            markup: dict = {"force_reply": True}
+            if placeholder:
+                markup["input_field_placeholder"] = placeholder[:64]
+            payload["reply_markup"] = markup
+        return await self._call("sendMessage", payload)
+
+    async def answer_callback(self, callback_id: str, text: str = "") -> None:
+        """Clears the button's loading spinner; `text` shows as a brief toast."""
+        payload: dict = {"callback_query_id": callback_id}
+        if text:
+            payload["text"] = text[:200]
+        await self._call("answerCallbackQuery", payload)
+
+    async def edit_keyboard(
+        self, chat_id: int, message_id: int, keyboard: list[list[dict]] | None
+    ) -> None:
+        await self._call(
+            "editMessageReplyMarkup",
+            {
+                "chat_id": chat_id,
+                "message_id": message_id,
+                "reply_markup": {"inline_keyboard": keyboard or []},
+            },
+        )
+
+    async def set_commands(self, commands: list[tuple[str, str]]) -> None:
+        await self._call(
+            "setMyCommands",
+            {"commands": [{"command": c, "description": d} for c, d in commands]},
+        )
 
     async def get_updates(self, offset: int | None, timeout: int) -> list[dict]:
-        payload: dict = {"timeout": timeout, "allowed_updates": ["message"]}
+        payload: dict = {"timeout": timeout, "allowed_updates": ["message", "callback_query"]}
         if offset is not None:
             payload["offset"] = offset
         return await self._call("getUpdates", payload, timeout=timeout + 10)
@@ -318,10 +351,9 @@ async def send_test_message(chat_id: int, user_name: str | None = None) -> None:
     """
     async with httpx.AsyncClient() as http:
         client = TelegramClient(http, settings.TELEGRAM_BOT_TOKEN or "", settings.TELEGRAM_API_BASE)
+        button = app_button("🚀 Open Stratosphere", "/dashboard")
         await client.send_message(
-            chat_id,
-            format_test_message(user_name),
-            app_button("🚀 Open Stratosphere", "/dashboard"),
+            chat_id, format_test_message(user_name), [[button]] if button else None
         )
 
 
@@ -380,6 +412,15 @@ def claim_due_reminders(db: Session, now: datetime | None = None) -> list[Claime
     return claimed
 
 
+def record_message_id(db: Session, notification_id: UUID, message_id: int) -> None:
+    db.execute(
+        update(Notification)
+        .where(Notification.id == notification_id)
+        .values(telegram_message_id=message_id)
+    )
+    db.commit()
+
+
 def release_claim(db: Session, notification_id: UUID) -> None:
     """Undo a claim after a retryable failure so the next tick tries again."""
     db.execute(
@@ -406,13 +447,26 @@ async def dispatch_once(
             text = format_reminder(
                 reminder.task_title, reminder.user_name, reminder.notification_id.int
             )
-            button = (
-                app_button("📝 Open task", f"/tasks/{reminder.goal_id}")
-                if reminder.goal_id
-                else None
-            )
-            await client.send_message(reminder.chat_id, text, button)
+            keyboard = None
+            if reminder.goal_id:
+                from app.services.telegram_bot import reminder_keyboard
+
+                keyboard = reminder_keyboard(reminder.goal_id)
+                button = app_button("📝 Open task", f"/tasks/{reminder.goal_id}")
+                if button:
+                    keyboard.append([button])
+            sent_message = await client.send_message(reminder.chat_id, text, keyboard)
             sent += 1
+            message_id = (sent_message or {}).get("message_id")
+            if message_id:
+                # So a reply to this reminder is saved on the right task.
+                await asyncio.to_thread(
+                    _with_session,
+                    session_factory,
+                    record_message_id,
+                    reminder.notification_id,
+                    message_id,
+                )
         except (TelegramBlocked, TelegramChatMissing):
             logger.info("telegram: chat blocked the bot or no longer exists; unlinking")
             await asyncio.to_thread(_with_session, session_factory, unlink_chat, reminder.chat_id)
@@ -439,19 +493,82 @@ async def dispatch_forever(client: TelegramClient, session_factory) -> None:
         await asyncio.sleep(DISPATCH_INTERVAL_SECONDS)
 
 
+BOT_COMMANDS = [
+    ("today", "Your open tasks, with buttons to finish them"),
+    ("add", "Add a task, e.g. /add Call mom tomorrow 6pm"),
+    ("menu", "Quick actions"),
+    ("help", "What I can do"),
+    ("stop", "Disconnect this chat"),
+]
+
+
+def _message_replies(db: Session, chat_id: int, text: str, reply_to_id: int | None):
+    """Replies for one incoming message, as BotReply objects."""
+    from app.services import telegram_bot as bot
+
+    command = text.strip().partition(" ")[0].split("@", 1)[0].lower()
+    store = bot.Store(db)
+    user = None if command in ("/start", "/stop") else store.user_for_chat(chat_id)
+    if user is None:
+        # Linking, unlinking, crisis replies and unlinked chats.
+        return [bot.BotReply(reply_for_text(db, chat_id, text))]
+    return bot.reply_to_message(store, user, text, reply_to_id, _utcnow())
+
+
+def _tap_result(db: Session, chat_id: int, data: str):
+    from app.services import telegram_bot as bot
+
+    store = bot.Store(db)
+    user = store.user_for_chat(chat_id)
+    if user is None:
+        return bot.TapResult(NOT_LINKED_TEXT, clear_keyboard=True)
+    return bot.handle_tap(store, user, data, _utcnow())
+
+
+async def _send_replies(client: TelegramClient, chat_id: int, replies) -> None:
+    for reply in replies:
+        await client.send_message(
+            chat_id, reply.text, reply.keyboard, reply.force_reply, reply.placeholder
+        )
+
+
 async def handle_update(client: TelegramClient, session_factory, update_: dict) -> None:
-    message = update_.get("message") or {}
-    chat = message.get("chat") or {}
-    text = message.get("text")
-    if chat.get("type") != "private" or not isinstance(text, str):
-        return
-    reply = await asyncio.to_thread(
-        _with_session, session_factory, reply_for_text, chat["id"], text
-    )
     try:
-        await client.send_message(chat["id"], reply)
+        if "callback_query" in update_:
+            await _handle_callback(client, session_factory, update_["callback_query"])
+            return
+        message = update_.get("message") or {}
+        chat = message.get("chat") or {}
+        text = message.get("text")
+        if chat.get("type") != "private" or not isinstance(text, str):
+            return
+        reply_to_id = (message.get("reply_to_message") or {}).get("message_id")
+        replies = await asyncio.to_thread(
+            _with_session, session_factory, _message_replies, chat["id"], text, reply_to_id
+        )
+        await _send_replies(client, chat["id"], replies)
     except TelegramError as exc:
         logger.warning("telegram: reply failed: %s", exc)
+
+
+async def _handle_callback(client: TelegramClient, session_factory, query: dict) -> None:
+    message = query.get("message") or {}
+    chat = message.get("chat") or {}
+    data = query.get("data")
+    if chat.get("type") != "private" or not isinstance(data, str):
+        await client.answer_callback(query["id"])
+        return
+    result = await asyncio.to_thread(
+        _with_session, session_factory, _tap_result, chat["id"], data
+    )
+    # Answer first: until then the button shows a spinner.
+    await client.answer_callback(query["id"], result.toast)
+    if result.keyboard is not None or result.clear_keyboard:
+        try:
+            await client.edit_keyboard(chat["id"], message["message_id"], result.keyboard)
+        except TelegramRejected:
+            pass  # "message is not modified" when the buttons are already right
+    await _send_replies(client, chat["id"], result.replies)
 
 
 async def poll_forever(client: TelegramClient, session_factory) -> None:
@@ -477,6 +594,14 @@ async def poll_forever(client: TelegramClient, session_factory) -> None:
 # ==========#
 
 
+async def _set_commands(client: TelegramClient) -> None:
+    """The command list Telegram shows behind the "/" button. Best effort."""
+    try:
+        await client.set_commands(BOT_COMMANDS)
+    except TelegramError as exc:
+        logger.warning("telegram: setMyCommands failed: %s", exc)
+
+
 class TelegramWorkers:
     """Started from the FastAPI lifespan; stopped on shutdown."""
 
@@ -488,6 +613,7 @@ class TelegramWorkers:
         self._http = httpx.AsyncClient()
         client = TelegramClient(self._http, settings.TELEGRAM_BOT_TOKEN, settings.TELEGRAM_API_BASE)
         self._tasks = [
+            asyncio.create_task(_set_commands(client), name="telegram-commands"),
             asyncio.create_task(
                 dispatch_forever(client, session_factory), name="telegram-dispatch"
             ),

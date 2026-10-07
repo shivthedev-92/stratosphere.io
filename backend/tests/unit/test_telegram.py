@@ -11,7 +11,6 @@ from app.services import telegram as tg
 from app.services.telegram import (
     LINK_INVALID_TEXT,
     LINKED_TEXT,
-    REMINDERS_ONLY_TEXT,
     START_WITHOUT_TOKEN_TEXT,
     ClaimedReminder,
     TelegramBlocked,
@@ -143,8 +142,11 @@ def test_crisis_message_to_bot_gets_resources_not_boilerplate():
     assert "14416" in reply and "112" in reply
 
 
-def test_ordinary_text_gets_reminders_only_reply():
-    assert reply_for_text(FakeDB(), 1, "this deadline is killing me", NOW) == REMINDERS_ONLY_TEXT
+def test_ordinary_text_in_an_unlinked_chat_explains_how_to_connect():
+    # Linked chats never reach reply_for_text for plain text (telegram_bot does).
+    assert (
+        reply_for_text(FakeDB(), 1, "this deadline is killing me", NOW) == START_WITHOUT_TOKEN_TEXT
+    )
 
 
 def test_reminder_is_a_friendly_note_with_first_name_and_title_only():
@@ -192,7 +194,6 @@ def test_every_fixed_reply_is_valid_telegram_html():
         LINKED_TEXT,
         LINK_INVALID_TEXT,
         START_WITHOUT_TOKEN_TEXT,
-        REMINDERS_ONLY_TEXT,
         tg.STOPPED_TEXT,
         tg.NOT_LINKED_TEXT,
         crisis_text(),
@@ -285,10 +286,11 @@ class FakeClient:
     def __init__(self, fail=None):
         self.sent, self.fail = [], fail or {}
 
-    async def send_message(self, chat_id, text, button=None):
+    async def send_message(self, chat_id, text, keyboard=None, force_reply=False, placeholder=None):
         if chat_id in self.fail:
             raise self.fail[chat_id]
-        self.sent.append((chat_id, text, button))
+        self.sent.append((chat_id, text, keyboard))
+        return {"message_id": 1000 + len(self.sent)}
 
 
 @pytest.mark.asyncio
@@ -302,6 +304,8 @@ async def test_dispatch_sends_unlinks_blocked_and_releases_failed(monkeypatch):
     unlinked, released = [], []
     monkeypatch.setattr(tg, "unlink_chat", lambda db, chat_id: unlinked.append(chat_id))
     monkeypatch.setattr(tg, "release_claim", lambda db, nid: released.append(nid))
+    recorded = []
+    monkeypatch.setattr(tg, "record_message_id", lambda db, nid, mid: recorded.append((nid, mid)))
     monkeypatch.setattr(tg.asyncio, "sleep", _no_sleep)
 
     client = FakeClient(
@@ -318,6 +322,8 @@ async def test_dispatch_sends_unlinks_blocked_and_releases_failed(monkeypatch):
     assert client.sent == [(1, format_reminder("task 1", "", ok.notification_id.int), None)]
     assert unlinked == [2, 5]  # blocked and missing chats; a plain rejection keeps its link
     assert released == [flaky.notification_id]  # rejected (4) keeps its claim
+    # The sent reminder's message id is kept, so a reply to it finds the task.
+    assert recorded == [(ok.notification_id, 1001)]
 
 
 @pytest.mark.asyncio
@@ -347,12 +353,21 @@ async def test_reminder_carries_an_open_task_button(monkeypatch):
     monkeypatch.setattr(tg, "claim_due_reminders", lambda db, now=None: [reminder])
     monkeypatch.setattr(tg.settings, "FRONTEND_URL", "https://stratosphereio.in")
     monkeypatch.setattr(tg.asyncio, "sleep", _no_sleep)
+    monkeypatch.setattr(tg, "record_message_id", lambda db, nid, mid: None)
     client = FakeClient()
 
     await tg.dispatch_once(client, lambda: _Closable(), NOW)
 
-    (_, _, button), = client.sent
-    assert button == {"text": "📝 Open task", "url": f"https://stratosphereio.in/tasks/{goal_id}"}
+    ((_, _, keyboard),) = client.sent
+    assert [b["text"] for b in keyboard[0]] == ["✅ Done", "⏰ +1 hour", "📝 Reflect"]
+    assert [b["callback_data"] for b in keyboard[0]] == [
+        f"done:{goal_id}",
+        f"snz:{goal_id}",
+        f"rfl:{goal_id}",
+    ]
+    assert keyboard[1] == [
+        {"text": "📝 Open task", "url": f"https://stratosphereio.in/tasks/{goal_id}"}
+    ]
 
 
 @pytest.mark.asyncio
@@ -363,9 +378,11 @@ async def test_send_message_uses_html_and_inline_button():
         seen.append(json.loads(request.content))
         return httpx.Response(200, json={"ok": True, "result": {}})
 
-    await _client(handler).send_message(1, "<b>hi</b>", {"text": "Go", "url": "https://x.y"})
+    await _client(handler).send_message(1, "<b>hi</b>", [[{"text": "Go", "url": "https://x.y"}]])
     await _client(handler).send_message(2, "plain")
+    await _client(handler).send_message(3, "Reflect?", force_reply=True, placeholder="How was it")
 
     assert seen[0]["parse_mode"] == "HTML"
     assert seen[0]["reply_markup"] == {"inline_keyboard": [[{"text": "Go", "url": "https://x.y"}]]}
     assert "reply_markup" not in seen[1]
+    assert seen[2]["reply_markup"] == {"force_reply": True, "input_field_placeholder": "How was it"}
