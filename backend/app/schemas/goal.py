@@ -70,7 +70,9 @@ class GoalOut(BaseModel):
 
 
 class GoalLogCreate(BaseModel):
-    completed: bool
+    # Omitted by current clients: the server records whether the task was
+    # complete when the reflection was written. Older mobile builds still send it.
+    completed: bool | None = None
     reflection: str = Field(min_length=1, max_length=2000)
     soulful: bool | None = None
     emotion_label: EmotionLabel | None = None

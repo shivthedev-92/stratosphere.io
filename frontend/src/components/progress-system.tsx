@@ -14,8 +14,8 @@ export function ProgressSystem({ goals, logs }: { goals: GoalOut[]; logs: GoalLo
     { low: 0, medium: 0, high: 0 },
   );
   const maxPriorityCount = Math.max(1, ...Object.values(priorityCounts));
-  const doneLogs = logs.filter((log) => log.completed).length;
-  const notDoneLogs = logs.filter((log) => !log.completed).length;
+  const doneGoals = goals.filter((goal) => goal.completed).length;
+  const openGoals = goals.length - doneGoals;
   const meaningfulLogs = logs.filter((log) => log.soulful === true).length;
 
   return (
@@ -33,14 +33,14 @@ export function ProgressSystem({ goals, logs }: { goals: GoalOut[]; logs: GoalLo
       </div>
 
       <div className="mt-5">
-        {/* Refetch when a reflection is added or removed. */}
-        <ActivityHeatmap refreshKey={logs.length} />
+        {/* Refetch when a task is finished or reopened, or a reflection is added. */}
+        <ActivityHeatmap refreshKey={`${doneGoals}-${logs.length}`} />
       </div>
 
       <div className="mt-5 grid gap-4 lg:grid-cols-[1fr_1fr]">
         <div className="grid grid-cols-3 gap-3">
-          <Stat label="Done" value={doneLogs} icon={CheckCircle} tone="text-low" />
-          <Stat label="Not done" value={notDoneLogs} icon={Circle} tone="text-fg-muted" />
+          <Stat label="Done" value={doneGoals} icon={CheckCircle} tone="text-low" />
+          <Stat label="Still open" value={openGoals} icon={Circle} tone="text-fg-muted" />
           <Stat label="Felt meaningful" value={meaningfulLogs} icon={Sparkle} tone="text-accent-soft" />
         </div>
 

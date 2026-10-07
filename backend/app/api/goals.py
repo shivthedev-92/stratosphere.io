@@ -167,7 +167,7 @@ def create_goal_log(
     log = GoalLog(
         user_id=current_user.id,
         goal_id=goal_id,
-        completed=data.completed,
+        completed=goal.completed if data.completed is None else data.completed,
         reflection=data.reflection,
         soulful=data.soulful,
         emotion_label=data.emotion_label,

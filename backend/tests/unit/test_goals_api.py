@@ -1,8 +1,10 @@
 from datetime import datetime, timezone
 from uuid import uuid4
 
-from app.api.goals import delete_goal, update_goal
-from app.schemas.goal import GoalUpdate
+import pytest
+
+from app.api.goals import create_goal_log, delete_goal, update_goal
+from app.schemas.goal import GoalLogCreate, GoalUpdate
 
 
 class FakeGoal:
@@ -53,6 +55,9 @@ class FakeSession:
         self.committed = True
 
     def refresh(self, item):
+        # Stand in for the database filling server defaults.
+        item.id = getattr(item, "id", None) or uuid4()
+        item.created_at = getattr(item, "created_at", None) or datetime.now(timezone.utc)
         self.refreshed.append(item)
 
 
@@ -101,3 +106,30 @@ def test_delete_goal_removes_owned_goal():
 
     assert db.deleted == [goal]
     assert db.committed is True
+
+
+@pytest.mark.parametrize("task_completed", [True, False])
+def test_reflection_records_whether_the_task_is_complete(task_completed):
+    goal = FakeGoal()
+    goal.completed = task_completed
+    db = FakeSession(goal)
+
+    log = create_goal_log(
+        goal.id, GoalLogCreate(reflection="Went fine"), current_user=FakeUser(goal.user_id), db=db
+    )
+
+    assert log.completed is task_completed
+
+
+def test_reflection_keeps_an_explicit_completed_from_older_clients():
+    goal = FakeGoal()
+    db = FakeSession(goal)
+
+    log = create_goal_log(
+        goal.id,
+        GoalLogCreate(completed=True, reflection="Went fine"),
+        current_user=FakeUser(goal.user_id),
+        db=db,
+    )
+
+    assert log.completed is True

@@ -17,13 +17,17 @@ IST = ZoneInfo("Asia/Kolkata")
 
 
 class FakeDB:
+    """Answers the two queries in order: finished tasks, then reflections."""
+
     def __init__(self):
+        self.finished = []
         self.rows = []
         self.statements = []
 
     def execute(self, statement):
         self.statements.append(statement)
-        return SimpleNamespace(all=lambda: self.rows)
+        rows = self.finished if len(self.statements) == 1 else self.rows
+        return SimpleNamespace(all=lambda: rows)
 
 
 @pytest.fixture
@@ -41,8 +45,9 @@ def at_ist(day_offset: int, hour: int, minute: int = 0) -> datetime:
     return (local - timedelta(days=day_offset)).astimezone(timezone.utc)
 
 
-def test_counts_per_local_day(client):
+def test_done_counts_finished_tasks_and_reflections_fill_the_rest(client):
     http, db = client
+    db.finished = [(at_ist(1, 10),), (at_ist(1, 20),), (at_ist(0, 9),)]
     db.rows = [
         (at_ist(1, 9), True, True),
         (at_ist(1, 13), True, None),
@@ -58,11 +63,20 @@ def test_counts_per_local_day(client):
     ]
 
 
+def test_finishing_a_task_without_reflecting_still_lights_the_day(client):
+    http, db = client
+    db.finished = [(at_ist(0, 11),)]
+    days = http.get("/progress/daily", params={"tz": "Asia/Kolkata"}).json()["days"]
+    assert days == [
+        {"date": datetime.now(IST).date().isoformat(), "done": 1, "not_done": 0, "meaningful": 0}
+    ]
+
+
 def test_late_evening_counts_on_the_local_date_not_utc(client):
     # 23:30 in India is 18:00 UTC the same day, but 00:30 IST the next day is
     # still the previous UTC date: each must land on its own local date.
     http, db = client
-    db.rows = [(at_ist(2, 23, 30), True, None), (at_ist(1, 0, 30), True, None)]
+    db.finished = [(at_ist(2, 23, 30),), (at_ist(1, 0, 30),)]
     days = http.get("/progress/daily", params={"tz": "Asia/Kolkata"}).json()["days"]
     local = datetime.now(IST).date()
     assert [d["date"] for d in days] == [
@@ -74,7 +88,7 @@ def test_late_evening_counts_on_the_local_date_not_utc(client):
 def test_accepts_legacy_zone_names_browsers_send(client):
     # Chrome reports India as "Asia/Calcutta"; Postgres builds may not know it.
     http, db = client
-    db.rows = [(at_ist(0, 10), True, True)]
+    db.finished = [(at_ist(0, 10),)]
     body = http.get("/progress/daily", params={"tz": "Asia/Calcutta"}).json()
     assert body["timezone"] == "Asia/Calcutta"
     assert body["days"][0]["done"] == 1
@@ -83,10 +97,11 @@ def test_accepts_legacy_zone_names_browsers_send(client):
 def test_query_is_bounded_by_user_and_time(client):
     http, db = client
     http.get("/progress/daily", params={"tz": "Asia/Kolkata"})
-    sql = str(db.statements[0].compile(dialect=postgresql.dialect()))
+    finished, logs = (str(s.compile(dialect=postgresql.dialect())) for s in db.statements)
+    assert "goals.user_id =" in finished and "goals.completed_at >=" in finished
     # Served by the (user_id, created_at) index; no time-zone work in SQL.
-    assert "goal_logs.user_id =" in sql and "goal_logs.created_at >=" in sql
-    assert "timezone(" not in sql
+    assert "goal_logs.user_id =" in logs and "goal_logs.created_at >=" in logs
+    assert "timezone(" not in finished + logs
 
 
 @pytest.mark.parametrize(

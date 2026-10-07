@@ -240,13 +240,13 @@ function Reflect() {
           <span className="text-xl font-semibold leading-tight tracking-[-0.02em]">Book flight to San Francisco</span>
         </div>
         <div className="flex flex-col gap-2.5">
-          <span className="text-sm font-medium">How did it go?</span>
+          <span className="text-sm font-medium">Does this still feel meaningful?</span>
           <div className="grid grid-cols-3 gap-1.5">
             <span className="flex h-10 items-center justify-center gap-1 rounded-control bg-low text-[13px] font-semibold text-[var(--app-bg)]">
               <Check size={14} weight="bold" />
-              Done
+              Yes
             </span>
-            {["Unsure", "Not done"].map((label) => (
+            {["Unsure", "No"].map((label) => (
               <span key={label} className="flex h-10 items-center justify-center rounded-control border border-line text-[13px] font-medium text-fg-muted">
                 {label}
               </span>

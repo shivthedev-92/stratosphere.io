@@ -30,9 +30,9 @@ function plural(n: number, word: string): string {
 
 function describe(day: HeatmapDay): string {
   const parts = [`${day.done} done`];
-  if (day.notDone) parts.push(`${day.notDone} not done`);
+  if (day.notDone) parts.push(`${day.notDone} reflected on while open`);
   if (day.meaningful) parts.push(`${day.meaningful} felt meaningful`);
-  return `${dayLong.format(day.date)} · ${day.done || day.notDone ? parts.join(" · ") : "no reflections"}`;
+  return `${dayLong.format(day.date)} · ${day.done || day.notDone || day.meaningful ? parts.join(" · ") : "nothing logged"}`;
 }
 
 /**
@@ -42,7 +42,7 @@ function describe(day: HeatmapDay): string {
  * One tab stop: arrow keys move a selected day (←/→ a week, ↑/↓ a day), and
  * its details are announced in the live line below. Hover and tap select too.
  */
-export function ActivityHeatmap({ refreshKey = 0 }: { refreshKey?: number }) {
+export function ActivityHeatmap({ refreshKey = 0 }: { refreshKey?: number | string }) {
   const [counts, setCounts] = useState<Map<string, DayCounts> | null>(null);
   const [failed, setFailed] = useState(false);
   const [selectedKey, setSelectedKey] = useState<string | null>(null);
