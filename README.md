@@ -30,8 +30,21 @@ Stratosphere is a planning tool, not therapy. When the crisis detector flags a c
 
 <img src="docs/images/safety-card.png" alt="Crisis resources card" width="520">
 
-### Telegram reminders
-Connect Telegram from **Settings** and get a message when a timed task is due, usually within 30 seconds. Messages come from Aster in a friendly, conversational tone ("Hey Priya! Just pinging to remind you…") and contain only your first name and the task title, never notes or reflections.
+### Telegram: reminders you can act on
+Connect Telegram from **Settings** and get a message from Aster when a timed task is due, usually within 30 seconds. Reminders carry only your first name and the task title, never notes or reflections, and come with buttons:
+
+- **✅ Done** marks the task complete, exactly like the web app (the heatmap lights up). **↩️ Reopen** undoes it.
+- **⏰ +1 hour** reminds you again later.
+- **📝 Reflect** asks how it went and saves your next message to that task's journal. Replying to a reminder does the same.
+
+You can also talk to the bot:
+
+- `/today` lists today's open tasks (including carried-over ones) with ✅ and 📝 buttons.
+- `/add Call mom tomorrow 6pm` adds a task; the time at the end is optional (today, tonight, tomorrow, weekdays, `6pm`, `18:00`, `in 2 hours`…).
+- `/menu` for quick actions, `/help` for the list, `/stop` to disconnect.
+- Type anything else and the bot asks which task it belongs to, or makes it a new task.
+
+"Today" and times use the time zone your browser reports to the web app. Every message is checked for crisis language first, and a reflection is always saved before any support resources are shown.
 
 <img src="docs/images/telegram-settings.png" alt="Telegram reminders settings" width="560">
 

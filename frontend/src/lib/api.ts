@@ -49,6 +49,8 @@ export type UserOut = {
   date_of_birth: string | null;
   in_app_notifications_enabled: boolean;
   avatar_id: string | null;
+  /** IANA zone the browser last reported; the Telegram bot uses it. */
+  timezone?: string | null;
   created_at: string;
 };
 
@@ -360,6 +362,12 @@ export const api = {
     request<UserOut>("/me/avatar", {
       method: "PUT",
       body: JSON.stringify({ avatar_id: avatarId }),
+    }),
+
+  updateTimezone: (timezone: string) =>
+    request<UserOut>("/me/timezone", {
+      method: "PUT",
+      body: JSON.stringify({ timezone }),
     }),
 
   deleteMe: () => request<void>("/me", { method: "DELETE" }),

@@ -9,7 +9,7 @@
 
 import uuid
 
-from sqlalchemy import Column, DateTime, ForeignKey, String, Text, func
+from sqlalchemy import BigInteger, Column, DateTime, ForeignKey, String, Text, func
 from sqlalchemy.dialects.postgresql import UUID
 
 from app.db import Base
@@ -33,4 +33,7 @@ class Notification(Base):
     read_at = Column(DateTime(timezone=True), nullable=True)
     # At-most-once claim for Telegram delivery; see app/services/telegram.py.
     telegram_sent_at = Column(DateTime(timezone=True), nullable=True)
+    # The Telegram message that delivered it, so a reply to that message can
+    # be saved as a reflection on the reminder's task.
+    telegram_message_id = Column(BigInteger, nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)

@@ -24,6 +24,7 @@ from app.schemas.auth import (
     AvatarUpdate,
     TelegramLinkOut,
     TelegramStatusOut,
+    TimezoneUpdate,
     UserOut,
     UserUpdate,
 )
@@ -55,6 +56,22 @@ def update_me(
     current_user.phone_number = data.phone_number.strip() if data.phone_number else None
     current_user.date_of_birth = data.date_of_birth
     current_user.in_app_notifications_enabled = data.in_app_notifications_enabled
+    db.add(current_user)
+    db.commit()
+    db.refresh(current_user)
+    return current_user
+
+
+@router.put("/me/timezone", response_model=UserOut)
+def update_timezone(
+    data: TimezoneUpdate,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> User:
+    # The web app reports the browser's zone; the Telegram bot uses it for
+    # "today" and for times like "tomorrow 6pm". Separate from PATCH /me for
+    # the same reason as the avatar: that endpoint replaces every field.
+    current_user.timezone = data.timezone
     db.add(current_user)
     db.commit()
     db.refresh(current_user)
