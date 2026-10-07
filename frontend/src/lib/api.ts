@@ -152,7 +152,8 @@ export type GoalUpdate = GoalCreate & {
 };
 
 export type GoalLogCreate = {
-  completed: boolean;
+  /** Leave out: the server records whether the task is complete at save time. */
+  completed?: boolean;
   reflection: string;
   soulful?: boolean | null;
   emotion_label?: EmotionLabel | null;

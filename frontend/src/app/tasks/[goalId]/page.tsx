@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { FormEvent, useEffect, useState } from "react";
 import { BackgroundShell } from "@/components/background-shell";
-import { Alarm, Compass } from "@phosphor-icons/react";
+import { Alarm, CheckCircle, Compass } from "@phosphor-icons/react";
 import { PriorityIcon } from "@/components/icons";
 import { api, type GoalLogOut, type GoalOut, type Priority,
   type SafetyNoticeOut,
@@ -39,9 +39,9 @@ function formatDateTime(value: string) {
   });
 }
 
+// Whether the task was complete when the entry was written.
 function getLogStatus(log: GoalLogOut) {
-  if (log.completed) return "Completed";
-  return "Not completed";
+  return log.completed ? "Task complete" : "Task open";
 }
 
 function getSoulfulStatus(log: GoalLogOut) {
@@ -57,7 +57,6 @@ export default function TaskJournalPage() {
   const [goal, setGoal] = useState<GoalOut | null>(null);
   const [logs, setLogs] = useState<GoalLogOut[]>([]);
   const [reflection, setReflection] = useState("");
-  const [completed, setCompleted] = useState(true);
   const [soulful, setSoulful] = useState<boolean | null>(true);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -87,8 +86,8 @@ export default function TaskJournalPage() {
     setSaving(true);
     setError("");
     try {
+      // No "completed" here: the server records whether the task is complete.
       const log = await api.createGoalLog(goalId, {
-        completed,
         reflection: reflection.trim(),
         soulful,
       });
@@ -96,7 +95,6 @@ export default function TaskJournalPage() {
       // The entry is already saved; this only surfaces resources.
       if (log.safety) setSafetyNotice(log.safety);
       setReflection("");
-      setCompleted(true);
       setSoulful(true);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Could not save journal entry");
@@ -140,6 +138,12 @@ export default function TaskJournalPage() {
             </Link>
             <h1 className="mt-3 break-words text-3xl font-bold">{goal.title}</h1>
             <div className="mt-3 flex flex-wrap gap-2">
+              {goal.completed && (
+                <span className="inline-flex items-center gap-1 rounded border border-accent/30 bg-accent/10 px-2 py-0.5 text-xs font-semibold text-accent-soft">
+                  <CheckCircle size={14} weight="fill" aria-hidden="true" />
+                  Completed
+                </span>
+              )}
               <span className={`inline-flex items-center gap-1 rounded-chip px-2.5 py-1 text-[13px] font-semibold ${priorityMeta[goal.priority].chip}`}>
                 <PriorityIcon priority={goal.priority} size={14} />
                 {priorityMeta[goal.priority].label}
@@ -191,44 +195,13 @@ export default function TaskJournalPage() {
               Add another reflection as the task evolves.
             </p>
 
-            <div className="mt-5 grid grid-cols-2 gap-2">
-              <button
-                type="button"
-                onClick={() => {
-                  setCompleted(true);
-                  setSoulful(true);
-                }}
-                className={`rounded-control border px-3 py-2 text-sm ${
-                  completed
-                    ? "border-low bg-low-bg font-semibold text-low"
-                    : "border-line-strong bg-raised text-fg-muted"
-                }`}
-              >
-                Done
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setCompleted(false);
-                  setSoulful(false);
-                }}
-                className={`rounded-control border px-3 py-2 text-sm ${
-                  !completed
-                    ? "border-notdone bg-raised font-semibold text-fg"
-                    : "border-line-strong bg-raised text-fg-muted"
-                }`}
-              >
-                Not done
-              </button>
-            </div>
-
             <textarea
               value={reflection}
               onChange={(e) => setReflection(e.target.value)}
               required
               rows={7}
               maxLength={2000}
-              className="mt-4 w-full resize-none rounded-control border border-line-strong bg-field px-3 py-2 text-sm outline-none focus:border-accent"
+              className="mt-5 w-full resize-none rounded-control border border-line-strong bg-field px-3 py-2 text-sm outline-none focus:border-accent"
               placeholder="Add the latest detail, obstacle, decision, or reflection..."
             />
 

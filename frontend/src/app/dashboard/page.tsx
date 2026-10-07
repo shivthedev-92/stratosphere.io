@@ -36,6 +36,7 @@ import { EmptyGoalsIllustration } from "@/components/illustrations";
 import { MonthPriorityCalendar } from "@/components/month-priority-calendar";
 import {
   Alarm,
+  ArrowCounterClockwise,
   Bell,
   CaretDown,
   ChatCircleText,
@@ -44,6 +45,7 @@ import {
   Compass,
   PencilSimple,
   Trash,
+  type Icon as PhosphorIcon,
 } from "@phosphor-icons/react";
 import { carriedOverLabel, getGoalEffectiveDate, isCarriedOver } from "@/lib/carry-over";
 import { DayIcon, PriorityIcon } from "@/components/icons";
@@ -177,6 +179,40 @@ function filterGoals(goals: GoalOut[], filter: ActionFilter, selectedDateKey: st
   });
 }
 
+const TASK_ACTION_TONES = {
+  neutral: "border-line-strong text-fg-muted hover:border-fg-subtle hover:bg-raised hover:text-fg",
+  accent: "border-accent/50 text-accent-soft hover:bg-accent/10",
+  danger: "border-danger/30 text-fg-muted hover:border-danger hover:bg-danger-bg hover:text-danger",
+};
+
+/** A 44px icon button: big enough to tap, labelled for screen readers, titled for hover. */
+function TaskActionButton({
+  icon: Icon,
+  label,
+  tone = "neutral",
+  disabled,
+  onClick,
+}: {
+  icon: PhosphorIcon;
+  label: string;
+  tone?: keyof typeof TASK_ACTION_TONES;
+  disabled?: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      aria-label={label}
+      title={label}
+      className={`grid h-11 w-11 place-items-center rounded-control border transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${TASK_ACTION_TONES[tone]}`}
+    >
+      <Icon size={20} aria-hidden="true" />
+    </button>
+  );
+}
+
 export default function DashboardPage() {
   const router = useRouter();
   const [user, setUser] = useState<UserOut | null>(null);
@@ -200,7 +236,8 @@ export default function DashboardPage() {
   const [priority, setPriority] = useState<Priority>("medium");
   const [activeGoal, setActiveGoal] = useState<GoalOut | null>(null);
   const [detailGoal, setDetailGoal] = useState<GoalOut | null>(null);
-  const [completed, setCompleted] = useState(true);
+  // The reflection was offered right after Mark complete, so it can be skipped.
+  const [reflectJustCompleted, setReflectJustCompleted] = useState(false);
   const [reflection, setReflection] = useState("");
   const [soulful, setSoulful] = useState<boolean | null>(null);
   const [error, setError] = useState("");
@@ -360,9 +397,9 @@ export default function DashboardPage() {
     setSelectedCalendarDate(null);
   }
 
-  function startReflection(goal: GoalOut) {
+  function startReflection(goal: GoalOut, justCompleted = false) {
     setActiveGoal(goal);
-    setCompleted(true);
+    setReflectJustCompleted(justCompleted);
     setSoulful(true);
   }
 
@@ -409,8 +446,8 @@ export default function DashboardPage() {
     setError("");
     setSaving(true);
     try {
+      // No "completed" here: the server records whether the task is complete.
       const log = await api.createGoalLog(activeGoal.id, {
-        completed,
         reflection: reflection.trim(),
         soulful,
       });
@@ -420,7 +457,6 @@ export default function DashboardPage() {
       setActiveGoal(null);
       setReflection("");
       setSoulful(null);
-      setCompleted(true);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Could not save reflection");
     } finally {
@@ -465,6 +501,8 @@ export default function DashboardPage() {
         completed,
       });
       setGoals((current) => current.map((item) => (item.id === updated.id ? updated : item)));
+      // Finishing is the natural moment to reflect; the pop-up can be skipped.
+      if (completed) startReflection(updated, true);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Could not update action item");
     } finally {
@@ -511,11 +549,6 @@ export default function DashboardPage() {
       ? groupTodayView(visibleGoals)
       : groupGoalsByDate(visibleGoals);
   const now = new Date();
-  const addressedGoalIds = new Set(
-    goalLogs
-      .filter((log) => log.completed)
-      .map((log) => log.goal_id),
-  );
   const latestLogByGoalId = goalLogs.reduce<Record<string, GoalLogOut>>((latestLogs, log) => {
     const current = latestLogs[log.goal_id];
     if (!current || new Date(log.created_at).getTime() > new Date(current.created_at).getTime()) {
@@ -933,7 +966,6 @@ export default function DashboardPage() {
                         }
                       >
                         {group.goals.map((goal) => {
-                          const isAddressed = addressedGoalIds.has(goal.id);
                           const latestLog = latestLogByGoalId[goal.id];
                           const logCount = logCountByGoalId[goal.id] ?? 0;
                           const reflectionExpanded = expandedReflections.has(goal.id);
@@ -971,11 +1003,6 @@ export default function DashboardPage() {
                                     <span className="inline-flex items-center gap-1 rounded border border-accent/30 bg-accent/10 px-2 py-0.5 text-xs font-semibold text-accent-soft">
                                       <CheckCircle size={14} weight="fill" aria-hidden="true" />
                                       Completed
-                                    </span>
-                                  )}
-                                  {!goal.completed && isAddressed && (
-                                    <span className="rounded border border-low/30 bg-low-bg px-2 py-0.5 text-xs font-semibold text-low">
-                                      Addressed
                                     </span>
                                   )}
                                   <span className={`inline-flex items-center gap-1 rounded-chip px-2.5 py-1 text-[13px] font-semibold ${priorityMeta[goal.priority].chip}`}>
@@ -1052,64 +1079,34 @@ export default function DashboardPage() {
                               )}
                               </div>
                               <div
-                                className={`flex shrink-0 gap-2 ${
-                                  actionItemView === "cards" ? "w-full flex-col" : "sm:flex-col"
+                                className={`flex shrink-0 items-center gap-2 ${
+                                  actionItemView === "cards" ? "justify-end" : ""
                                 }`}
                               >
-                                <button
-                                  type="button"
+                                <TaskActionButton
+                                  icon={ChatCircleText}
+                                  label={`Reflect on ${goal.title}`}
                                   onClick={() => startReflection(goal)}
-                                  className={`rounded-control bg-raised px-4 py-2 text-sm font-semibold transition-colors hover:bg-raised/70 ${
-                                    actionItemView === "cards" ? "w-full" : ""
-                                  }`}
-                              >
-                                {isAddressed ? "Re-work" : "Reflect"}
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => handleSetGoalCompleted(goal, !goal.completed)}
-                                disabled={saving}
-                                aria-pressed={goal.completed}
-                                className={`inline-flex items-center justify-center gap-1.5 rounded-control border px-4 py-2 text-sm font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${
-                                  goal.completed
-                                    ? "border-line-strong text-fg-muted hover:bg-raised"
-                                    : "border-accent/50 text-accent-soft hover:bg-accent/10"
-                                } ${actionItemView === "cards" ? "w-full" : ""}`}
-                              >
-                                {goal.completed ? (
-                                  "Reopen"
-                                ) : (
-                                  <>
-                                    <CheckCircle size={16} aria-hidden="true" />
-                                    Mark complete
-                                  </>
-                                )}
-                              </button>
-                              <div
-                                className={`flex gap-2 ${
-                                  actionItemView === "cards" ? "w-full" : "justify-end"
-                                }`}
-                              >
-                                <button
-                                  type="button"
-                                  onClick={() => setDetailGoal(goal)}
-                                  aria-label={`Edit ${goal.title}`}
-                                  title="Edit task"
-                                  className="grid h-10 w-10 place-items-center rounded-control border border-line-strong text-sm transition-colors hover:border-fg-subtle hover:bg-raised"
-                                >
-                                  <PencilSimple size={18} aria-hidden="true" />
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => handleDeleteGoalFromList(goal.id)}
+                                />
+                                <TaskActionButton
+                                  icon={goal.completed ? ArrowCounterClockwise : CheckCircle}
+                                  label={`${goal.completed ? "Reopen" : "Mark complete"}: ${goal.title}`}
+                                  tone={goal.completed ? "neutral" : "accent"}
                                   disabled={saving}
-                                  aria-label={`Delete ${goal.title}`}
-                                  title="Delete task"
-                                  className="grid h-10 w-10 place-items-center rounded-control border border-danger/30 text-sm transition-colors hover:border-danger hover:bg-danger-bg disabled:opacity-40 disabled:cursor-not-allowed"
-                                >
-                                  <Trash size={18} aria-hidden="true" />
-                                </button>
-                              </div>
+                                  onClick={() => handleSetGoalCompleted(goal, !goal.completed)}
+                                />
+                                <TaskActionButton
+                                  icon={PencilSimple}
+                                  label={`Edit ${goal.title}`}
+                                  onClick={() => setDetailGoal(goal)}
+                                />
+                                <TaskActionButton
+                                  icon={Trash}
+                                  label={`Delete ${goal.title}`}
+                                  tone="danger"
+                                  disabled={saving}
+                                  onClick={() => handleDeleteGoalFromList(goal.id)}
+                                />
                               </div>
                             </div>
                           </article>
@@ -1135,14 +1132,10 @@ export default function DashboardPage() {
       {activeGoal && (
         <ReflectGoalModal
           goal={activeGoal}
-          completed={completed}
+          justCompleted={reflectJustCompleted}
           reflection={reflection}
           soulful={soulful}
           saving={saving}
-          onCompletedChange={(value) => {
-            setCompleted(value);
-            setSoulful(value ? true : false);
-          }}
           onReflectionChange={setReflection}
           onSoulfulChange={setSoulful}
           onCancel={() => {

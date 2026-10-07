@@ -14,5 +14,5 @@ class ProgressDailyOut(BaseModel):
     timezone: str
     start: date
     end: date
-    # Only days with at least one reflection; missing days are empty.
+    # Only days with a finished task or a reflection; missing days are empty.
     days: list[DailyProgressOut]

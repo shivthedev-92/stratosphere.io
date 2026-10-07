@@ -1,14 +1,14 @@
-import { CheckCircle, CircleDashed } from "@phosphor-icons/react";
+import { CheckCircle } from "@phosphor-icons/react";
 import { FormEvent } from "react";
 import type { GoalOut } from "@/lib/api";
 
 type ReflectGoalModalProps = {
   goal: GoalOut;
-  completed: boolean;
+  /** Opened straight after Mark complete: reflecting is optional, so Cancel reads "Skip". */
+  justCompleted?: boolean;
   reflection: string;
   soulful: boolean | null;
   saving: boolean;
-  onCompletedChange: (value: boolean) => void;
   onReflectionChange: (value: string) => void;
   onSoulfulChange: (value: boolean | null) => void;
   onCancel: () => void;
@@ -17,11 +17,10 @@ type ReflectGoalModalProps = {
 
 export function ReflectGoalModal({
   goal,
-  completed,
+  justCompleted = false,
   reflection,
   soulful,
   saving,
-  onCompletedChange,
   onReflectionChange,
   onSoulfulChange,
   onCancel,
@@ -33,41 +32,16 @@ export function ReflectGoalModal({
         onSubmit={onSubmit}
         className="w-full max-w-lg rounded-card border border-line bg-surface-solid p-5 shadow-2xl"
       >
+        {justCompleted && (
+          <p className="mb-2 inline-flex items-center gap-1.5 text-sm font-semibold text-low">
+            <CheckCircle size={18} weight="fill" aria-hidden="true" />
+            Marked complete. Want to reflect on it?
+          </p>
+        )}
         <h2 className="text-lg font-semibold">{goal.title}</h2>
         <p className="mt-1 text-sm text-fg-subtle">
           What went well, what got in the way, and does this still feel meaningful?
         </p>
-
-        <div className="mt-5 grid grid-cols-2 gap-2">
-          <button
-            type="button"
-            onClick={() => onCompletedChange(true)}
-            className={`rounded-control border px-3 py-2 text-sm ${
-              completed
-                ? "border-low bg-low-bg font-semibold text-low"
-                : "border-line-strong bg-raised text-fg-muted"
-            }`}
-          >
-            <span className="inline-flex items-center justify-center gap-1.5">
-              <CheckCircle size={18} weight={completed ? "fill" : "regular"} aria-hidden="true" />
-              Done
-            </span>
-          </button>
-          <button
-            type="button"
-            onClick={() => onCompletedChange(false)}
-            className={`rounded-control border px-3 py-2 text-sm ${
-              !completed
-                ? "border-notdone bg-raised font-semibold text-fg"
-                : "border-line-strong bg-raised text-fg-muted"
-            }`}
-          >
-            <span className="inline-flex items-center justify-center gap-1.5">
-              <CircleDashed size={18} aria-hidden="true" />
-              Not done
-            </span>
-          </button>
-        </div>
 
         <textarea
           value={reflection}
@@ -75,7 +49,7 @@ export function ReflectGoalModal({
           rows={5}
           required
           maxLength={2000}
-          className="mt-4 w-full resize-none rounded-control border border-line-strong bg-field px-3 py-2 text-sm outline-none focus:border-accent"
+          className="mt-5 w-full resize-none rounded-control border border-line-strong bg-field px-3 py-2 text-sm outline-none focus:border-accent"
           placeholder="Write a short reflection..."
         />
 
@@ -111,7 +85,7 @@ export function ReflectGoalModal({
             onClick={onCancel}
             className="rounded-control border border-line-strong px-4 py-2 text-sm font-semibold"
           >
-            Cancel
+            {justCompleted ? "Skip" : "Cancel"}
           </button>
           <button
             type="submit"
