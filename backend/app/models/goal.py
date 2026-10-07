@@ -14,7 +14,17 @@
 
 import uuid
 
-from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String, Text, func
+from sqlalchemy import (
+    Boolean,
+    Column,
+    DateTime,
+    ForeignKey,
+    Integer,
+    String,
+    Text,
+    UniqueConstraint,
+    func,
+)
 from sqlalchemy.dialects.postgresql import UUID
 
 from app.db import Base
@@ -67,6 +77,9 @@ class ChecklistItem(Base):
     """One item on a checklist. completed_at set means ticked, and when."""
 
     __tablename__ = "checklist_items"
+    __table_args__ = (
+        UniqueConstraint("checklist_id", "position", name="uq_checklist_items_checklist_position"),
+    )
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     # Denormalised from the checklist so ownership is one indexed filter.

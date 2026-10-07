@@ -44,6 +44,8 @@ export function ChecklistCard({
   onError,
 }: ChecklistCardProps) {
   const [busy, setBusy] = useState(false);
+  // One save per item at a time: overlapping toggles could land out of order.
+  const [pendingIds, setPendingIds] = useState<ReadonlySet<string>>(() => new Set());
   // Reads like a journal entry until the pencil opens the editor.
   const [editing, setEditing] = useState(false);
   const [newItem, setNewItem] = useState("");
@@ -77,6 +79,8 @@ export function ChecklistCard({
   // Ticks show at once; the server's time replaces the provisional one,
   // and a failed save puts the item back as it was.
   async function toggle(item: ChecklistItemOut) {
+    if (pendingIds.has(item.id)) return;
+    setPendingIds((current) => new Set(current).add(item.id));
     const completed = !item.completed_at;
     replaceItem({ ...item, completed_at: completed ? new Date().toISOString() : null });
     try {
@@ -84,6 +88,12 @@ export function ChecklistCard({
     } catch (err: unknown) {
       replaceItem(item);
       onError(err instanceof Error ? err.message : "Could not update item");
+    } finally {
+      setPendingIds((current) => {
+        const next = new Set(current);
+        next.delete(item.id);
+        return next;
+      });
     }
   }
 
@@ -208,6 +218,7 @@ export function ChecklistCard({
                     type="checkbox"
                     checked={done}
                     onChange={() => toggle(item)}
+                    disabled={pendingIds.has(item.id)}
                     aria-label={item.text}
                     className="mt-1 h-5 w-5 shrink-0 cursor-pointer accent-[var(--color-low)]"
                   />
@@ -309,6 +320,7 @@ export function ChecklistCard({
                     type="checkbox"
                     checked={done}
                     onChange={() => toggle(item)}
+                    disabled={pendingIds.has(item.id)}
                     className="mt-[5px] h-4 w-4 shrink-0 cursor-pointer accent-[var(--color-low)]"
                   />
                   <span className="min-w-0 flex-1">

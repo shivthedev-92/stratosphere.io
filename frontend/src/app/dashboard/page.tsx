@@ -1052,11 +1052,13 @@ export default function DashboardPage() {
                                 <TaskActionButton
                                   icon={ChatCircleText}
                                   label={`Reflect on ${goal.title}`}
+                                  tooltip="Reflect"
                                   onClick={() => startReflection(goal)}
                                 />
                                 <TaskActionButton
                                   icon={goal.completed ? ArrowCounterClockwise : CheckCircle}
                                   label={`${goal.completed ? "Reopen" : "Mark complete"}: ${goal.title}`}
+                                  tooltip={goal.completed ? "Reopen" : "Mark complete"}
                                   tone={goal.completed ? "neutral" : "accent"}
                                   disabled={saving}
                                   onClick={() => handleSetGoalCompleted(goal, !goal.completed)}
@@ -1064,11 +1066,13 @@ export default function DashboardPage() {
                                 <TaskActionButton
                                   icon={PencilSimple}
                                   label={`Edit ${goal.title}`}
+                                  tooltip="Edit"
                                   onClick={() => setDetailGoal(goal)}
                                 />
                                 <TaskActionButton
                                   icon={Trash}
                                   label={`Delete ${goal.title}`}
+                                  tooltip="Delete"
                                   tone="danger"
                                   disabled={saving}
                                   onClick={() => handleDeleteGoalFromList(goal.id)}
