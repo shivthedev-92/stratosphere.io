@@ -49,6 +49,7 @@ import {
 import { carriedOverLabel, getGoalEffectiveDate, isCarriedOver } from "@/lib/carry-over";
 import { DayIcon, PriorityIcon } from "@/components/icons";
 import { MotivationalBanner } from "@/components/motivational-banner";
+import { DashboardSkeleton } from "@/components/page-skeletons";
 import { TelegramSettings } from "@/components/telegram-settings";
 import { ThemeSwitcher } from "@/components/theme";
 import { AvatarPicker, UserAvatar } from "@/components/avatar-picker";
@@ -511,7 +512,7 @@ export default function DashboardPage() {
     }
   }
 
-  if (loading) return <p className="text-fg-subtle p-8">Loading...</p>;
+  if (loading) return <DashboardSkeleton />;
   if (!user) return null;
 
   const visibleGoals = filterGoals(goals, actionFilter, selectedCalendarDate);

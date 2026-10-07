@@ -4,6 +4,7 @@ import { Check, Copy } from "@phosphor-icons/react";
 import { useEffect, useRef, useState } from "react";
 import { QrCode } from "@/components/qr-code";
 import { api, type TelegramStatusOut } from "@/lib/api";
+import { LoadingRegion, Skeleton } from "@/components/skeleton";
 
 const POLL_MS = 3000;
 
@@ -182,7 +183,10 @@ export function TelegramSettings() {
           </button>
         </div>
       ) : status === null ? (
-        <p className="mt-4 text-sm text-fg-subtle">Loading…</p>
+        <LoadingRegion label="Loading Telegram settings" className="mt-4 space-y-2">
+          <Skeleton className="h-4 w-3/4" />
+          <Skeleton className="h-10 w-44" />
+        </LoadingRegion>
       ) : !status.available ? (
         <p className="mt-4 text-sm text-fg-subtle">
           Telegram reminders aren&apos;t set up on this server yet.

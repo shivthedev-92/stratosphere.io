@@ -15,6 +15,7 @@ import {
 } from "@phosphor-icons/react";
 import { ChecklistCard } from "@/components/checklist-card";
 import { ChecklistForm } from "@/components/checklist-form";
+import { TaskJournalSkeleton, TimelineEntrySkeleton } from "@/components/page-skeletons";
 import { PriorityIcon } from "@/components/icons";
 import { TaskActionButton } from "@/components/task-action-button";
 import {
@@ -78,6 +79,7 @@ export default function TaskJournalPage() {
   const [goal, setGoal] = useState<GoalOut | null>(null);
   const [logs, setLogs] = useState<GoalLogOut[]>([]);
   const [checklists, setChecklists] = useState<ChecklistOut[]>([]);
+  const [checklistsLoading, setChecklistsLoading] = useState(true);
   const [entryTab, setEntryTab] = useState<EntryTab>("journal");
   // Set after Mark complete here, to invite a reflection; cleared once one is saved.
   const [justCompleted, setJustCompleted] = useState(false);
@@ -114,7 +116,8 @@ export default function TaskJournalPage() {
       .catch((err: unknown) => {
         if (err instanceof Error && err.message.includes("401")) return; // the load above redirects
         setError("Could not load checklists. Your reflections are shown; refresh to try again.");
-      });
+      })
+      .finally(() => setChecklistsLoading(false));
   }, [goalId]);
 
   const [safetyNotice, setSafetyNotice] = useState<SafetyNoticeOut | null>(null);
@@ -195,7 +198,7 @@ export default function TaskJournalPage() {
     tabRefs.current[next]?.focus();
   }
 
-  if (loading) return <p className="p-8 text-fg-subtle">Loading...</p>;
+  if (loading) return <TaskJournalSkeleton />;
 
   if (!goal) {
     return (
@@ -411,7 +414,11 @@ export default function TaskJournalPage() {
               </span>
             </div>
 
-            {timeline.length === 0 ? (
+            {timeline.length === 0 && checklistsLoading ? (
+              <div className="mt-6 border-l border-line-strong pl-6">
+                <TimelineEntrySkeleton lines={["w-3/4", "w-1/2"]} />
+              </div>
+            ) : timeline.length === 0 ? (
               <div className="mt-6 rounded-control border border-dashed border-line-strong bg-surface p-6 text-sm text-fg-muted">
                 Nothing here yet. Add a reflection or a checklist to start the timeline.
               </div>
