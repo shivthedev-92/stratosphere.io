@@ -44,6 +44,8 @@ export function ChecklistCard({
   onError,
 }: ChecklistCardProps) {
   const [busy, setBusy] = useState(false);
+  // Reads like a journal entry until the pencil opens the editor.
+  const [editing, setEditing] = useState(false);
   const [newItem, setNewItem] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editText, setEditText] = useState("");
@@ -139,6 +141,16 @@ export function ChecklistCard({
 
   const label = checklist.title ?? "Checklist";
 
+  function doneLine(item: ChecklistItemOut) {
+    if (!item.completed_at) return null;
+    return (
+      <p className="mt-0.5 text-xs text-fg-subtle">
+        Done {formatDoneAt(item.completed_at)} ·{" "}
+        <span className="whitespace-nowrap">took {formatDuration(item.created_at, item.completed_at)}</span>
+      </p>
+    );
+  }
+
   return (
     <article className="rounded-card border border-line bg-surface p-4">
       <div className="flex flex-wrap items-start justify-between gap-2">
@@ -148,124 +160,173 @@ export function ChecklistCard({
             Checklist
           </span>
           {checklist.title && <h3 className="break-words text-sm font-semibold text-fg">{checklist.title}</h3>}
+          <span className="text-xs tabular-nums text-fg-subtle">
+            {doneCount} of {items.length} done
+          </span>
         </div>
         <div className="flex items-center gap-1">
           <time className="text-xs text-fg-subtle" dateTime={checklist.created_at}>
             {formatCreatedAt(checklist.created_at)}
           </time>
-          <button
-            type="button"
-            onClick={removeChecklist}
-            disabled={busy}
-            aria-label={`Delete ${label}`}
-            title="Delete checklist"
-            className={`${ICON_BUTTON} hover:text-danger`}
-          >
-            <Trash size={16} aria-hidden="true" />
-          </button>
+          {!editing && (
+            <button
+              type="button"
+              onClick={() => setEditing(true)}
+              aria-label={`Edit ${label}`}
+              title="Edit checklist"
+              className={ICON_BUTTON}
+            >
+              <PencilSimple size={16} aria-hidden="true" />
+            </button>
+          )}
         </div>
       </div>
 
-      <div className="mt-3 flex items-center gap-3">
+      <div
+        role="progressbar"
+        aria-label={`${label} progress`}
+        aria-valuemin={0}
+        aria-valuemax={items.length}
+        aria-valuenow={doneCount}
+        className="mt-3 h-1 overflow-hidden rounded-full bg-raised"
+      >
         <div
-          role="progressbar"
-          aria-label={`${label} progress`}
-          aria-valuemin={0}
-          aria-valuemax={items.length}
-          aria-valuenow={doneCount}
-          className="h-1.5 flex-1 overflow-hidden rounded-full bg-raised"
-        >
-          <div
-            className="h-full rounded-full bg-low transition-[width]"
-            style={{ width: `${items.length ? (doneCount / items.length) * 100 : 0}%` }}
-          />
-        </div>
-        <span className="text-xs font-semibold tabular-nums text-fg-muted">
-          {doneCount} of {items.length} done
-        </span>
+          className="h-full rounded-full bg-low transition-[width]"
+          style={{ width: `${items.length ? (doneCount / items.length) * 100 : 0}%` }}
+        />
       </div>
 
-      <ul className="mt-3 space-y-1">
-        {items.map((item) => {
-          const done = !!item.completed_at;
-          const editing = editingId === item.id;
-          return (
-            <li key={item.id} className="flex items-start gap-2 rounded-control px-1 py-1 hover:bg-raised/50">
-              <input
-                type="checkbox"
-                checked={done}
-                onChange={() => toggle(item)}
-                aria-label={item.text}
-                className="mt-1 h-5 w-5 shrink-0 cursor-pointer accent-[var(--color-low)]"
-              />
-              <div className="min-w-0 flex-1">
-                {editing ? (
+      {editing ? (
+        <>
+          <ul className="mt-3 space-y-1">
+            {items.map((item) => {
+              const done = !!item.completed_at;
+              const renaming = editingId === item.id;
+              return (
+                <li key={item.id} className="flex items-start gap-2 rounded-control px-1 py-1 hover:bg-raised/50">
                   <input
-                    autoFocus
-                    value={editText}
-                    onChange={(e) => setEditText(e.target.value)}
-                    onKeyDown={handleEditKeyDown}
-                    onBlur={() => saveEdit(item)}
-                    maxLength={500}
-                    aria-label={`Rename ${item.text}`}
-                    className="w-full rounded-control border border-line-strong bg-field px-2 py-1 text-sm outline-none focus:border-accent"
+                    type="checkbox"
+                    checked={done}
+                    onChange={() => toggle(item)}
+                    aria-label={item.text}
+                    className="mt-1 h-5 w-5 shrink-0 cursor-pointer accent-[var(--color-low)]"
                   />
-                ) : (
-                  <p className={`break-words text-sm ${done ? "text-fg-subtle line-through" : "text-fg"}`}>
-                    {item.text}
-                  </p>
-                )}
-                {item.completed_at && (
-                  <p className="mt-0.5 text-xs text-fg-subtle">
-                    Done {formatDoneAt(item.completed_at)} ·{" "}
-                    <span className="whitespace-nowrap">
-                      took {formatDuration(item.created_at, item.completed_at)}
-                    </span>
-                  </p>
-                )}
-              </div>
-              {!editing && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    cancelEdit.current = false;
-                    setEditingId(item.id);
-                    setEditText(item.text);
-                  }}
-                  disabled={busy}
-                  aria-label={`Rename ${item.text}`}
-                  title="Rename item"
-                  className={ICON_BUTTON}
-                >
-                  <PencilSimple size={16} aria-hidden="true" />
-                </button>
-              )}
-              <button
-                type="button"
-                onClick={() => removeItem(item)}
-                disabled={busy}
-                aria-label={`Delete ${item.text}`}
-                title="Delete item"
-                className={`${ICON_BUTTON} hover:text-danger`}
-              >
-                <Trash size={16} aria-hidden="true" />
-              </button>
-            </li>
-          );
-        })}
-      </ul>
+                  <div className="min-w-0 flex-1">
+                    {renaming ? (
+                      <input
+                        autoFocus
+                        value={editText}
+                        onChange={(e) => setEditText(e.target.value)}
+                        onKeyDown={handleEditKeyDown}
+                        onBlur={() => saveEdit(item)}
+                        maxLength={500}
+                        aria-label={`Rename ${item.text}`}
+                        className="w-full rounded-control border border-line-strong bg-field px-2 py-1 text-sm outline-none focus:border-accent"
+                      />
+                    ) : (
+                      <p className={`break-words text-sm ${done ? "text-fg-subtle line-through" : "text-fg"}`}>
+                        {item.text}
+                      </p>
+                    )}
+                    {doneLine(item)}
+                  </div>
+                  {!renaming && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        cancelEdit.current = false;
+                        setEditingId(item.id);
+                        setEditText(item.text);
+                      }}
+                      disabled={busy}
+                      aria-label={`Rename ${item.text}`}
+                      title="Rename item"
+                      className={ICON_BUTTON}
+                    >
+                      <PencilSimple size={16} aria-hidden="true" />
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => removeItem(item)}
+                    disabled={busy}
+                    aria-label={`Delete ${item.text}`}
+                    title="Delete item"
+                    className={`${ICON_BUTTON} hover:text-danger`}
+                  >
+                    <Trash size={16} aria-hidden="true" />
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
 
-      <form onSubmit={addItem} className="mt-2 flex items-center gap-2 pl-1">
-        <Plus size={16} aria-hidden="true" className="shrink-0 text-fg-subtle" />
-        <input
-          value={newItem}
-          onChange={(e) => setNewItem(e.target.value)}
-          maxLength={500}
-          aria-label={`Add an item to ${label}`}
-          placeholder="Add an item"
-          className="w-full rounded-control border border-transparent bg-transparent px-2 py-1.5 text-sm outline-none placeholder:text-fg-subtle hover:border-line focus:border-accent focus:bg-field"
-        />
-      </form>
+          <form onSubmit={addItem} className="mt-2 flex items-center gap-2 pl-1">
+            <Plus size={16} aria-hidden="true" className="shrink-0 text-fg-subtle" />
+            <input
+              value={newItem}
+              onChange={(e) => setNewItem(e.target.value)}
+              maxLength={500}
+              aria-label={`Add an item to ${label}`}
+              placeholder="Add an item"
+              className="w-full rounded-control border border-transparent bg-transparent px-2 py-1.5 text-sm outline-none placeholder:text-fg-subtle hover:border-line focus:border-accent focus:bg-field"
+            />
+          </form>
+
+          <div className="mt-3 flex items-center justify-between gap-2 border-t border-line pt-3">
+            <button
+              type="button"
+              onClick={removeChecklist}
+              disabled={busy}
+              className="inline-flex items-center gap-1.5 rounded-control px-2 py-1.5 text-sm font-semibold text-fg-muted transition-colors hover:bg-danger-bg hover:text-danger disabled:opacity-40"
+            >
+              <Trash size={16} aria-hidden="true" />
+              Delete checklist
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setEditing(false);
+                setEditingId(null);
+              }}
+              className="rounded-control bg-accent px-4 py-1.5 text-sm font-semibold text-white transition-colors hover:bg-accent-hover"
+            >
+              Done
+            </button>
+          </div>
+        </>
+      ) : items.length === 0 ? (
+        <p className="mt-3 font-serif text-[15px] italic text-fg-subtle">No items yet.</p>
+      ) : (
+        // Journal view: reads like a reflection, but items can still be ticked.
+        <ul className="mt-3 space-y-2">
+          {items.map((item) => {
+            const done = !!item.completed_at;
+            return (
+              <li key={item.id}>
+                <label className="flex cursor-pointer items-start gap-3 rounded-control py-0.5">
+                  <input
+                    type="checkbox"
+                    checked={done}
+                    onChange={() => toggle(item)}
+                    className="mt-[5px] h-4 w-4 shrink-0 cursor-pointer accent-[var(--color-low)]"
+                  />
+                  <span className="min-w-0 flex-1">
+                    <span
+                      className={`block break-words font-serif text-[15px] italic leading-6 ${
+                        done ? "text-fg-subtle line-through decoration-fg-subtle/70" : "text-fg"
+                      }`}
+                    >
+                      {item.text}
+                    </span>
+                    {doneLine(item)}
+                  </span>
+                </label>
+              </li>
+            );
+          })}
+        </ul>
+      )}
 
       {allDone && !taskCompleted && (
         <div className="mt-3 flex flex-col gap-2 rounded-control border border-low/30 bg-low-bg px-3 py-2 sm:flex-row sm:items-center sm:justify-between">
