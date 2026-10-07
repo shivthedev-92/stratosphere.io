@@ -12,7 +12,7 @@
 # Version 0.1.0 | 2024-06
 ############################################################################
 
-from fastapi import APIRouter, Depends, HTTPException, Response, status
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Response, status
 from sqlalchemy.orm import Session
 
 from app.config import settings
@@ -34,9 +34,9 @@ from app.security import (
 )
 from app.services.password_reset import (
     RESET_REQUEST_MESSAGE,
-    create_password_reset_request,
+    prepare_password_reset_email,
     reset_password,
-    send_password_reset_email,
+    send_email,
 )
 
 router = APIRouter(prefix="/auth", tags=["auth"])
@@ -93,11 +93,14 @@ def logout(response: Response) -> None:
 @router.post("/password-reset/request", response_model=MessageOut)
 def request_password_reset(
     data: PasswordResetRequestIn,
+    background_tasks: BackgroundTasks,
     db: Session = Depends(get_db),
 ) -> MessageOut:
-    token = create_password_reset_request(db, data.email)
-    if token:
-        send_password_reset_email(str(data.email), token)
+    outgoing = prepare_password_reset_email(db, str(data.email))
+    # Sent after the response: SMTP can take seconds, and a slower answer
+    # for known addresses would reveal which emails have accounts.
+    if outgoing:
+        background_tasks.add_task(send_email, outgoing)
     return MessageOut(message=RESET_REQUEST_MESSAGE)
 
 

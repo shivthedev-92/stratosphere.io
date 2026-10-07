@@ -59,6 +59,10 @@ export default function ForgotPasswordPage() {
           </button>
         </form>
       )}
+      <p className="text-center text-xs text-fg-subtle">
+        Signed up with Google or Microsoft? There&apos;s no password to reset; we&apos;ll email you
+        a reminder of how you sign in.
+      </p>
       <p className="pt-1 text-center text-sm text-fg-muted">
         Remembered it?{" "}
         <Link href="/login" className="font-semibold text-accent-soft hover:underline">
