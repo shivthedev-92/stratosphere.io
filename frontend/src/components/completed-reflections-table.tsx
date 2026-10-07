@@ -1,4 +1,5 @@
 import type { GoalLogOut, GoalOut } from "@/lib/api";
+import { formatDuration } from "@/lib/duration";
 
 function formatDateTime(date: string) {
   return new Date(date).toLocaleString(undefined, {
@@ -7,18 +8,6 @@ function formatDateTime(date: string) {
     hour: "numeric",
     minute: "2-digit",
   });
-}
-
-function formatDuration(start: string, end: string) {
-  const diffMs = Math.max(0, new Date(end).getTime() - new Date(start).getTime());
-  const totalMinutes = Math.max(1, Math.round(diffMs / 60000));
-  const days = Math.floor(totalMinutes / 1440);
-  const hours = Math.floor((totalMinutes % 1440) / 60);
-  const minutes = totalMinutes % 60;
-
-  if (days > 0) return `${days}d ${hours}h`;
-  if (hours > 0) return `${hours}h ${minutes}m`;
-  return `${minutes}m`;
 }
 
 function getStatus(log: GoalLogOut | undefined) {
