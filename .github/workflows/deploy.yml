@@ -98,7 +98,7 @@ jobs:
           run_name="deploy-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
           location="$(az vm show -g "$RESOURCE_GROUP" -n "$VM_NAME" --query location -o tsv)"
           # The run command keeps its (encrypted) parameters until deleted.
-          trap 'az vm run-command delete -g "$RESOURCE_GROUP" --vm-name "$VM_NAME" -n "$run_name" --yes --no-wait >/dev/null 2>&1 || true' EXIT
+          trap 'az vm run-command delete -g "$RESOURCE_GROUP" --vm-name "$VM_NAME" --run-command-name "$run_name" --yes --no-wait >/dev/null 2>&1 || true' EXIT
 
           # Waits for the script to finish; its result is read from the instance view below.
           az vm run-command create \
@@ -115,7 +115,7 @@ jobs:
             --timeout-in-seconds 1200 \
             --output none || true
 
-          view="$(az vm run-command show -g "$RESOURCE_GROUP" --vm-name "$VM_NAME" -n "$run_name" \
+          view="$(az vm run-command show -g "$RESOURCE_GROUP" --vm-name "$VM_NAME" --run-command-name "$run_name" \
             --instance-view --query instanceView -o json)"
           jq -r '.output // ""' <<<"$view"
           jq -r '.error // ""' <<<"$view" >&2
