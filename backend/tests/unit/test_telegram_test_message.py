@@ -94,8 +94,8 @@ def test_temporary_failure_keeps_the_link(setup):
 def test_test_message_greets_by_first_name_only():
     # Same rule as reminders: first name at most, nothing from notes or reflections.
     text = tg.format_test_message("Priya Sharma")
-    assert text.startswith("Hey Priya!") and "Sharma" not in text
-    assert text.endswith("— Aster") and "{" not in text
+    assert text.startswith("👋 Hey Priya!") and "Sharma" not in text
+    assert text.endswith("— Aster ✨") and "{" not in text
 
 
 def test_button_is_rate_limited():
