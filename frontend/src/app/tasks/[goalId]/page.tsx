@@ -65,11 +65,6 @@ function formatDateTime(value: string) {
   });
 }
 
-// Whether the task was complete when the entry was written.
-function getLogStatus(log: GoalLogOut) {
-  return log.completed ? "Task complete" : "Task open";
-}
-
 function getSoulfulStatus(log: GoalLogOut) {
   if (log.soulful === true) return "Meaningful";
   if (log.soulful === false) return "Not meaningful";
@@ -95,11 +90,10 @@ export default function TaskJournalPage() {
   const [error, setError] = useState("");
 
   useEffect(() => {
-    Promise.all([api.goal(goalId), api.goalLogsForGoal(goalId), api.checklistsForGoal(goalId)])
-      .then(([goalData, logData, checklistData]) => {
+    Promise.all([api.goal(goalId), api.goalLogsForGoal(goalId)])
+      .then(([goalData, logData]) => {
         setGoal(goalData);
         setLogs(logData);
-        setChecklists(checklistData);
       })
       .catch((err: unknown) => {
         if (err instanceof Error && err.message.includes("401")) {
@@ -110,6 +104,18 @@ export default function TaskJournalPage() {
       })
       .finally(() => setLoading(false));
   }, [goalId, router]);
+
+  // Separate from the task and its reflections: if checklists fail to load,
+  // the journal still shows and only this part reports the problem.
+  useEffect(() => {
+    api
+      .checklistsForGoal(goalId)
+      .then(setChecklists)
+      .catch((err: unknown) => {
+        if (err instanceof Error && err.message.includes("401")) return; // the load above redirects
+        setError("Could not load checklists. Your reflections are shown; refresh to try again.");
+      });
+  }, [goalId]);
 
   const [safetyNotice, setSafetyNotice] = useState<SafetyNoticeOut | null>(null);
 
@@ -260,6 +266,7 @@ export default function TaskJournalPage() {
           <TaskActionButton
             icon={goal.completed ? ArrowCounterClockwise : CheckCircle}
             label={goal.completed ? "Reopen task" : "Mark task complete"}
+            tooltip={goal.completed ? "Reopen" : "Mark complete"}
             tone={goal.completed ? "neutral" : "accent"}
             disabled={saving}
             onClick={() => handleSetCompleted(!goal.completed)}
@@ -437,9 +444,6 @@ export default function TaskJournalPage() {
                           <div className="flex flex-wrap gap-2">
                             <span className="rounded-chip border border-line bg-raised px-2 py-0.5 text-xs font-semibold text-accent-soft">
                               Reflection
-                            </span>
-                            <span className="rounded border border-line px-2 py-0.5 text-xs text-fg-muted">
-                              {getLogStatus(entry.log)}
                             </span>
                             <span className="rounded border border-line px-2 py-0.5 text-xs text-fg-muted">
                               {getSoulfulStatus(entry.log)}

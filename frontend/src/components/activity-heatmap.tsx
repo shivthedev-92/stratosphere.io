@@ -30,7 +30,7 @@ function plural(n: number, word: string): string {
 
 function describe(day: HeatmapDay): string {
   const parts = [`${day.done} done`];
-  if (day.notDone) parts.push(`${day.notDone} reflected on while open`);
+  if (day.notDone) parts.push(`${day.notDone} reflected as not done`);
   if (day.meaningful) parts.push(`${day.meaningful} felt meaningful`);
   return `${dayLong.format(day.date)} · ${day.done || day.notDone || day.meaningful ? parts.join(" · ") : "nothing logged"}`;
 }

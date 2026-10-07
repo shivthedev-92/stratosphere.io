@@ -60,12 +60,13 @@ def checklist_out(checklist: GoalChecklist, items: list[ChecklistItem]) -> Check
     )
 
 
-def get_owned_checklist(checklist_id: UUID, current_user: User, db: Session) -> GoalChecklist:
-    checklist = (
-        db.query(GoalChecklist)
-        .filter(GoalChecklist.id == checklist_id, GoalChecklist.user_id == current_user.id)
-        .first()
+def get_owned_checklist(
+    checklist_id: UUID, current_user: User, db: Session, lock: bool = False
+) -> GoalChecklist:
+    query = db.query(GoalChecklist).filter(
+        GoalChecklist.id == checklist_id, GoalChecklist.user_id == current_user.id
     )
+    checklist = (query.with_for_update() if lock else query).first()
     if not checklist:
         raise HTTPException(status_code=404, detail="Checklist not found")
     return checklist
@@ -164,7 +165,9 @@ def add_checklist_item(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ) -> ChecklistItem:
-    checklist = get_owned_checklist(checklist_id, current_user, db)
+    checklist = get_owned_checklist(checklist_id, current_user, db, lock=True)
+    # The row lock above serialises concurrent adds to this checklist, so the
+    # count and next position below cannot be read by two requests at once.
     count, last_position = (
         db.query(func.count(ChecklistItem.id), func.max(ChecklistItem.position))
         .filter(ChecklistItem.checklist_id == checklist.id)
