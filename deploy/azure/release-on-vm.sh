@@ -20,6 +20,18 @@ WORK="$(mktemp -d)"
 readonly WORK
 trap 'rm -rf -- "$WORK"' EXIT
 
+# Ready through Caddy, as the public sees it, but resolved to this VM so the
+# check doesn't depend on hairpin routing. Retries while TLS and the app warm up.
+publicly_ready() {
+  local site
+  site="$(sed -n 's/^SITE_ADDRESS=//p' .env.azure | tail -n 1)"
+  [[ -n "$site" ]] || { echo "SITE_ADDRESS missing from .env.azure" >&2; return 1; }
+  curl --fail --silent --show-error --output /dev/null \
+    --resolve "$site:443:127.0.0.1" \
+    --retry 12 --retry-delay 5 --retry-all-errors \
+    "https://$site/api/health/ready"
+}
+
 compose() {
   docker compose \
     --project-name stratosphere \
@@ -63,7 +75,9 @@ docker logout ghcr.io >/dev/null
 unset DOCKER_CONFIG
 
 echo "Starting release $RELEASE"
-if compose up -d --no-build --remove-orphans --wait --wait-timeout 300; then
+# 'current' moves only once the release is healthy in Compose AND ready
+# through Caddy; otherwise the previous release is restored below.
+if compose up -d --no-build --remove-orphans --wait --wait-timeout 300 && publicly_ready; then
   ln -sfn "$RELEASE" "$ROOT/current"
   chown -h "$OWNER" "$ROOT/current"
   compose ps --format 'table {{.Service}}\t{{.Status}}'

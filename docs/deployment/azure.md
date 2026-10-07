@@ -103,7 +103,9 @@ It creates an Entra app registration with a federated credential that only jobs 
 
 **Secrets stay on the VM.** CI deploys read `/opt/stratosphere/shared/.env.azure`. The first CI deploy copies it from the live release, and every `deploy.sh` run overwrites it with your local `deploy/azure/.env.azure`. To change a secret, either edit that file on the VM and re-run the workflow (**Actions > Deploy > Run workflow**), or run `deploy.sh`.
 
-**Rolling back:** open an earlier successful Deploy run and choose **Re-run all jobs**. It redeploys that commit's images. The VM keeps the last five releases.
+**Automatic rollback:** a release becomes `current` only after Compose reports it healthy *and* `/api/health/ready` answers through Caddy on the VM. If either fails, the VM restarts the previous release and the workflow fails.
+
+**Rolling back by hand:** within 30 days, open an earlier successful Deploy run and choose **Re-run all jobs**. GitHub only allows re-runs for 30 days after the original run; this re-runs CI and rebuilds that commit's images. For older releases, check out the commit and run `deploy.sh`, or on the VM start one of the last five kept releases with `docker compose ... up -d --no-build` from its directory, as long as its images haven't been pruned (images older than 10 days are removed).
 
 `deploy.sh` still works as a manual fallback. It builds on the VM and tags the images `:local`.
 

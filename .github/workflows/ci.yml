@@ -20,6 +20,9 @@ jobs:
         working-directory: backend
     steps:
       - uses: actions/checkout@v4
+        with:
+          # Don't leave the job token in .git/config for later steps (npm/uv scripts) to read.
+          persist-credentials: false
       - uses: astral-sh/setup-uv@v6
         with:
           enable-cache: true
@@ -35,6 +38,9 @@ jobs:
         working-directory: frontend
     steps:
       - uses: actions/checkout@v4
+        with:
+          # Don't leave the job token in .git/config for later steps (npm/uv scripts) to read.
+          persist-credentials: false
       - uses: actions/setup-node@v4
         with:
           node-version-file: frontend/.nvmrc
@@ -54,6 +60,9 @@ jobs:
         working-directory: mobile
     steps:
       - uses: actions/checkout@v4
+        with:
+          # Don't leave the job token in .git/config for later steps (npm/uv scripts) to read.
+          persist-credentials: false
       - uses: actions/setup-node@v4
         with:
           node-version-file: frontend/.nvmrc
