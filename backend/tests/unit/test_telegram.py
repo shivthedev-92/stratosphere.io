@@ -1,5 +1,6 @@
 """Telegram reminders: linking, bot replies, client errors, and dispatch."""
 
+import json
 from datetime import datetime, timedelta, timezone
 from uuid import uuid4
 
@@ -149,9 +150,9 @@ def test_ordinary_text_gets_reminders_only_reply():
 def test_reminder_is_a_friendly_note_with_first_name_and_title_only():
     texts = [format_reminder("Read 15 minutes", "Priya Sharma", v) for v in range(3)]
     for text in texts:
-        assert text.startswith(("Hey Priya", "Hi Priya"))
-        assert '"Read 15 minutes"' in text and text.endswith("— Aster")
-        assert "Sharma" not in text  # first name only
+        assert "Priya!" in text.split("\n")[0]  # greeting line, first name only
+        assert "<b>Read 15 minutes</b>" in text and text.endswith("— Aster ✨")
+        assert "Sharma" not in text
     assert len(set(texts)) == 3  # a few ways of saying it
 
 
@@ -161,12 +162,60 @@ def test_reminder_variant_is_stable_and_wraps():
 
 
 def test_reminder_without_a_name_says_hey_there():
-    assert format_reminder("Walk", "  ", 0).startswith("Hey there!")
-    assert format_reminder("Walk", None, 0).startswith("Hey there!")
+    assert format_reminder("Walk", "  ", 0).startswith("⏰ Hey there!")
+    assert format_reminder("Walk", None, 0).startswith("⏰ Hey there!")
 
 
 def test_braces_in_a_title_are_not_template_fields():
-    assert '"Plan {launch}"' in format_reminder("Plan {launch}", "Sam", 0)
+    assert "<b>Plan {launch}</b>" in format_reminder("Plan {launch}", "Sam", 0)
+
+
+def test_titles_and_names_are_escaped_for_telegram_html():
+    # Messages go out with parse_mode=HTML; a raw "<" or "&" would make
+    # Telegram reject the reminder outright.
+    text = format_reminder("Fix <b>bugs</b> & ship", "<Sam>", 0)
+    assert "<b>Fix &lt;b&gt;bugs&lt;/b&gt; &amp; ship</b>" in text
+    assert "Hey &lt;Sam&gt;!" in text
+
+
+def test_every_fixed_reply_is_valid_telegram_html():
+    # Telegram HTML allows only a few tags; any other "<" must be escaped.
+    from html.parser import HTMLParser
+
+    allowed = {"b", "i", "u", "s", "a", "code", "pre"}
+
+    class Check(HTMLParser):
+        def handle_starttag(self, tag, attrs):
+            assert tag in allowed, tag
+
+    for text in (
+        LINKED_TEXT,
+        LINK_INVALID_TEXT,
+        START_WITHOUT_TOKEN_TEXT,
+        REMINDERS_ONLY_TEXT,
+        tg.STOPPED_TEXT,
+        tg.NOT_LINKED_TEXT,
+        crisis_text(),
+        tg.format_test_message("Priya"),
+        *(format_reminder("Walk", "Sam", v) for v in range(3)),
+    ):
+        Check().feed(text)
+
+
+def test_crisis_reply_has_no_emoji():
+    assert all(ord(ch) < 0x2000 for ch in crisis_text())
+
+
+@pytest.mark.parametrize(
+    ("frontend_url", "expected"),
+    [
+        ("https://stratosphereio.in/", {"text": "Go", "url": "https://stratosphereio.in/tasks/1"}),
+        ("http://localhost:3000", None),  # Telegram rejects non-https button URLs
+    ],
+)
+def test_app_button_needs_a_public_https_url(monkeypatch, frontend_url, expected):
+    monkeypatch.setattr(tg.settings, "FRONTEND_URL", frontend_url)
+    assert tg.app_button("Go", "/tasks/1") == expected
 
 
 # --- client: token never leaks ----------------------------------------------
@@ -236,10 +285,10 @@ class FakeClient:
     def __init__(self, fail=None):
         self.sent, self.fail = [], fail or {}
 
-    async def send_message(self, chat_id, text):
+    async def send_message(self, chat_id, text, button=None):
         if chat_id in self.fail:
             raise self.fail[chat_id]
-        self.sent.append((chat_id, text))
+        self.sent.append((chat_id, text, button))
 
 
 @pytest.mark.asyncio
@@ -266,7 +315,7 @@ async def test_dispatch_sends_unlinks_blocked_and_releases_failed(monkeypatch):
     sent = await tg.dispatch_once(client, lambda: _Closable(), NOW)
 
     assert sent == 1
-    assert client.sent == [(1, format_reminder("task 1", "", ok.notification_id.int))]
+    assert client.sent == [(1, format_reminder("task 1", "", ok.notification_id.int), None)]
     assert unlinked == [2, 5]  # blocked and missing chats; a plain rejection keeps its link
     assert released == [flaky.notification_id]  # rejected (4) keeps its claim
 
@@ -289,3 +338,34 @@ class _Closable:
 
 async def _no_sleep(_s):
     return None
+
+
+@pytest.mark.asyncio
+async def test_reminder_carries_an_open_task_button(monkeypatch):
+    goal_id = uuid4()
+    reminder = ClaimedReminder(uuid4(), 1, "Meditate", "Priya", goal_id)
+    monkeypatch.setattr(tg, "claim_due_reminders", lambda db, now=None: [reminder])
+    monkeypatch.setattr(tg.settings, "FRONTEND_URL", "https://stratosphereio.in")
+    monkeypatch.setattr(tg.asyncio, "sleep", _no_sleep)
+    client = FakeClient()
+
+    await tg.dispatch_once(client, lambda: _Closable(), NOW)
+
+    (_, _, button), = client.sent
+    assert button == {"text": "📝 Open task", "url": f"https://stratosphereio.in/tasks/{goal_id}"}
+
+
+@pytest.mark.asyncio
+async def test_send_message_uses_html_and_inline_button():
+    seen = []
+
+    def handler(request):
+        seen.append(json.loads(request.content))
+        return httpx.Response(200, json={"ok": True, "result": {}})
+
+    await _client(handler).send_message(1, "<b>hi</b>", {"text": "Go", "url": "https://x.y"})
+    await _client(handler).send_message(2, "plain")
+
+    assert seen[0]["parse_mode"] == "HTML"
+    assert seen[0]["reply_markup"] == {"inline_keyboard": [[{"text": "Go", "url": "https://x.y"}]]}
+    assert "reply_markup" not in seen[1]

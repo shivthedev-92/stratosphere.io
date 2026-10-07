@@ -38,6 +38,7 @@ import logging
 import secrets
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
+from html import escape
 from uuid import UUID
 
 import httpx
@@ -141,34 +142,46 @@ def unlink_user(db: Session, user: User) -> None:
 # Bot messages  |
 # ===============#
 
+# Every bot message is sent with parse_mode=HTML, so fixed copy here must be
+# valid Telegram HTML, and anything user-supplied (names, task titles) must
+# go through escape(). An unescaped "<" makes Telegram reject the message.
 LINKED_TEXT = (
-    "Connected. You'll get your Stratosphere task reminders here.\n\n"
-    "Send /stop at any time to disconnect."
+    "🎉 <b>You're connected!</b>\n\n"
+    "Your Stratosphere task reminders will land right here ⏰\n\n"
+    "Send /stop any time to disconnect."
 )
 LINK_INVALID_TEXT = (
-    "That link has expired or was already used. In Stratosphere, open Settings "
-    "and choose Connect Telegram again."
+    "⌛ That link has expired or was already used.\n\n"
+    "In Stratosphere, open <b>Settings</b> → <b>Connect Telegram</b> for a fresh one."
 )
 START_WITHOUT_TOKEN_TEXT = (
-    "To receive reminders, open Stratosphere, go to Settings and choose Connect Telegram."
+    "👋 Hi! To get reminders here, open Stratosphere → <b>Settings</b> → "
+    "<b>Connect Telegram</b>."
 )
 TEST_MESSAGE_TEMPLATE = (
-    "Hey {name}! Aster here, just testing the line. "
-    "Your task reminders will land right here, like this one. Nothing else to do. — Aster"
+    "👋 Hey {name}! Aster here ✨\n\n"
+    "Just testing the line 📡 Your task reminders will land right here, like this one.\n\n"
+    "Nothing else to do. See you soon! 🌟\n\n"
+    "— Aster ✨"
 )
-STOPPED_TEXT = "Disconnected. You won't get reminders here any more."
-NOT_LINKED_TEXT = "This chat isn't connected to a Stratosphere account."
+STOPPED_TEXT = (
+    "👋 Disconnected. You won't get reminders here any more.\n\n"
+    "You can reconnect any time from <b>Settings</b> in Stratosphere."
+)
+NOT_LINKED_TEXT = "🤔 This chat isn't connected to a Stratosphere account."
 REMINDERS_ONLY_TEXT = (
-    "I only send reminders. To talk things through, open the coach in the Stratosphere app."
+    "💬 I only send reminders here. To talk things through, open Aster, your coach, "
+    "in the Stratosphere app."
 )
 
 
 def crisis_text() -> str:
-    """Plain-text version of the fixed crisis copy, with the verified lines."""
-    lines = [CRISIS_MESSAGE, ""]
+    """The fixed crisis copy with the verified lines. Deliberately no emoji."""
+    lines = [escape(CRISIS_MESSAGE), ""]
     for resource in INDIA_RESOURCES:
-        lines.append(f"{resource.name} ({resource.hours}): {' / '.join(resource.numbers)}")
-    lines += ["", f"Emergency: {EMERGENCY_NUMBER}"]
+        numbers = " / ".join(resource.numbers)
+        lines.append(escape(f"{resource.name} ({resource.hours}): {numbers}"))
+    lines += ["", escape(f"Emergency: {EMERGENCY_NUMBER}")]
     return "\n".join(lines)
 
 
@@ -177,9 +190,12 @@ def crisis_text() -> str:
 # reflections. The variant comes from the reminder's id, so a retried send
 # repeats the same text.
 REMINDER_TEMPLATES = (
-    'Hey {name}! Just pinging to remind you: "{task}" is up now. Keeping you posted. Bye! — Aster',
-    "Hi {name}, quick nudge from me: it's time for \"{task}\". You've got this. — Aster",
-    'Hey {name}! "{task}" is on your plan for right now. One small step at a time. — Aster',
+    "⏰ Hey {name}!\n\nIt's time for <b>{task}</b>.\n\n"
+    "One small step at a time. You've got this 💪\n\n— Aster ✨",
+    "🔔 Quick nudge, {name}!\n\n<b>{task}</b> is up now.\n\n"
+    "Breathe, begin, and see how it goes 🌱\n\n— Aster ✨",
+    "🌤️ Hi {name}!\n\n<b>{task}</b> is on your plan for right now.\n\n"
+    "Progress over perfection 🚀\n\n— Aster ✨",
 )
 
 
@@ -191,8 +207,18 @@ def first_name(full_name: str | None) -> str:
 
 def format_reminder(task_title: str, user_name: str | None = None, variant: int = 0) -> str:
     template = REMINDER_TEMPLATES[variant % len(REMINDER_TEMPLATES)]
-    # Values are inserted, never re-parsed, so braces in a title are safe.
-    return template.format(name=first_name(user_name), task=task_title)
+    # Values are inserted, never re-parsed, so braces in a title are safe;
+    # escaping keeps "<" or "&" in a title from breaking Telegram's HTML.
+    return template.format(name=escape(first_name(user_name)), task=escape(task_title))
+
+
+def app_button(label: str, path: str) -> dict | None:
+    """A button that opens Stratosphere, or None when the app has no public
+    https URL (Telegram rejects buttons pointing at localhost or http)."""
+    base = settings.FRONTEND_URL.rstrip("/")
+    if not base.startswith("https://"):
+        return None
+    return {"text": label, "url": f"{base}{path}"}
 
 
 def reply_for_text(db: Session, chat_id: int, text: str, now: datetime | None = None) -> str:
@@ -261,11 +287,17 @@ class TelegramClient:
             raise TelegramError(detail)
         return data["result"]
 
-    async def send_message(self, chat_id: int, text: str) -> None:
-        await self._call(
-            "sendMessage",
-            {"chat_id": chat_id, "text": text, "disable_web_page_preview": True},
-        )
+    async def send_message(self, chat_id: int, text: str, button: dict | None = None) -> None:
+        """Send Telegram HTML; `text` must already be escaped where needed."""
+        payload: dict = {
+            "chat_id": chat_id,
+            "text": text,
+            "parse_mode": "HTML",
+            "disable_web_page_preview": True,
+        }
+        if button:
+            payload["reply_markup"] = {"inline_keyboard": [[button]]}
+        await self._call("sendMessage", payload)
 
     async def get_updates(self, offset: int | None, timeout: int) -> list[dict]:
         payload: dict = {"timeout": timeout, "allowed_updates": ["message"]}
@@ -275,7 +307,7 @@ class TelegramClient:
 
 
 def format_test_message(user_name: str | None) -> str:
-    return TEST_MESSAGE_TEMPLATE.format(name=first_name(user_name))
+    return TEST_MESSAGE_TEMPLATE.format(name=escape(first_name(user_name)))
 
 
 async def send_test_message(chat_id: int, user_name: str | None = None) -> None:
@@ -286,7 +318,11 @@ async def send_test_message(chat_id: int, user_name: str | None = None) -> None:
     """
     async with httpx.AsyncClient() as http:
         client = TelegramClient(http, settings.TELEGRAM_BOT_TOKEN or "", settings.TELEGRAM_API_BASE)
-        await client.send_message(chat_id, format_test_message(user_name))
+        await client.send_message(
+            chat_id,
+            format_test_message(user_name),
+            app_button("🚀 Open Stratosphere", "/dashboard"),
+        )
 
 
 # ==================#
@@ -300,13 +336,20 @@ class ClaimedReminder:
     chat_id: int
     task_title: str
     user_name: str = ""
+    goal_id: UUID | None = None
 
 
 def claim_due_reminders(db: Session, now: datetime | None = None) -> list[ClaimedReminder]:
     """Select due reminders for linked users and claim each one atomically."""
     now = now or _utcnow()
     rows = (
-        db.query(Notification.id, User.telegram_chat_id, Notification.body, User.name)
+        db.query(
+            Notification.id,
+            User.telegram_chat_id,
+            Notification.body,
+            User.name,
+            Notification.goal_id,
+        )
         .join(User, User.id == Notification.user_id)
         .join(Goal, Goal.id == Notification.goal_id)
         .filter(
@@ -323,14 +366,16 @@ def claim_due_reminders(db: Session, now: datetime | None = None) -> list[Claime
         .all()
     )
     claimed: list[ClaimedReminder] = []
-    for notification_id, chat_id, title, user_name in rows:
+    for notification_id, chat_id, title, user_name, goal_id in rows:
         result = db.execute(
             update(Notification)
             .where(Notification.id == notification_id, Notification.telegram_sent_at.is_(None))
             .values(telegram_sent_at=now)
         )
         if result.rowcount == 1:
-            claimed.append(ClaimedReminder(notification_id, chat_id, title, user_name or ""))
+            claimed.append(
+                ClaimedReminder(notification_id, chat_id, title, user_name or "", goal_id)
+            )
     db.commit()
     return claimed
 
@@ -361,7 +406,12 @@ async def dispatch_once(
             text = format_reminder(
                 reminder.task_title, reminder.user_name, reminder.notification_id.int
             )
-            await client.send_message(reminder.chat_id, text)
+            button = (
+                app_button("📝 Open task", f"/tasks/{reminder.goal_id}")
+                if reminder.goal_id
+                else None
+            )
+            await client.send_message(reminder.chat_id, text, button)
             sent += 1
         except (TelegramBlocked, TelegramChatMissing):
             logger.info("telegram: chat blocked the bot or no longer exists; unlinking")
